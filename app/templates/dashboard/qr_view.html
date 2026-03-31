@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}QR Identity | DigiBioFi{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+  
+  <!-- Animated Background -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-brand-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+    <div class="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-indigo-600/20 rounded-full blur-[120px]"></div>
+  </div>
+
+  <!-- Back Link -->
+  <div class="absolute top-8 left-8">
+    <a href="/dashboard" class="flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-bold">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      Dashboard
+    </a>
+  </div>
+
+  <div class="relative z-10 max-w-sm w-full text-center">
+    <div class="mb-12">
+      <h1 class="text-3xl font-black text-white mb-3 tracking-tight">QR Identity</h1>
+      <p class="text-slate-400 font-medium">Your signature professional gateway</p>
+    </div>
+
+    <!-- QR Container -->
+    <div class="relative group mb-12">
+      <!-- Glow Effect -->
+      <div class="absolute -inset-4 bg-brand-500 rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse-slow"></div>
+      
+      <div class="relative bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-brand-500/10">
+        {% if profile.qr_code %}
+        <img src="/{{ profile.qr_code.image_path }}" alt="QR Code" class="w-full aspect-square rounded-2xl" />
+        {% else %}
+        <div class="w-full aspect-square bg-slate-100 rounded-2xl flex items-center justify-center">
+           <i data-lucide="loader-2" class="w-12 h-12 text-brand-500 animate-spin"></i>
+        </div>
+        {% endif %}
+        
+        <div class="mt-8">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Scan to connect</p>
+          <p class="text-sm font-bold text-brand-600 mt-1 truncate px-4">{{ profile.full_name or profile.slug }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-4">
+      <div class="flex gap-4">
+        <a href="/qr/download/{{ profile.slug }}" class="flex-1 bg-white hover:bg-slate-50 text-slate-900 font-bold py-4 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3">
+          <i data-lucide="download" class="w-5 h-5"></i>
+          Download
+        </a>
+        <button onclick="copyLink()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3">
+          <i data-lucide="share-2" class="w-5 h-5"></i>
+          Share
+        </button>
+      </div>
+      
+      <form action="/dashboard/qr/regenerate" method="post">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <button type="submit" class="w-full text-slate-500 hover:text-white text-sm font-bold py-2 transition-colors flex items-center justify-center gap-2">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Regenerate Identity
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Branding -->
+  <div class="mt-20 flex items-center gap-2 font-black text-slate-600 text-lg opacity-50">
+    <i data-lucide="layers" class="w-5 h-5"></i>
+    <span>DigiBioFi</span>
+  </div>
+</div>
+
+<script>
+  function copyLink() {
+    const url = "{{ base_url }}/p/{{ profile.slug }}?src=qr&qr_id={{ profile.qr_code.qr_id if profile.qr_code else '' }}";
+    navigator.clipboard.writeText(url);
+    alert("Shareable QR link copied!");
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Projects — DigiBioFi{% endblock %}
+
+{% block body %}
+{% include "dashboard/_nav.html" %}
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Projects</h1>
+  <p class="text-sm text-slate-400 mb-6">Showcase your work — side projects, open source, case studies.</p>
+
+  {% if request.query_params.get('saved') %}
+  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Project added.</div>
+  {% endif %}
+
+  {% if profile.projects %}
+  <div class="space-y-4 mb-8">
+    {% for proj in profile.projects %}
+    <div class="card flex items-start justify-between gap-4">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="font-semibold text-slate-800">{{ proj.name }}</p>
+          {% if proj.url %}
+          <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer"
+             class="text-brand-400 hover:text-brand-600">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+          {% endif %}
+        </div>
+        {% if proj.description %}<p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ proj.description }}</p>{% endif %}
+      </div>
+      <form action="/dashboard/projects/{{ proj.id }}/delete" method="post">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <button type="submit" onclick="return confirm('Delete?')"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-5">Add Project</h2>
+    <form action="/dashboard/projects/add" method="post" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+      <div>
+        <label class="form-label">Project Name *</label>
+        <input type="text" name="name" required class="input-field" placeholder="My Awesome App" />
+      </div>
+      <div>
+        <label class="form-label">URL</label>
+        <input type="url" name="url" class="input-field" placeholder="https://github.com/..." />
+      </div>
+      <div>
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="3" class="input-field resize-y"
+                  placeholder="What it does, technologies used, impact..."></textarea>
+      </div>
+      <button type="submit" class="btn-primary px-6 py-2.5 text-sm rounded-xl">Add Project</button>
+    </form>
+  </div>
+</main>
+
+<style>
+.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
+.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
+.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
+</style>
+{% endblock %}

@@ -1,0 +1,56 @@
+/*
+ * DigiBioFi — Custom CSS
+ * All heavy lifting is done by Tailwind. This file handles non-utility styles.
+ */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus outline for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Image aspect-ratio helper for profile photos */
+.img-square {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+/* QR code crisp rendering (no blurring) */
+img[alt*="QR"] {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Truncate after 2 lines */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Print styles for the card preview */
+@media print {
+  nav, footer, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+/* Fade-in animation for public profile sections */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.35s ease-out forwards;
+}

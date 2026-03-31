@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Skills — DigiBioFi{% endblock %}
+
+{% block body %}
+{% include "dashboard/_nav.html" %}
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Skills</h1>
+  <p class="text-sm text-slate-400 mb-6">List your technical and soft skills. One per line.</p>
+
+  {% if request.query_params.get('saved') %}
+  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Skills saved.</div>
+  {% endif %}
+
+  <div class="card">
+    <form action="/dashboard/skills" method="post">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+      <div class="mb-4">
+        <label class="form-label">
+          Skills
+          <span class="text-slate-400 font-normal text-xs ml-1">— one per line. Optionally add category: <code class="bg-slate-100 px-1 rounded">Python|Backend</code></span>
+        </label>
+        <textarea name="skills_raw" rows="12" class="input-field font-mono resize-y"
+                  placeholder="Python|Backend&#10;React|Frontend&#10;PostgreSQL|Database&#10;Docker&#10;Communication">{% for skill in profile.skills %}{{ skill.name }}{% if skill.category %}|{{ skill.category }}{% endif %}
+{% endfor %}</textarea>
+      </div>
+      <button type="submit" class="btn-primary px-6 py-2.5 text-sm rounded-xl">Save Skills</button>
+    </form>
+  </div>
+
+  {% if profile.skills %}
+  <div class="mt-6">
+    <h2 class="font-semibold text-slate-600 text-sm mb-3">Preview</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for skill in profile.skills %}
+      <span class="skill-tag">{{ skill.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</main>
+
+<style>
+.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
+.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
+.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
+.skill-tag { @apply px-3 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full border border-brand-100; }
+</style>
+{% endblock %}

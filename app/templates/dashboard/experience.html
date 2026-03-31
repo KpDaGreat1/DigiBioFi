@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Experience — DigiBioFi{% endblock %}
+
+{% block body %}
+{% include "dashboard/_nav.html" %}
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Work Experience</h1>
+  <p class="text-sm text-slate-400 mb-6">Add your work history — most recent first.</p>
+
+  {% if request.query_params.get('saved') %}
+  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Entry added.</div>
+  {% endif %}
+
+  <!-- Existing entries -->
+  {% if profile.experiences %}
+  <div class="space-y-4 mb-8">
+    {% for exp in profile.experiences %}
+    <div class="card flex items-start justify-between gap-4">
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-slate-800">{{ exp.title }}</p>
+        <p class="text-sm text-brand-600 font-medium">{{ exp.company }}</p>
+        <p class="text-xs text-slate-400 mt-1">
+          {{ exp.location }}{% if exp.location %} · {% endif %}
+          {{ exp.start_date }} – {{ 'Present' if exp.is_current else exp.end_date }}
+        </p>
+        {% if exp.description %}<p class="text-xs text-slate-500 mt-2 line-clamp-2">{{ exp.description }}</p>{% endif %}
+      </div>
+      <form action="/dashboard/experience/{{ exp.id }}/delete" method="post" class="flex-shrink-0">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <button type="submit" onclick="return confirm('Delete this entry?')"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add new entry form -->
+  <div class="card">
+    <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-5">Add Experience</h2>
+    <form action="/dashboard/experience/add" method="post" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Job Title *</label>
+          <input type="text" name="title" required class="input-field" placeholder="Senior Engineer" />
+        </div>
+        <div>
+          <label class="form-label">Company *</label>
+          <input type="text" name="company" required class="input-field" placeholder="Acme Corp" />
+        </div>
+        <div>
+          <label class="form-label">Location</label>
+          <input type="text" name="location" class="input-field" placeholder="New York, NY" />
+        </div>
+        <div>
+          <label class="form-label">Start Date</label>
+          <input type="text" name="start_date" class="input-field" placeholder="Jan 2022" />
+        </div>
+        <div>
+          <label class="form-label">End Date</label>
+          <input type="text" name="end_date" class="input-field" placeholder="Dec 2024" id="end-date-input" />
+        </div>
+        <div class="flex items-end pb-0.5">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_current" value="on" id="is-current-cb" class="w-4 h-4 accent-brand-600"
+                   onchange="document.getElementById('end-date-input').disabled = this.checked" />
+            <span class="text-sm text-slate-600">Currently working here</span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="3" class="input-field resize-y"
+                  placeholder="Key responsibilities, achievements..."></textarea>
+      </div>
+      <button type="submit" class="btn-primary px-6 py-2.5 text-sm rounded-xl">Add Entry</button>
+    </form>
+  </div>
+</main>
+
+<style>
+.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
+.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all disabled:opacity-40; }
+.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
+</style>
+{% endblock %}

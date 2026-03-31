@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | DigiBioFi{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50 flex">
+  <!-- Sidebar -->
+  <aside class="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 sticky top-0 h-screen">
+    <div class="p-6">
+      <div class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+        <div class="bg-brand-600 p-1 rounded-lg">
+          <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+        </div>
+        <span>DigiBioFi</span>
+      </div>
+    </div>
+    
+    <nav class="flex-1 px-4 space-y-1">
+      <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 bg-brand-50 text-brand-700 rounded-xl font-bold transition-all">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        Dashboard
+      </a>
+      <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        Profile
+      </a>
+      <a href="/dashboard/experience" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="briefcase" class="w-5 h-5"></i>
+        Experience
+      </a>
+      <a href="/dashboard/education" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+        Education
+      </a>
+      <a href="/dashboard/skills" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="cpu" class="w-5 h-5"></i>
+        Skills
+      </a>
+      <a href="/dashboard/projects" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="code-2" class="w-5 h-5"></i>
+        Projects
+      </a>
+      <a href="/dashboard/qr" class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold transition-all">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>
+        QR Identity
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-100">
+      <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-500 rounded-xl font-bold transition-all">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 min-w-0 flex flex-col">
+    <!-- Top Nav (Mobile & Actions) -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+      <div class="lg:hidden flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+        <i data-lucide="layers" class="w-6 h-6"></i>
+      </div>
+      <h2 class="hidden lg:block text-lg font-black text-slate-900">Overview</h2>
+      
+      <div class="flex items-center gap-4">
+        {% if profile.slug %}
+        <a href="/p/{{ profile.slug }}" target="_blank" class="flex items-center gap-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-full transition-all">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          View Public Profile
+        </a>
+        {% endif %}
+        <div class="w-10 h-10 rounded-full bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500">
+          {{ user.username[0].upper() }}
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-6 lg:p-10 space-y-10">
+      
+      <!-- Welcome Section -->
+      <section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+            Welcome back, {{ profile.full_name or user.username }}
+          </h1>
+          <p class="text-slate-500 font-medium mt-2">Here's how your professional identity is performing.</p>
+        </div>
+        <div class="flex gap-3">
+           <a href="/dashboard/profile" class="bg-white border border-slate-200 hover:border-brand-300 text-slate-700 font-bold px-5 py-2.5 rounded-2xl transition-all shadow-premium hover:shadow-brand-500/5">
+             Edit Profile
+           </a>
+           <a href="/dashboard/qr" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-2xl transition-all shadow-lg shadow-brand-500/25 hover:-translate-y-0.5">
+             Share QR
+           </a>
+        </div>
+      </section>
+
+      {% if profile and not profile.full_name %}
+      <div class="p-6 bg-brand-600 rounded-3xl text-white flex flex-col md:flex-row items-center gap-6 shadow-xl shadow-brand-500/20">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <i data-lucide="sparkles" class="w-8 h-8"></i>
+        </div>
+        <div class="flex-1 text-center md:text-left">
+          <p class="text-xl font-black mb-1">Your profile is almost ready!</p>
+          <p class="text-brand-100 font-medium">Complete your details to unlock the full potential of DigiBioFi.</p>
+        </div>
+        <a href="/dashboard/profile" class="bg-white text-brand-600 font-black px-8 py-3 rounded-2xl whitespace-nowrap hover:bg-brand-50 transition-colors">
+          Finish Now
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% set stat_items = [
+          ('Total Views', stats.total_views if stats else 0, 'eye', 'text-blue-600', 'bg-blue-50'),
+          ('Unique Visitors', stats.unique_visitors if stats else 0, 'users', 'text-indigo-600', 'bg-indigo-50'),
+          ('QR Scans', stats.qr_scans if stats else 0, 'qr-code', 'text-pink-600', 'bg-pink-50'),
+          ('Resume Downloads', stats.pdf_downloads if stats else 0, 'file-text', 'text-emerald-600', 'bg-emerald-50')
+        ] %}
+        {% for label, value, icon, t_color, b_color in stat_items %}
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-premium">
+          <div class="w-12 h-12 {{ b_color }} {{ t_color }} rounded-2xl flex items-center justify-center mb-4">
+            <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
+          </div>
+          <div class="text-3xl font-black text-slate-900">{{ value }}</div>
+          <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mt-1">{{ label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Quick Actions -->
+        <div class="lg:col-span-2 space-y-8">
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-premium overflow-hidden">
+             <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-black text-slate-900">Manage Content</h3>
+                <i data-lucide="more-horizontal" class="w-5 h-5 text-slate-400"></i>
+             </div>
+             <div class="p-6 grid sm:grid-cols-2 gap-4">
+                {% for url, label, desc, icon, color in [
+                  ('/dashboard/profile', 'Basic Info', 'Name, headline, and bio', 'user', 'bg-indigo-50 text-indigo-600'),
+                  ('/dashboard/experience', 'Experience', 'Job history and roles', 'briefcase', 'bg-blue-50 text-blue-600'),
+                  ('/dashboard/education', 'Education', 'Degrees and schools', 'graduation-cap', 'bg-violet-50 text-violet-600'),
+                  ('/dashboard/skills', 'Skills', 'Technical & soft skills', 'cpu', 'bg-emerald-50 text-emerald-600'),
+                  ('/dashboard/projects', 'Projects', 'Showcase your work', 'code-2', 'bg-orange-50 text-orange-600'),
+                  ('/dashboard/qr', 'QR Experience', 'Customize your QR identity', 'qr-code', 'bg-pink-50 text-pink-600')
+                ] %}
+                <a href="{{ url }}" class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                  <div class="w-12 h-12 {{ color }} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold text-slate-900">{{ label }}</p>
+                    <p class="text-xs font-medium text-slate-400">{{ desc }}</p>
+                  </div>
+                </a>
+                {% endfor %}
+             </div>
+          </div>
+        </div>
+
+        <!-- QR Preview Sidebar -->
+        <div class="space-y-8">
+          <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-premium text-center">
+            <h3 class="text-lg font-black text-slate-900 mb-6">QR Identity</h3>
+            <div class="relative inline-block group">
+              <div class="absolute -inset-4 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+              <div class="relative bg-slate-50 p-6 rounded-[2rem] border-4 border-white shadow-inner">
+                {% if profile.qr_code %}
+                <img src="/{{ profile.qr_code.image_path }}" alt="QR Code" class="w-40 h-40 mx-auto" />
+                {% else %}
+                <div class="w-40 h-40 flex flex-col items-center justify-center text-slate-300 gap-2">
+                  <i data-lucide="qr-code" class="w-12 h-12 opacity-20"></i>
+                  <p class="text-[10px] font-black uppercase tracking-widest">Not Generated</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="mt-8 space-y-3">
+               <a href="/dashboard/qr" class="block w-full bg-slate-900 text-white font-bold py-3 rounded-2xl hover:bg-slate-800 transition-colors">
+                  Download QR
+               </a>
+               <button onclick="copyLink()" class="block w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors">
+                  Copy Profile Link
+               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  function copyLink() {
+    const url = "{{ base_url }}/p/{{ profile.slug }}";
+    navigator.clipboard.writeText(url);
+    alert("Profile link copied to clipboard!");
+  }
+</script>
+{% endblock %}
