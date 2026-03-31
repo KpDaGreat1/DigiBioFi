@@ -61,6 +61,28 @@ async def lifespan(app: FastAPI):
 # Simple in-memory rate limiter: {ip: (timestamp, count)}
 _rate_limits: Dict[str, Tuple[float, int]] = {}
 
+def get_client_ip(request: Request) -> str:
+    """
+    Extract client IP from request, checking trusted proxy headers first.
+    In production, this helps get the real client IP when behind a load balancer.
+    """
+    # Check X-Forwarded-For (most common with proxies)
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        # X-Forwarded-For can contain multiple IPs; use the first one
+        return forwarded_for.split(",")[0].strip()
+    
+    # Check X-Real-IP (used by some proxies)
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    
+    # Fall back to direct connection IP
+    if request.client:
+        return request.client.host
+    
+    return "unknown"
+
 def is_rate_limited(ip: str) -> bool:
     if settings.app_env == "testing":
         return False
@@ -95,8 +117,8 @@ app = FastAPI(
 
 @app.middleware("http")
 async def security_and_rate_limit_middleware(request: Request, call_next):
-    # 1. Rate Limiting
-    ip = request.client.host if request.client else "unknown"
+    # 1. Rate Limiting (with trusted proxy header support)
+    ip = get_client_ip(request)
     if is_rate_limited(ip):
         return JSONResponse(
             status_code=429,

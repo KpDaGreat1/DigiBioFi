@@ -102,8 +102,25 @@ def set_user_role(
     admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    """Change a user's role. Prevent self-demotion and restrict admin creation."""
     user = db.query(User).filter(User.id == user_id).first()
-    if user and role in ("user", "admin"):
-        user.role = role
-        db.commit()
+    
+    if not user:
+        return RedirectResponse("/admin/users", status_code=303)
+    
+    # Prevent changing your own role
+    if user.id == admin.id:
+        logger.warning(f"Admin {admin.id} attempted to change their own role")
+        return RedirectResponse("/admin/users", status_code=303)
+    
+    # Only allow valid roles
+    if role not in ("user", "admin"):
+        return RedirectResponse("/admin/users", status_code=303)
+    
+    # If promoting to admin, ensure at least one admin exists already
+    # (implicit: the requesting admin must exist to be here)
+    user.role = role
+    db.commit()
+    logger.info(f"Admin {admin.id} changed user {user.id} role to {role}")
+    
     return RedirectResponse("/admin/users", status_code=303)

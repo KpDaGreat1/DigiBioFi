@@ -1,6 +1,7 @@
 """
 Dashboard routes — authenticated user home, account, profile edit, QR, card preview.
 """
+import logging
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -16,6 +17,7 @@ from app.schemas.profile import (
 from app.services import profile_service, qr_service, file_service, analytics_service
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+logger = logging.getLogger(__name__)
 
 
 def _get_profile(user: User, db: Session):
@@ -101,9 +103,11 @@ def profile_edit_submit(
         profile_service.update_profile(profile, data, db)
         return RedirectResponse("/dashboard/profile?saved=1", status_code=303)
     except profile_service.SlugTaken as e:
-        error = str(e)
+        logger.warning(f"User {current_user.id} attempted to use taken slug: {e}")
+        error = "That profile URL is already taken. Please choose another."
     except Exception as e:
-        error = str(e)
+        logger.error(f"Profile update error for user {current_user.id}: {e}", exc_info=True)
+        error = "An error occurred while saving your profile. Please try again."
 
     return templates.TemplateResponse(
         "dashboard/profile_edit.html",
@@ -127,9 +131,10 @@ async def upload_profile_image(
         data = ProfileUpdate(profile_image=path)
         profile_service.update_profile(profile, data, db)
     except Exception as e:
+        logger.error(f"Image upload error for user {current_user.id}: {e}", exc_info=True)
         return templates.TemplateResponse(
             "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile, "image_error": str(e)},
+            {"request": request, "user": current_user, "profile": profile, "image_error": "Failed to upload image. Please check the file and try again."},
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile?saved=1", status_code=303)
@@ -150,9 +155,10 @@ async def upload_resume(
         data = ProfileUpdate(resume_pdf=path)
         profile_service.update_profile(profile, data, db)
     except Exception as e:
+        logger.error(f"Resume upload error for user {current_user.id}: {e}", exc_info=True)
         return templates.TemplateResponse(
             "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile, "resume_error": str(e)},
+            {"request": request, "user": current_user, "profile": profile, "resume_error": "Failed to upload resume. Please check the file is a valid PDF and try again."},
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile?saved=1", status_code=303)
