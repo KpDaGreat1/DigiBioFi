@@ -1,91 +1,232 @@
-{% extends "base.html" %}
+{% extends "layouts/dashboard.html" %}
+
 {% block title %}Experience — DigiBioFi{% endblock %}
+{% block page_title %}Experience & Roles{% endblock %}
 
-{% block body %}
-{% include "dashboard/_nav.html" %}
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-10">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight leading-tight">Professional Experience</h1>
+      <p class="text-slate-500 font-medium mt-1">Showcase your career journey and key achievements.</p>
+    </div>
+    <button onclick="document.getElementById('add-exp-form').scrollIntoView({behavior: 'smooth'})" 
+            class="flex items-center gap-2 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 px-6 py-3 rounded-2xl transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-0.5">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      Add New Role
+    </button>
+  </div>
 
-<main class="max-w-3xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-slate-800 mb-1">Work Experience</h1>
-  <p class="text-sm text-slate-400 mb-6">Add your work history — most recent first.</p>
-
-  {% if request.query_params.get('saved') %}
-  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Entry added.</div>
-  {% endif %}
-
-  <!-- Existing entries -->
+  <!-- Experience Timeline — current roles first, then by start_date desc -->
   {% if profile.experiences %}
-  <div class="space-y-4 mb-8">
+  <div class="relative space-y-12 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-brand-500 before:via-slate-200 before:to-transparent">
     {% for exp in profile.experiences %}
-    <div class="card flex items-start justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <p class="font-semibold text-slate-800">{{ exp.title }}</p>
-        <p class="text-sm text-brand-600 font-medium">{{ exp.company }}</p>
-        <p class="text-xs text-slate-400 mt-1">
-          {{ exp.location }}{% if exp.location %} · {% endif %}
-          {{ exp.start_date }} – {{ 'Present' if exp.is_current else exp.end_date }}
-        </p>
-        {% if exp.description %}<p class="text-xs text-slate-500 mt-2 line-clamp-2">{{ exp.description }}</p>{% endif %}
+    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+      <!-- Icon -->
+      <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shadow-xl z-10 {% if exp.is_current %}bg-brand-600 animate-pulse-slow{% else %}bg-slate-400{% endif %} text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-transform group-hover:scale-125">
+        <i data-lucide="briefcase" class="w-4 h-4"></i>
       </div>
-      <form action="/dashboard/experience/{{ exp.id }}/delete" method="post" class="flex-shrink-0">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <button type="submit" onclick="return confirm('Delete this entry?')"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Delete">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-        </button>
-      </form>
+      <!-- Content Card -->
+      <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-premium hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/5 transition-all group/card relative">
+        {% if exp.is_current %}
+        <div class="absolute -top-3 left-8 px-4 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/20 z-20">Current Role</div>
+        {% endif %}
+        <div class="flex items-start justify-between gap-6">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <time class="px-3 py-1 bg-brand-50 text-brand-700 text-[10px] font-black uppercase tracking-widest rounded-lg border border-brand-100/50">
+                {{ exp.start_date }} – {{ 'Present' if exp.is_current else exp.end_date }}
+              </time>
+              {% if exp.location %}
+              <span class="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <i data-lucide="map-pin" class="w-3 h-3 text-brand-500"></i>
+                {{ exp.location }}
+              </span>
+              {% endif %}
+            </div>
+            <h3 class="text-xl font-black text-slate-900 leading-tight mb-1 group-hover/card:text-brand-600 transition-colors">{{ exp.title }}</h3>
+            <p class="text-base font-bold text-slate-500">{{ exp.company }}</p>
+
+            {% if exp.description %}
+            <div class="mt-6 text-sm text-slate-500 font-medium leading-relaxed line-clamp-3 group-hover/card:line-clamp-none transition-all">
+              {{ exp.description }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="flex flex-col gap-2 opacity-0 group-hover/card:opacity-100 transition-all translate-x-2 group-hover/card:translate-x-0">
+            <a href="/dashboard/experience/{{ exp.id }}/edit"
+               class="p-2.5 rounded-2xl text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-all border border-transparent hover:border-brand-100 shadow-sm" title="Edit">
+              <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+            </a>
+            <form action="/dashboard/experience/{{ exp.id }}/delete" method="post">
+              <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+              <button type="submit" onclick="return confirm('Delete this role?')"
+                      class="p-2.5 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 shadow-sm" title="Delete Entry">
+                <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
     {% endfor %}
+  </div>
+  {% else %}
+  <div class="p-12 bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-center space-y-4 shadow-sm">
+    <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-300">
+      <i data-lucide="briefcase" class="w-8 h-8"></i>
+    </div>
+    <div>
+      <p class="text-lg font-black text-slate-900">No experience added yet</p>
+      <p class="text-slate-400 font-medium">Add your work history to show your professional growth.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Edit experience form (shown when edit_exp is set) -->
+  {% if edit_exp %}
+  <div id="edit-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-premium relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i data-lucide="pencil" class="w-5 h-5"></i>
+        </div>
+        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Edit Experience</h2>
+      </div>
+      <form action="/dashboard/experience/{{ edit_exp.id }}/edit" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Job Title *</label>
+            <input type="text" name="title" required value="{{ edit_exp.title }}"
+                   class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Company *</label>
+            <input type="text" name="company" required value="{{ edit_exp.company }}"
+                   class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
+            <input type="text" name="location" value="{{ edit_exp.location }}"
+                   class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Start Date</label>
+              <input type="text" name="start_date" value="{{ edit_exp.start_date }}"
+                     class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">End Date</label>
+              <input type="text" name="end_date" id="edit-end-date-input" value="{{ edit_exp.end_date }}"
+                     class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+            </div>
+          </div>
+          <div class="md:col-span-2 flex items-center gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <div class="relative flex items-center">
+              <input type="checkbox" name="is_current" value="on" id="edit-is-current-cb"
+                     {% if edit_exp.is_current %}checked{% endif %}
+                     class="peer sr-only"
+                     onchange="document.getElementById('edit-end-date-input').disabled = this.checked" />
+              <div class="w-10 h-5 bg-slate-200 rounded-full peer-checked:bg-brand-600 transition-colors"></div>
+              <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </div>
+            <label for="edit-is-current-cb" class="text-sm font-bold text-slate-600 cursor-pointer">I am currently working in this role</label>
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Description <span class="text-slate-400 font-medium normal-case">(max 500 chars)</span></label>
+            <textarea name="description" rows="4" maxlength="500"
+                      class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium resize-none">{{ edit_exp.description }}</textarea>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <a href="/dashboard/experience" class="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl transition-all">Cancel</a>
+          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20">Save Changes</button>
+        </div>
+      </form>
+    </div>
   </div>
   {% endif %}
 
   <!-- Add new entry form -->
-  <div class="card">
-    <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-5">Add Experience</h2>
-    <form action="/dashboard/experience/add" method="post" class="space-y-4">
-      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="form-label">Job Title *</label>
-          <input type="text" name="title" required class="input-field" placeholder="Senior Engineer" />
+  <div id="add-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-premium relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
+    
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i data-lucide="plus" class="w-5 h-5"></i>
         </div>
-        <div>
-          <label class="form-label">Company *</label>
-          <input type="text" name="company" required class="input-field" placeholder="Acme Corp" />
-        </div>
-        <div>
-          <label class="form-label">Location</label>
-          <input type="text" name="location" class="input-field" placeholder="New York, NY" />
-        </div>
-        <div>
-          <label class="form-label">Start Date</label>
-          <input type="text" name="start_date" class="input-field" placeholder="Jan 2022" />
-        </div>
-        <div>
-          <label class="form-label">End Date</label>
-          <input type="text" name="end_date" class="input-field" placeholder="Dec 2024" id="end-date-input" />
-        </div>
-        <div class="flex items-end pb-0.5">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_current" value="on" id="is-current-cb" class="w-4 h-4 accent-brand-600"
-                   onchange="document.getElementById('end-date-input').disabled = this.checked" />
-            <span class="text-sm text-slate-600">Currently working here</span>
-          </label>
-        </div>
+        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Add Experience</h2>
       </div>
-      <div>
-        <label class="form-label">Description</label>
-        <textarea name="description" rows="3" class="input-field resize-y"
-                  placeholder="Key responsibilities, achievements..."></textarea>
-      </div>
-      <button type="submit" class="btn-primary px-6 py-2.5 text-sm rounded-xl">Add Entry</button>
-    </form>
-  </div>
-</main>
 
-<style>
-.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
-.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
-.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all disabled:opacity-40; }
-.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
-</style>
+      <form action="/dashboard/experience/add" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Job Title *</label>
+            <input type="text" name="title" required 
+                   class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.title %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="e.g. Senior Software Engineer" />
+            {% if errors and errors.title %}<p class="error-message">{{ errors.title }}</p>{% endif %}
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Company *</label>
+            <input type="text" name="company" required 
+                   class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.company %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="e.g. Helionexus" />
+            {% if errors and errors.company %}<p class="error-message">{{ errors.company }}</p>{% endif %}
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
+            <input type="text" name="location" 
+                   class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.location %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="e.g. San Francisco, CA (or Remote)" />
+            {% if errors and errors.location %}<p class="error-message">{{ errors.location }}</p>{% endif %}
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Start Date</label>
+              <input type="text" name="start_date" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.start_date %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                     placeholder="e.g. Jan 2022" />
+              {% if errors and errors.start_date %}<p class="error-message">{{ errors.start_date }}</p>{% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">End Date</label>
+              <input type="text" name="end_date" id="end-date-input" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.end_date %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium disabled:opacity-30 disabled:cursor-not-allowed" 
+                     placeholder="e.g. Dec 2024" />
+              {% if errors and errors.end_date %}<p class="error-message">{{ errors.end_date }}</p>{% endif %}
+            </div>
+          </div>
+          <div class="md:col-span-2 flex items-center gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <div class="relative flex items-center">
+              <input type="checkbox" name="is_current" value="on" id="is-current-cb" 
+                     class="peer sr-only" 
+                     onchange="document.getElementById('end-date-input').disabled = this.checked" />
+              <div class="w-10 h-5 bg-slate-200 rounded-full peer-checked:bg-brand-600 transition-colors"></div>
+              <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </div>
+            <label for="is-current-cb" class="text-sm font-bold text-slate-600 cursor-pointer">I am currently working in this role</label>
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Description</label>
+            <textarea name="description" rows="4" 
+                      class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.description %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium resize-none" 
+                      placeholder="Highlight your responsibilities and impact..."></textarea>
+            {% if errors and errors.description %}<p class="error-message">{{ errors.description }}</p>{% endif %}
+          </div>
+        </div>
+        <button type="submit" data-loading-text="ADDING ROLE..." class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20 hover:-translate-y-1">
+          Add Experience Entry
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

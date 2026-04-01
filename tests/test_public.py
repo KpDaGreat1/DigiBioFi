@@ -14,9 +14,10 @@ class TestPublicProfile:
             "bio": "I build things.",
             "email": "jane@test.com",
             "phone": "", "location": "NYC",
-            "website": "", "linkedin": "", "twitter": "", "github": "",
+            "website": "", "twitter": "", "github": "",
             "is_public": "on",
             "slug": "testuser",
+            "csrf_token": "test",
         })
 
         from app.models.user import User

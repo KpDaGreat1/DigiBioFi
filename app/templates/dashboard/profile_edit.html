@@ -1,172 +1,298 @@
-{% extends "base.html" %}
+{% extends "layouts/dashboard.html" %}
+
 {% block title %}Edit Profile — DigiBioFi{% endblock %}
+{% block page_title %}Profile Settings{% endblock %}
 
-{% block body %}
-{% include "dashboard/_nav.html" %}
-
-<main class="max-w-3xl mx-auto px-4 py-8">
-  <div class="flex items-center justify-between mb-6">
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-8">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Edit Profile</h1>
-      <p class="text-sm text-slate-400 mt-1">Your public-facing info. Keep it current.</p>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight">Edit Profile</h1>
+      <p class="text-slate-500 font-medium mt-1">Your public-facing identity. Keep it sharp and current.</p>
     </div>
     {% if profile and profile.slug %}
-    <a href="/p/{{ profile.slug }}" target="_blank" class="text-sm text-brand-600 hover:underline font-medium">
-      Preview →
+    <a href="/p/{{ profile.slug }}" target="_blank" class="flex items-center gap-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-5 py-2.5 rounded-2xl transition-all border border-brand-100/50">
+      <i data-lucide="external-link" class="w-4 h-4"></i>
+      Preview Profile
     </a>
     {% endif %}
   </div>
 
-  {% if request.query_params.get('saved') %}
-  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Profile saved successfully.</div>
-  {% endif %}
-  {% if error %}
-  <div class="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{{ error }}</div>
-  {% endif %}
-  {% if image_error %}
-  <div class="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{{ image_error }}</div>
-  {% endif %}
-
-  <!-- Profile image upload -->
-  <div class="card mb-6 flex items-center gap-5">
-    {% if profile and profile.profile_image %}
-    <img src="/{{ profile.profile_image }}" alt="Profile photo"
-         class="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md" />
-    {% else %}
-    <div class="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 text-3xl font-bold border-2 border-white shadow-md">
-      {{ (profile.full_name or user.username)[0].upper() }}
-    </div>
-    {% endif %}
-    <div>
-      <p class="font-medium text-slate-700 text-sm mb-2">Profile photo</p>
-      <form action="/dashboard/profile/image" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <label class="cursor-pointer inline-flex items-center gap-2 text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium text-slate-600 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          Upload photo
-          <input type="file" name="file" accept="image/*" class="hidden" onchange="this.form.submit()" />
-        </label>
-      </form>
-      <p class="text-xs text-slate-400 mt-1">JPG, PNG, WebP · max 5 MB</p>
-    </div>
-  </div>
-
-  <!-- Main profile form -->
-  <form action="/dashboard/profile" method="post" class="space-y-6">
-    <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-    <div class="card space-y-5">
-      <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide">Basic Info</h2>
-
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="form-label">Full Name</label>
-          <input type="text" name="full_name" value="{{ profile.full_name or '' }}" class="input-field" placeholder="Jane Doe" />
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Visuals & Assets -->
+    <div class="space-y-8">
+      <!-- Profile Image -->
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium text-center">
+        <div class="relative inline-block mb-6 group">
+          <div class="absolute -inset-2 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+          {% if profile and profile.profile_image %}
+          <img src="{{ profile.profile_image }}" alt="Profile photo"
+               class="relative w-32 h-32 rounded-[2rem] object-cover border-4 border-white shadow-xl" />
+          {% else %}
+          <div class="relative w-32 h-32 rounded-[2rem] bg-slate-100 flex items-center justify-center text-slate-300 text-4xl font-black border-4 border-white shadow-xl">
+            {{ (profile.full_name or user.username)[0].upper() }}
+          </div>
+          {% endif %}
+          
+          <form action="/dashboard/profile/image" method="post" enctype="multipart/form-data" class="absolute bottom-0 right-0">
+            <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+            <label class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center cursor-pointer hover:bg-brand-600 transition-all shadow-lg hover:scale-110">
+              <i data-lucide="camera" class="w-5 h-5"></i>
+              <input type="file" name="file" accept="image/*" class="hidden" onchange="this.form.submit()" />
+            </label>
+          </form>
         </div>
-        <div>
-          <label class="form-label">Custom URL Slug</label>
-          <div class="flex items-center">
-            <span class="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-400">/p/</span>
-            <input type="text" name="slug" value="{{ profile.slug or '' }}" class="input-field rounded-l-none" placeholder="jane-doe" />
+        
+        <h3 class="font-black text-slate-900">Profile Photo</h3>
+        <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">JPG, PNG or WebP</p>
+        {% if profile and profile.profile_image %}
+        <form action="/dashboard/profile/image/delete" method="post" class="mt-3">
+          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+          <button type="submit" onclick="return confirm('Remove profile photo?')"
+                  class="text-xs font-bold text-red-400 hover:text-red-600 transition-colors flex items-center gap-1 mx-auto">
+            <i data-lucide="trash-2" class="w-3 h-3"></i> Remove Photo
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Resume Asset -->
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium">
+        <h3 class="font-black text-slate-900 mb-4 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-brand-600"></i>
+          Resume
+        </h3>
+        
+        {% if profile and profile.resume_pdf %}
+        <div class="bg-slate-50 rounded-2xl p-4 mb-4 flex items-center justify-between border border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+              <i data-lucide="check" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-600 uppercase tracking-tight">Active Resume</span>
+          </div>
+          <a href="/resume/download/{{ profile.slug }}" target="_blank" class="text-brand-600 hover:text-brand-700 transition-colors">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+          </a>
+        </div>
+        {% endif %}
+
+        <form action="/dashboard/profile/resume" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+          <label class="w-full flex items-center justify-center gap-2 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-brand-300 hover:bg-brand-50/30 p-4 rounded-2xl cursor-pointer transition-all group">
+            <i data-lucide="upload-cloud" class="w-5 h-5 text-slate-400 group-hover:text-brand-500 transition-colors"></i>
+            <span class="text-sm font-bold text-slate-500 group-hover:text-brand-700">Upload Resume (PDF)</span>
+            <input type="file" name="file" accept="application/pdf" class="hidden" onchange="this.form.submit()" />
+          </label>
+        </form>
+        <p class="text-[10px] text-slate-400 mt-3 font-bold uppercase tracking-tighter text-center">Max file size: 5MB</p>
+      </div>
+      
+      <!-- Visibility -->
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium">
+        <h3 class="font-black text-slate-900 mb-4">Privacy</h3>
+        <label class="flex items-center gap-3 cursor-pointer group">
+          <div class="relative">
+            <input type="checkbox" name="is_public" form="profile-form" value="on"
+                   {% if profile.is_public %}checked{% endif %}
+                   class="peer sr-only" />
+            <div class="w-12 h-6 bg-slate-200 rounded-full peer-checked:bg-brand-600 transition-colors"></div>
+            <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-colors">Public Profile</p>
+            <p class="text-xs text-slate-400 font-medium leading-tight mt-0.5">Toggle visibility on the web</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Right Column: Form Fields -->
+    <div class="lg:col-span-2">
+      <form id="profile-form" action="/dashboard/profile" method="post" class="space-y-8">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        
+        <!-- Identity Section -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <i data-lucide="fingerprint" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">Identity</h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Full Name</label>
+              <input type="text" name="full_name" value="{{ profile.full_name or '' }}" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.full_name %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                     placeholder="e.g. Alex Rivera" maxlength="200" required />
+              {% if errors and errors.full_name %}<p class="error-message">{{ errors.full_name }}</p>{% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Custom Slug</label>
+              <div class="relative flex items-center group">
+                <span class="absolute left-5 text-slate-400 font-bold group-focus-within:text-brand-500 transition-colors">/p/</span>
+                <input type="text" name="slug" value="{{ profile.slug or '' }}" 
+                       class="w-full pl-11 pr-5 py-4 rounded-2xl border {% if errors and errors.slug %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                       placeholder="alex-rivera" maxlength="50" required />
+              </div>
+              {% if errors and errors.slug %}<p class="error-message">{{ errors.slug }}</p>{% endif %}
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Professional Headline</label>
+              <input type="text" name="headline" value="{{ profile.headline or '' }}" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.headline %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                     placeholder="e.g. Senior Product Designer @ Helionexus" maxlength="200" />
+              {% if errors and errors.headline %}<p class="error-message">{{ errors.headline }}</p>{% endif %}
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <div class="flex justify-between items-center px-1">
+                <label class="text-sm font-black text-slate-700 uppercase tracking-widest">Bio (Professional Summary)</label>
+                <p id="bio-counter" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">0 / 1000</p>
+              </div>
+              <textarea name="bio" rows="4" id="bio-textarea"
+                        class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.bio %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900 resize-none" 
+                        placeholder="Tell your professional story in a few sentences..." maxlength="1000">{{ profile.bio or '' }}</textarea>
+              {% if errors and errors.bio %}<p class="error-message">{{ errors.bio }}</p>{% endif %}
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">Markdown supported</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div>
-        <label class="form-label">Headline / Title</label>
-        <input type="text" name="headline" value="{{ profile.headline or '' }}" class="input-field"
-               placeholder="e.g. Full-Stack Engineer · Open to opportunities" />
-      </div>
+        <!-- Reach Section -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <i data-lucide="zap" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">Reach</h2>
+          </div>
 
-      <div>
-        <label class="form-label">Bio</label>
-        <textarea name="bio" rows="4" class="input-field resize-y"
-                  placeholder="Write 2–3 sentences about yourself...">{{ profile.bio or '' }}</textarea>
-      </div>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Public Email</label>
+              <input type="email" name="email" value="{{ profile.email or '' }}" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                     placeholder="alex@example.com" maxlength="200" />
+              {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Phone</label>
+              <input type="text" name="phone" value="{{ profile.phone or '' }}" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.phone %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                     placeholder="+1 (555) 000-0000" maxlength="20" />
+              {% if errors and errors.phone %}<p class="error-message">{{ errors.phone }}</p>{% endif %}
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
+              <input type="text" name="location" value="{{ profile.location or '' }}" 
+                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.location %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                     placeholder="e.g. San Francisco, CA" maxlength="200" />
+              {% if errors and errors.location %}<p class="error-message">{{ errors.location }}</p>{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Links Section -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
+              <i data-lucide="share-2" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">Professional Links</h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            {% for name, label, icon, placeholder in [
+              ('website', 'Portfolio/Website', 'globe', 'https://alexrivera.com'),
+              ('github', 'GitHub', 'github', 'https://github.com/alexrivera'),
+              ('twitter', 'X (Twitter)', 'twitter', 'https://x.com/alexrivera'),
+              ('telegram', 'Telegram', 'send', 'https://t.me/alexrivera')
+            ] %}
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">{{ label }}</label>
+              <div class="relative flex items-center group">
+                <i data-lucide="{{ icon }}" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+                <input type="url" name="{{ name }}" value="{{ profile | attr(name) or '' }}" 
+                       class="w-full pl-12 pr-5 py-4 rounded-2xl border {% if errors and errors[name] %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                       placeholder="{{ placeholder }}" maxlength="500" />
+              </div>
+              {% if errors and errors[name] %}<p class="error-message">{{ errors[name] }}</p>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Visibility Section -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">Visibility & Preferences</h2>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6">
+            <label class="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white transition-all cursor-pointer group">
+              <input type="checkbox" name="is_public" class="w-6 h-6 rounded-lg text-brand-600 focus:ring-brand-500/20 border-slate-300" 
+                     {% if profile.is_public %}checked{% endif %} />
+              <div>
+                <p class="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-colors">Public Profile</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Visible to everyone</p>
+              </div>
+            </label>
+            
+            <label class="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white transition-all cursor-pointer group">
+              <input type="checkbox" name="recruiter_visibility" class="w-6 h-6 rounded-lg text-brand-600 focus:ring-brand-500/20 border-slate-300" 
+                     {% if profile.recruiter_visibility %}checked{% endif %} />
+              <div>
+                <p class="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-colors">Recruiter Ready</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Show "Hire Me" badge</p>
+              </div>
+            </label>
+
+            <label class="flex items-center gap-4 p-5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white transition-all cursor-pointer group">
+              <input type="checkbox" name="freelance_availability" class="w-6 h-6 rounded-lg text-brand-600 focus:ring-brand-500/20 border-slate-300" 
+                     {% if profile.freelance_availability %}checked{% endif %} />
+              <div>
+                <p class="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-colors">Freelance Only</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Availability for projects</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sticky Save Action -->
+        <div class="sticky bottom-8 z-20">
+          <div class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl border border-slate-200 shadow-2xl flex items-center justify-between gap-4">
+            <p class="text-xs font-bold text-slate-400 px-4 hidden md:block uppercase tracking-widest">Unsaved changes detected</p>
+            <div class="flex-1 md:flex-none">
+              <button type="submit" class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white font-black px-10 py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                Save Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
-
-    <div class="card space-y-5">
-      <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide">Contact</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="form-label">Email</label>
-          <input type="email" name="email" value="{{ profile.email or '' }}" class="input-field" placeholder="jane@example.com" />
-        </div>
-        <div>
-          <label class="form-label">Phone</label>
-          <input type="text" name="phone" value="{{ profile.phone or '' }}" class="input-field" placeholder="+1 555 000 0000" />
-        </div>
-        <div class="sm:col-span-2">
-          <label class="form-label">Location</label>
-          <input type="text" name="location" value="{{ profile.location or '' }}" class="input-field" placeholder="New York, NY" />
-        </div>
-      </div>
-    </div>
-
-    <div class="card space-y-5">
-      <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide">Social & Web</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="form-label">Website</label>
-          <input type="url" name="website" value="{{ profile.website or '' }}" class="input-field" placeholder="https://janedoe.com" />
-        </div>
-        <div>
-          <label class="form-label">LinkedIn</label>
-          <input type="url" name="linkedin" value="{{ profile.linkedin or '' }}" class="input-field" placeholder="https://linkedin.com/in/..." />
-        </div>
-        <div>
-          <label class="form-label">GitHub</label>
-          <input type="url" name="github" value="{{ profile.github or '' }}" class="input-field" placeholder="https://github.com/..." />
-        </div>
-        <div>
-          <label class="form-label">X / Twitter</label>
-          <input type="url" name="twitter" value="{{ profile.twitter or '' }}" class="input-field" placeholder="https://x.com/..." />
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <label class="flex items-center gap-3 cursor-pointer">
-        <input type="checkbox" name="is_public" value="on"
-               {% if profile.is_public %}checked{% endif %}
-               class="w-5 h-5 rounded accent-brand-600" />
-        <div>
-          <span class="font-medium text-slate-700 text-sm">Public profile</span>
-          <p class="text-xs text-slate-400">When enabled, your profile is accessible at your public URL.</p>
-        </div>
-      </label>
-    </div>
-
-    <button type="submit" class="w-full btn-primary py-3 text-sm rounded-xl">Save Profile</button>
-  </form>
-
-  <!-- Resume upload -->
-  <div class="card mt-6">
-    <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-4">Resume PDF</h2>
-    {% if profile and profile.resume_pdf %}
-    <p class="text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg mb-3">
-      Resume uploaded. <a href="/resume/download/{{ profile.slug }}" class="underline font-medium" target="_blank">Download</a>
-    </p>
-    {% endif %}
-    {% if resume_error %}
-    <p class="text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg mb-3">{{ resume_error }}</p>
-    {% endif %}
-    <form action="/dashboard/profile/resume" method="post" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-      <label class="cursor-pointer inline-flex items-center gap-2 text-xs bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium text-slate-600 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        Upload PDF resume
-        <input type="file" name="file" accept="application/pdf" class="hidden" onchange="this.form.submit()" />
-      </label>
-      <p class="text-xs text-slate-400 mt-2">PDF only · max 5 MB</p>
-    </form>
   </div>
+</div>
 
-</main>
-
-<style>
-.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
-.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
-.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
-.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
-</style>
+<script>
+  // Bio counter
+  const bioTextarea = document.getElementById('bio-textarea');
+  const bioCounter = document.getElementById('bio-counter');
+  
+  if (bioTextarea && bioCounter) {
+    const updateCounter = () => {
+      const length = bioTextarea.value.length;
+      bioCounter.textContent = `${length} / 1000`;
+      bioCounter.classList.toggle('text-brand-600', length > 900);
+    };
+    bioTextarea.addEventListener('input', updateCounter);
+    updateCounter();
+  }
+</script>
 {% endblock %}

@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     emails_from_email: str = "noreply@example.com"
     emails_from_name: str = "DigiBioFi"
 
+    # ── Stripe ───────────────────────────────────────────────────────────────
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id: str = ""
+
     # ── CORS ─────────────────────────────────────────────────────────────────
     allowed_origins: str = "http://localhost:8000"
 

@@ -34,6 +34,12 @@ Pillow==10.4.0
 # URL / slug utilities
 python-slugify==8.0.4
 
+# Payment Processing
+stripe==9.14.0
+
+# Environment variables
+python-dotenv==1.0.1
+
 # Input sanitization
 bleach==6.1.0
 

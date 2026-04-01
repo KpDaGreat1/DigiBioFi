@@ -1,77 +1,132 @@
 {% extends "base.html" %}
-{% block title %}Create account — DigiBioFi{% endblock %}
+{% block title %}Join Elite — DigiBioFi Identity{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 p-4">
-  <div class="w-full max-w-md">
-
-    <div class="text-center mb-8">
-      <a href="/" class="inline-flex items-center gap-2 font-bold text-brand-600 text-2xl">
-        <svg class="w-9 h-9" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#4f46e5"/><path d="M8 10h10M8 16h8M8 22h6" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="23" cy="22" r="4" fill="white" fill-opacity="0.9"/></svg>
-        DigiBioFi
-      </a>
-      <p class="mt-3 text-slate-500 text-sm">Create your free digital profile</p>
+<div class="min-h-screen flex flex-col md:flex-row bg-white">
+  <!-- Left Side: Branding & Visual -->
+  <div class="hidden md:flex md:w-1/2 bg-slate-900 relative overflow-hidden items-center justify-center p-12">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-brand-600 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
+      <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
     </div>
+    
+    <div class="relative z-10 max-w-md text-center">
+      <div class="inline-flex items-center gap-2 font-black text-white text-3xl mb-12 tracking-tighter">
+        <div class="bg-brand-600 p-2 rounded-xl shadow-2xl shadow-brand-500/20">
+          <i data-lucide="layers" class="w-8 h-8"></i>
+        </div>
+        <span>DigiBioFi</span>
+      </div>
+      <h2 class="text-4xl font-black text-white leading-tight mb-6 tracking-tight">Your professional identity starts here.</h2>
+      <p class="text-slate-400 text-lg font-medium leading-relaxed">Join thousands of high-impact professionals and claim your signature digital presence.</p>
+      
+      <!-- Stats or Social Proof -->
+      <div class="mt-16 grid grid-cols-2 gap-8 text-left border-t border-white/10 pt-12">
+        <div>
+          <p class="text-3xl font-black text-white">1,000+</p>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Verified Users</p>
+        </div>
+        <div>
+          <p class="text-3xl font-black text-white">50k+</p>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Monthly Scans</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-8">
+  <!-- Right Side: Register Form -->
+  <div class="flex-1 flex items-center justify-center p-8 md:p-12 overflow-y-auto">
+    <div class="w-full max-w-md py-12">
+      <div class="md:hidden text-center mb-12">
+        <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tighter">
+          <i data-lucide="layers" class="w-6 h-6"></i>
+          DigiBioFi
+        </a>
+      </div>
 
-      {% if error %}
-      <div class="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
-        {{ error }}
+      <div class="mb-10">
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Create Account</h1>
+        <p class="text-slate-500 font-medium">Claim your professional handle and start building.</p>
+      </div>
+
+      {% if errors and errors.general %}
+      <div class="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
+        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        {{ errors.general }}
       </div>
       {% endif %}
 
-      <form action="/register" method="post" class="space-y-5">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-          <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
-                 class="input-field" placeholder="you@example.com" />
+      <form action="/register" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Email Address</label>
+          <div class="relative flex items-center group">
+            <i data-lucide="mail" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
+                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="alex@example.com" />
+          </div>
+          {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">
-            Username
-            <span class="text-slate-400 font-normal text-xs ml-1">— used in your profile URL</span>
-          </label>
-          <input type="text" name="username" value="{{ username or '' }}" required
-                 class="input-field" placeholder="johndoe" minlength="3" maxlength="30"
-                 pattern="[a-zA-Z0-9_\-]+" />
-          <p class="mt-1 text-xs text-slate-400">Letters, numbers, _ and - only</p>
+
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Unique Username</label>
+          <div class="relative flex items-center group">
+            <span class="absolute left-5 text-slate-400 font-bold group-focus-within:text-brand-500 transition-colors">@</span>
+            <input type="text" name="username" value="{{ username or '' }}" required
+                   class="w-full pl-11 pr-5 py-4 rounded-2xl border {% if errors and errors.username %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="johndoe" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_\-]+" />
+          </div>
+          {% if errors and errors.username %}<p class="error-message">{{ errors.username }}</p>{% endif %}
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter ml-1">Only letters, numbers, _ and - allowed</p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-          <input type="password" name="password" required autocomplete="new-password"
-                 class="input-field" placeholder="Must meet requirements below" minlength="8" />
-          <div class="mt-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg">
-            <p class="font-semibold mb-1.5 text-slate-700">Password must contain:</p>
-            <ul class="space-y-1 list-disc list-inside">
-              <li>At least 8 characters</li>
-              <li>One uppercase letter (A-Z)</li>
-              <li>One number (0-9)</li>
-              <li>One special character (!@#$%^&*)</li>
-            </ul>
+
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Secure Password</label>
+          <div class="relative flex items-center group">
+            <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <input type="password" name="password" required autocomplete="new-password"
+                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.password %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="••••••••" minlength="8" />
+          </div>
+          {% if errors and errors.password %}<p class="error-message">{{ errors.password }}</p>{% endif %}
+          
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Requirements:</p>
+            <div class="grid grid-cols-2 gap-2">
+              {% for req in ['8+ Characters', 'Uppercase', 'Number', 'Special Icon'] %}
+              <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                {{ req }}
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Confirm Password</label>
-          <input type="password" name="confirm_password" required autocomplete="new-password"
-                 class="input-field" placeholder="••••••••" />
+
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Confirm Password</label>
+          <div class="relative flex items-center group">
+            <i data-lucide="shield-check" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <input type="password" name="confirm_password" required autocomplete="new-password"
+                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.confirm_password %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="••••••••" />
+          </div>
+          {% if errors and errors.confirm_password %}<p class="error-message">{{ errors.confirm_password }}</p>{% endif %}
         </div>
-        <button type="submit" class="w-full btn-primary py-2.5 text-sm rounded-xl">
-          Create account
+
+        <button type="submit" data-loading-text="CREATING ACCOUNT..." class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-1 text-lg uppercase tracking-widest mt-4">
+          Create Account
         </button>
       </form>
 
-      <p class="mt-6 text-center text-sm text-slate-500">
-        Already have an account?
-        <a href="/login" class="text-brand-600 hover:underline font-medium">Log in</a>
+      <p class="mt-10 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">
+        Already verified?
+        <a href="/login" class="text-brand-600 hover:text-brand-700 transition-colors ml-1">Sign In</a>
       </p>
     </div>
   </div>
 </div>
 
-<style>
-.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
-.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
-</style>
 {% endblock %}

@@ -1,63 +1,88 @@
 {% extends "base.html" %}
-{% block title %}Log in — DigiBioFi{% endblock %}
+{% block title %}Log in — DigiBioFi Elite{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 p-4">
-  <div class="w-full max-w-md">
-
-    <!-- Logo -->
-    <div class="text-center mb-8">
-      <a href="/" class="inline-flex items-center gap-2 font-bold text-brand-600 text-2xl">
-        <svg class="w-9 h-9" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#4f46e5"/><path d="M8 10h10M8 16h8M8 22h6" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="23" cy="22" r="4" fill="white" fill-opacity="0.9"/></svg>
-        DigiBioFi
-      </a>
-      <p class="mt-3 text-slate-500 text-sm">Welcome back — log in to your account</p>
+<div class="min-h-screen flex flex-col md:flex-row bg-white">
+  <!-- Left Side: Branding & Visual -->
+  <div class="hidden md:flex md:w-1/2 bg-slate-900 relative overflow-hidden items-center justify-center p-12">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-brand-600 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
+      <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
     </div>
-
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-8">
-
-      {% if registered %}
-      <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">
-        Account created! You can now log in.
-      </div>
-      {% endif %}
-
-      {% if error %}
-      <div class="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
-        {{ error }}
-      </div>
-      {% endif %}
-
-      <form action="/login" method="post" class="space-y-5">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-          <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
-                 class="input-field" placeholder="you@example.com" />
+    
+    <div class="relative z-10 max-w-md text-center">
+      <div class="inline-flex items-center gap-2 font-black text-white text-3xl mb-12 tracking-tighter">
+        <div class="bg-brand-600 p-2 rounded-xl shadow-2xl shadow-brand-500/20">
+          <i data-lucide="layers" class="w-8 h-8"></i>
         </div>
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-sm font-medium text-slate-700">Password</label>
-            <a href="/forgot-password" class="text-xs text-brand-600 hover:underline">Forgot password?</a>
+        <span>DigiBioFi</span>
+      </div>
+      <h2 class="text-4xl font-black text-white leading-tight mb-6 tracking-tight">Welcome back to the elite circle.</h2>
+      <p class="text-slate-400 text-lg font-medium leading-relaxed">Access your professional identity and manage your digital signature.</p>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form -->
+  <div class="flex-1 flex items-center justify-center p-8 md:p-12">
+    <div class="w-full max-w-md">
+      <div class="md:hidden text-center mb-12">
+        <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tighter">
+          <i data-lucide="layers" class="w-6 h-6"></i>
+          DigiBioFi
+        </a>
+      </div>
+
+      <div class="mb-10">
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Sign In</h1>
+        <p class="text-slate-500 font-medium">Enter your credentials to access your dashboard.</p>
+      </div>
+
+      {% if errors and errors.general %}
+      <div class="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
+        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        {{ errors.general }}
+      </div>
+      {% endif %}
+
+      <form action="/login" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        
+        <div class="space-y-2">
+          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Email Address</label>
+          <div class="relative flex items-center group">
+            <i data-lucide="mail" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
+                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="alex@example.com" />
           </div>
-          <input type="password" name="password" required autocomplete="current-password"
-                 class="input-field" placeholder="••••••••" />
+          {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
         </div>
-        <button type="submit" class="w-full btn-primary py-2.5 text-sm rounded-xl">
-          Log in
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest">Password</label>
+            <a href="/forgot-password" class="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-700 transition-colors">Forgot?</a>
+          </div>
+          <div class="relative flex items-center group">
+            <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <input type="password" name="password" required autocomplete="current-password"
+                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.password %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="••••••••" />
+          </div>
+          {% if errors and errors.password %}<p class="error-message">{{ errors.password }}</p>{% endif %}
+        </div>
+
+        <button type="submit" data-loading-text="SIGNING IN..." class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 hover:-translate-y-1 text-lg uppercase tracking-widest">
+          Sign In
         </button>
       </form>
 
-      <p class="mt-6 text-center text-sm text-slate-500">
-        Don't have an account?
-        <a href="/register" class="text-brand-600 hover:underline font-medium">Sign up free</a>
+      <p class="mt-10 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">
+        New here?
+        <a href="/register" class="text-brand-600 hover:text-brand-700 transition-colors ml-1">Create Account</a>
       </p>
     </div>
   </div>
 </div>
 
-<style>
-.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
-.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
-</style>
 {% endblock %}

@@ -27,8 +27,9 @@ class StorageInterface(ABC):
         pass
 
 class LocalStorage(StorageInterface):
-    def __init__(self, base_dir: str = settings.upload_dir):
+    def __init__(self, base_dir: str = settings.upload_dir, url_prefix: str = "/uploads"):
         self.base_dir = Path(base_dir)
+        self.url_prefix = url_prefix.rstrip("/")
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_full_path(self, path: str) -> Path:
@@ -53,8 +54,7 @@ class LocalStorage(StorageInterface):
         return False
 
     def get_url(self, path: str) -> str:
-        # In this app, /uploads is mounted as StaticFiles
-        return f"/uploads/{path.lstrip('/')}"
+        return f"{self.url_prefix}/{path.lstrip('/')}"
 
     def exists(self, path: str) -> bool:
         return self._get_full_path(path).exists()

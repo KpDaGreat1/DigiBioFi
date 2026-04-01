@@ -23,13 +23,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Flash messages: auto-dismiss after 4 seconds ───────────────────────────
-  document.querySelectorAll("[data-auto-dismiss]").forEach((el) => {
+  // ── Flash messages: auto-dismiss ───────────────────────────────────────────
+  document.querySelectorAll(".flash-message").forEach((el) => {
     setTimeout(() => {
-      el.style.transition = "opacity 0.4s";
+      el.style.transform = "translateX(100%)";
       el.style.opacity = "0";
+      el.style.transition = "transform 0.4s ease-in, opacity 0.4s ease-in";
       setTimeout(() => el.remove(), 400);
-    }, 4000);
+    }, 5000);
+  });
+
+  // ── Form loading states ────────────────────────────────────────────────────
+  document.querySelectorAll("form").forEach((form) => {
+    form.addEventListener("submit", (e) => {
+      // Check if it's a file upload (might take time)
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        // Prevent multiple clicks
+        if (submitBtn.classList.contains("btn-loading")) {
+          e.preventDefault();
+          return;
+        }
+        
+        // Only show loading if form is valid (client-side)
+        if (form.checkValidity && !form.checkValidity()) return;
+
+        // Change text if provided via data attribute
+        if (submitBtn.dataset.loadingText) {
+          submitBtn.dataset.originalText = submitBtn.innerHTML;
+          submitBtn.innerHTML = submitBtn.dataset.loadingText;
+        }
+        
+        submitBtn.classList.add("btn-loading");
+      }
+    });
   });
 
   // ── File input preview ─────────────────────────────────────────────────────

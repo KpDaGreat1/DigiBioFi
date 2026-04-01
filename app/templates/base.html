@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#4f46e5" />
+  <meta name="description" content="DigiBioFi — The elite digital identity platform for high-impact professionals." />
+  
+  <!-- Favicon (SVG for better scaling) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f46e5%22/><path d=%22M25 30h50M25 50h40M25 70h30%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22/><circle cx=%2270%22 cy=%2270%22 r=%2212%22 fill=%22white%22/></svg>">
   
   <title>{% block title %}DigiBioFi — Your Digital Identity{% endblock %}</title>
 
@@ -63,16 +67,16 @@
   <link rel="stylesheet" href="/static/css/custom.css" />
 
   <style>
+    .text-gradient {
+      background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
     .glass-effect {
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    .text-gradient {
-      background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
     }
     .hover-lift {
       transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
@@ -87,6 +91,22 @@
   {% block head %}{% endblock %}
 </head>
 <body class="h-full bg-slate-50 font-sans text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
+
+  <!-- Flash Messages -->
+  <div id="flash-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+    {% for msg in get_flashed_messages(request) %}
+      <div class="flash-message pointer-events-auto px-6 py-4 rounded-2xl shadow-2xl border flex items-center gap-3 animate-slide-in-right 
+                  {% if msg.category == 'success' %}bg-emerald-50 border-emerald-100 text-emerald-700
+                  {% elif msg.category == 'error' %}bg-red-50 border-red-100 text-red-700
+                  {% else %}bg-slate-900 border-slate-800 text-white{% endif %}">
+        <i data-lucide="{% if msg.category == 'success' %}check-circle{% elif msg.category == 'error' %}alert-circle{% else %}info{% endif %}" class="w-5 h-5"></i>
+        <span class="text-sm font-bold">{{ msg.message }}</span>
+        <button onclick="this.parentElement.remove()" class="ml-4 opacity-50 hover:opacity-100 transition-opacity">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    {% endfor %}
+  </div>
 
   {% block body %}{% endblock %}
 

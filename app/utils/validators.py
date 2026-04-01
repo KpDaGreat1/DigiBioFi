@@ -5,6 +5,7 @@ import hashlib
 from pathlib import Path
 
 from fastapi import UploadFile, HTTPException, status
+from pydantic import ValidationError
 
 from app.core.config import settings
 
@@ -73,3 +74,29 @@ def sanitize_text(value: str) -> str:
     allowed_attrs = {"a": ["href", "rel", "target"]}
     cleaned = bleach.clean(value, tags=allowed_tags, attributes=allowed_attrs, strip=True)
     return cleaned
+
+
+_BLOCKED_WORDS: set[str] = {
+    "spam", "casino", "viagra", "porn", "xxx", "hack", "phishing",
+    "nigger", "faggot", "chink", "spic", "kike",
+}
+
+
+def check_word_filter(text: str) -> bool:
+    """Return True if text contains a blocked word, False otherwise."""
+    lower = text.lower()
+    return any(w in lower for w in _BLOCKED_WORDS)
+
+
+def format_pydantic_errors(e: ValidationError) -> dict:
+    """Format Pydantic errors into a {field: message} dictionary."""
+    errors = {}
+    for error in e.errors():
+        # Get the field name from the location tuple
+        field = str(error["loc"][-1])
+        msg = error["msg"]
+        # Clean up common Pydantic message prefixes
+        if msg.startswith("Value error, "):
+            msg = msg[len("Value error, "):]
+        errors[field] = msg
+    return errors

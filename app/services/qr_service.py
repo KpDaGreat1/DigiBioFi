@@ -7,6 +7,7 @@ The QR code record in the database tracks the image path and the URL it encodes.
 import io
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 import qrcode
 from qrcode.image.styledpil import StyledPilImage
@@ -15,34 +16,46 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.profile import Profile, QRCode
-from app.services.storage import storage
+from app.services.storage import LocalStorage
+
+# QR codes are stored under uploads/qr_codes/ and served at /qr_codes/<slug>.png
+# The static mount in main.py maps /qr_codes/ → uploads/qr_codes/
+qr_storage = LocalStorage(base_dir=settings.upload_dir, url_prefix="/uploads")
 
 
-def generate_qr_for_profile(profile: Profile, db: Session) -> QRCode:
+def generate_qr_for_profile(profile: Profile, db: Session, force: bool = False) -> QRCode:
     """
-    Generate (or regenerate) a QR code PNG for the profile's public URL.
+    Generate (or reuse) a persistent QR code PNG for the profile's public URL.
 
-    - Uses a persistent qr_id (UUID).
-    - Creates the PNG file in storage.
-    - Upserts the QRCode record in the database.
-    - Returns the updated QRCode model instance.
+    - QR is generated once at profile creation (or first demand).
+    - Checks for existing record and file before creating new.
+    - QR URL always points to the same profile slug.
+    - No regeneration unless explicitly triggered.
     """
     # 1. Get or create persistent QR record
     qr_record = db.query(QRCode).filter(QRCode.profile_id == profile.id).first()
+    
+    # Path is constant based on profile slug
+    path = f"qr_codes/{profile.slug}.png"
+
+    if not force and qr_record and qr_record.image_path and qr_storage.exists(path):
+        # Already exists and file is there, return it
+        return qr_record
+
     if not qr_record:
         qr_record = QRCode(
             profile_id=profile.id,
             qr_id=uuid.uuid4(),
-            image_path="", # will be set below
+            image_path=path,
             qr_url="", # will be set below
         )
         db.add(qr_record)
-        db.flush() # ensure qr_record.qr_id is available if not set yet (though we set it)
+        db.flush()
 
-    # 2. Build the signature URL
+    # 2. Build the signature URL (must be stable)
     qr_url = f"{settings.base_url}/p/{profile.slug}?src=qr&qr_id={qr_record.qr_id}"
     
-    # 3. Generate QR image
+    # 3. Generate QR image if it doesn't exist or forced
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -62,8 +75,7 @@ def generate_qr_for_profile(profile: Profile, db: Session) -> QRCode:
     img.save(img_byte_arr, format='PNG')
     img_byte_arr.seek(0)
     
-    path = f"qr_codes/{profile.slug}.png"
-    storage.save(img_byte_arr, path)
+    qr_storage.save(img_byte_arr, path)
 
     # 5. Update record
     qr_record.image_path = path
@@ -78,19 +90,18 @@ def generate_qr_for_profile(profile: Profile, db: Session) -> QRCode:
 def get_qr_url(slug: str) -> str | None:
     """Return the public URL for the QR image."""
     path = f"qr_codes/{slug}.png"
-    if storage.exists(path):
-        return storage.get_url(path)
+    if qr_storage.exists(path):
+        return qr_storage.get_url(path)
     return None
 
 
 def get_qr_bytes(slug: str) -> bytes | None:
     """Read a QR PNG from storage and return raw bytes, or None if not found."""
     path = f"qr_codes/{slug}.png"
-    if not storage.exists(path):
+    if not qr_storage.exists(path):
         return None
-    # Storage interface should probably have a read() method but we can use open() if local
-    # For now, since we know it's LocalStorage in this phase:
-    full_path = settings.upload_path / path
+
+    full_path = Path(settings.upload_dir) / path
     if full_path.exists():
         return full_path.read_bytes()
     return None

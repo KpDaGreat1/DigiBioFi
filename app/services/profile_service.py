@@ -1,6 +1,8 @@
 """
 Profile CRUD service — create, read, update profile and all sub-sections.
 """
+from typing import Optional, List
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.profile import (
@@ -132,16 +134,50 @@ def delete_education(edu_id: int, profile: Profile, db: Session) -> None:
 
 # ── Skills ────────────────────────────────────────────────────────────────────
 
-def replace_skills(profile: Profile, skills: list[SkillCreate], db: Session) -> list[Skill]:
-    """Delete all existing skills and replace with the provided list."""
-    db.query(Skill).filter(Skill.profile_id == profile.id).delete()
-    new_skills = [
-        Skill(profile_id=profile.id, **s.model_dump(), display_order=i)
-        for i, s in enumerate(skills)
-    ]
-    db.add_all(new_skills)
+def update_skill(skill_id: int, profile: Profile, data: SkillCreate, db: Session) -> Optional[Skill]:
+    skill = db.query(Skill).filter(Skill.id == skill_id, Skill.profile_id == profile.id).first()
+    if not skill:
+        return None
+    for field, value in data.model_dump().items():
+        setattr(skill, field, value)
     db.commit()
-    return new_skills
+    db.refresh(skill)
+    return skill
+
+
+def delete_skill(skill_id: int, profile: Profile, db: Session) -> bool:
+    skill = db.query(Skill).filter(Skill.id == skill_id, Skill.profile_id == profile.id).first()
+    if skill:
+        db.delete(skill)
+        db.commit()
+        return True
+    return False
+
+
+def replace_skills(profile: Profile, skills: list[SkillCreate], db: Session) -> list[Skill]:
+    """Delete all existing skills and replace with the provided list. Defensive: no empty/null/dupes."""
+    from sqlalchemy.exc import SQLAlchemyError
+    import logging
+    logger = logging.getLogger(__name__)
+    db.query(Skill).filter(Skill.profile_id == profile.id).delete()
+    cleaned = []
+    seen = set()
+    for i, s in enumerate(skills):
+        name = s.name.strip()
+        category = s.category.strip() if s.category else ""
+        key = (name.lower(), category.lower())
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(Skill(profile_id=profile.id, name=name, category=category, display_order=len(cleaned)))
+    try:
+        db.add_all(cleaned)
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Skill save error for profile {profile.id}: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Failed to save skills. Please try again.")
+    return cleaned
 
 
 # ── Projects ──────────────────────────────────────────────────────────────────

@@ -43,7 +43,7 @@ class TestAnalyticsEvents:
 
         resp = auth_client.post(
             f"/api/analytics/event/{slug}",
-            content=json.dumps({"event_type": "link_click", "source": "direct", "link_target": "linkedin"}),
+            content=json.dumps({"event_type": "link_click", "source": "direct", "link_target": "github"}),
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == 200
@@ -54,7 +54,7 @@ class TestAnalyticsEvents:
             AnalyticsEvent.event_type == "link_click",
         ).all()
         assert len(events) == 1
-        assert events[0].link_target == "linkedin"
+        assert events[0].link_target == "github"
 
     def test_analytics_summary(self, db, auth_client):
         """Summary should aggregate events correctly."""

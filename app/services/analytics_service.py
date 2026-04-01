@@ -1,8 +1,8 @@
 """
 Analytics service — record events and compute summary statistics.
 """
-from datetime import datetime, timezone
-from sqlalchemy import func
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
 from app.models.analytics import AnalyticsEvent
@@ -18,9 +18,23 @@ def record_event(
     user_agent: str,
     db: Session,
     qr_id: str | None = None,
-) -> AnalyticsEvent:
+) -> AnalyticsEvent | None:
     """Persist a single analytics event. IP is anonymised before storage."""
     visitor_hash = hash_visitor(ip, user_agent)
+
+    # Dedupe logic: Don't record same event from same visitor within 5 minutes
+    five_mins_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
+    existing = db.query(AnalyticsEvent).filter(
+        and_(
+            AnalyticsEvent.profile_id == profile.id,
+            AnalyticsEvent.visitor_hash == visitor_hash,
+            AnalyticsEvent.event_type == event.event_type,
+            AnalyticsEvent.created_at >= five_mins_ago
+        )
+    ).first()
+
+    if existing:
+        return None
 
     record = AnalyticsEvent(
         profile_id=profile.id,

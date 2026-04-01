@@ -37,7 +37,7 @@ class TestQRGeneration:
         # First generate
         auth_client.get("/dashboard/qr")
 
-        resp = auth_client.post("/dashboard/qr/regenerate", follow_redirects=False)
+        resp = auth_client.post("/dashboard/qr/regenerate", data={"csrf_token": "test"}, follow_redirects=False)
         assert resp.status_code == 303
         assert "regenerated=1" in resp.headers["location"]
 

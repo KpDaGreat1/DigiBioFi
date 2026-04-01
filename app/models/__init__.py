@@ -12,5 +12,7 @@ from app.models.profile import (         # noqa: F401
     Award,
     CustomSection,
     QRCode,
+    ProfileView,
 )
 from app.models.analytics import AnalyticsEvent  # noqa: F401
+from app.models.stripe import StripeEvent  # noqa: F401

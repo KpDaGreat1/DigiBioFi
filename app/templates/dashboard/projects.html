@@ -1,71 +1,169 @@
-{% extends "base.html" %}
+{% extends "layouts/dashboard.html" %}
+
 {% block title %}Projects — DigiBioFi{% endblock %}
+{% block page_title %}Projects & Portfolio{% endblock %}
 
-{% block body %}
-{% include "dashboard/_nav.html" %}
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-10">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight leading-tight">Portfolio</h1>
+      <p class="text-slate-500 font-medium mt-1">Showcase your best work, side projects, and contributions.</p>
+    </div>
+    <button onclick="document.getElementById('add-project-form').scrollIntoView({behavior: 'smooth'})" 
+            class="flex items-center gap-2 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 px-6 py-3 rounded-2xl transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-0.5">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      Add New Project
+    </button>
+  </div>
 
-<main class="max-w-3xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-slate-800 mb-1">Projects</h1>
-  <p class="text-sm text-slate-400 mb-6">Showcase your work — side projects, open source, case studies.</p>
-
-  {% if request.query_params.get('saved') %}
-  <div class="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">Project added.</div>
-  {% endif %}
-
+  <!-- Projects Grid -->
   {% if profile.projects %}
-  <div class="space-y-4 mb-8">
+  <div class="grid md:grid-cols-2 gap-8">
     {% for proj in profile.projects %}
-    <div class="card flex items-start justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <p class="font-semibold text-slate-800">{{ proj.name }}</p>
-          {% if proj.url %}
-          <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer"
-             class="text-brand-400 hover:text-brand-600">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-          </a>
-          {% endif %}
+    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-premium hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500/5 transition-all group flex flex-col h-full overflow-hidden relative">
+      <!-- Project Card Content -->
+      <div class="p-10 flex-1">
+        <div class="flex items-start justify-between gap-6 mb-8">
+          <div class="w-16 h-16 bg-orange-50 text-orange-600 rounded-[1.5rem] flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+            <i data-lucide="code-2" class="w-8 h-8"></i>
+          </div>
+          <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+            <a href="/dashboard/projects/{{ proj.id }}/edit"
+               class="p-2.5 rounded-2xl text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-all border border-transparent hover:border-orange-100 shadow-sm bg-white" title="Edit Project">
+              <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+            </a>
+            <form action="/dashboard/projects/{{ proj.id }}/delete" method="post">
+              <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+              <button type="submit" onclick="return confirm('Delete this project?')"
+                      class="p-2.5 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 shadow-sm bg-white" title="Delete">
+                <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+              </button>
+            </form>
+          </div>
         </div>
-        {% if proj.description %}<p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ proj.description }}</p>{% endif %}
+
+        <h3 class="text-2xl font-black text-slate-900 leading-tight mb-4 group-hover:text-orange-600 transition-colors">{{ proj.name }}</h3>
+        
+        {% if proj.description %}
+        <p class="text-sm font-medium text-slate-500 leading-relaxed mb-6">{{ proj.description }}</p>
+        {% endif %}
       </div>
-      <form action="/dashboard/projects/{{ proj.id }}/delete" method="post">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <button type="submit" onclick="return confirm('Delete?')"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-        </button>
-      </form>
+      
+      {% if proj.url %}
+      <div class="px-10 py-6 bg-slate-50/50 border-t border-slate-100 mt-auto group/link">
+        <a href="{{ proj.url }}" target="_blank" class="flex items-center justify-between text-xs font-black text-slate-400 uppercase tracking-widest hover:text-brand-600 transition-colors">
+          <span class="flex items-center gap-2">
+            <i data-lucide="link" class="w-3.5 h-3.5"></i>
+            View Live Project
+          </span>
+          <i data-lucide="external-link" class="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-all -translate-x-2 group-hover/link:translate-x-0"></i>
+        </a>
+      </div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
+  {% else %}
+  <div class="p-12 bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-center space-y-4 shadow-sm">
+    <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-300">
+      <i data-lucide="code-2" class="w-8 h-8"></i>
+    </div>
+    <div>
+      <p class="text-lg font-black text-slate-900">Portfolio is empty</p>
+      <p class="text-slate-400 font-medium">Add some of your best work to show what you're capable of.</p>
+    </div>
+  </div>
   {% endif %}
 
-  <div class="card">
-    <h2 class="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-5">Add Project</h2>
-    <form action="/dashboard/projects/add" method="post" class="space-y-4">
-      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-      <div>
-        <label class="form-label">Project Name *</label>
-        <input type="text" name="name" required class="input-field" placeholder="My Awesome App" />
+  <!-- Add new entry form -->
+  <div id="add-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-premium relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
+    
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-orange-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+        </div>
+        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Add Project</h2>
       </div>
-      <div>
-        <label class="form-label">URL</label>
-        <input type="url" name="url" class="input-field" placeholder="https://github.com/..." />
-      </div>
-      <div>
-        <label class="form-label">Description</label>
-        <textarea name="description" rows="3" class="input-field resize-y"
-                  placeholder="What it does, technologies used, impact..."></textarea>
-      </div>
-      <button type="submit" class="btn-primary px-6 py-2.5 text-sm rounded-xl">Add Project</button>
-    </form>
-  </div>
-</main>
 
-<style>
-.card { @apply bg-white rounded-2xl border border-slate-100 p-6 shadow-sm; }
-.form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
-.input-field { @apply w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
-.btn-primary { @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all; }
-</style>
+      <form action="/dashboard/projects/add" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Project Name *</label>
+            <input type="text" name="name" required 
+                   class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.name %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   placeholder="e.g. DigiBioFi Platform" />
+            {% if errors and errors.name %}<p class="error-message">{{ errors.name }}</p>{% endif %}
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Project URL</label>
+            <div class="relative flex items-center group">
+              <i data-lucide="link" class="absolute left-5 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+              <input type="url" name="url" 
+                     class="w-full pl-12 pr-5 py-4 rounded-2xl border {% if errors and errors.url %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                     placeholder="https://github.com/alexrivera/digibiofi" />
+            </div>
+            {% if errors and errors.url %}<p class="error-message">{{ errors.url }}</p>{% endif %}
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Description</label>
+            <textarea name="description" rows="4" 
+                      class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.description %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium resize-none" 
+                      placeholder="Describe the project goals, tech stack, and your role..."></textarea>
+            {% if errors and errors.description %}<p class="error-message">{{ errors.description }}</p>{% endif %}
+          </div>
+        </div>
+        <button type="submit" data-loading-text="ADDING PROJECT..." class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-1">
+          Add Project to Portfolio
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit project form -->
+  {% if edit_proj %}
+  <div id="edit-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-premium relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i data-lucide="pencil" class="w-5 h-5"></i>
+        </div>
+        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Edit Project</h2>
+      </div>
+      <form action="/dashboard/projects/{{ edit_proj.id }}/edit" method="post" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Project Name *</label>
+            <input type="text" name="name" required value="{{ edit_proj.name }}"
+                   class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Project URL</label>
+            <div class="relative flex items-center group">
+              <i data-lucide="link" class="absolute left-5 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+              <input type="url" name="url" value="{{ edit_proj.url }}"
+                     class="w-full pl-12 pr-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" />
+            </div>
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Description <span class="text-slate-400 font-medium normal-case">(max 300 chars)</span></label>
+            <textarea name="description" rows="4" maxlength="300"
+                      class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium resize-none">{{ edit_proj.description }}</textarea>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <a href="/dashboard/projects" class="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl transition-all">Cancel</a>
+          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
 {% endblock %}

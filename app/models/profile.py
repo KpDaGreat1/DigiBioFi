@@ -7,7 +7,7 @@ All section tables (Experience, Education, etc.) belong to a Profile (1:N).
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID, desc
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -36,9 +36,9 @@ class Profile(Base):
 
     # Social / web
     website: Mapped[str] = mapped_column(String(500), nullable=False, default="")
-    linkedin: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     twitter: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     github: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    telegram: Mapped[str] = mapped_column(String(500), nullable=False, default="")
 
     # Uploaded assets (stored as relative paths)
     profile_image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
@@ -46,6 +46,14 @@ class Profile(Base):
 
     # Visibility
     is_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    recruiter_visibility: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    freelance_availability: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Elite Customization
+    profile_image_2: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    profile_image_3: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    custom_background_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    custom_header_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -64,7 +72,7 @@ class Profile(Base):
 
     experiences: Mapped[list["Experience"]] = relationship(
         "Experience", back_populates="profile", cascade="all, delete-orphan",
-        order_by="Experience.display_order",
+        order_by="desc(Experience.is_current), desc(Experience.start_date)",
     )
     educations: Mapped[list["Education"]] = relationship(
         "Education", back_populates="profile", cascade="all, delete-orphan",
@@ -133,6 +141,7 @@ class Education(Base):
     start_date: Mapped[str] = mapped_column(String(20), nullable=False, default="")
     end_date: Mapped[str] = mapped_column(String(20), nullable=False, default="")
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    certificate_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="educations")
@@ -239,3 +248,20 @@ class QRCode(Base):
     )
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="qr_code")
+
+
+class ProfileView(Base):
+    """Tracks unique profile views per IP/device per 24h to prevent refresh abuse."""
+    __tablename__ = "profile_views"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    profile_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    visitor_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True,
+    )

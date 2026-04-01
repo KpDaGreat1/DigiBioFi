@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.main import app
 
 settings.app_env = "testing"
+app.state.environment = "testing"  # Update app state after setting settings
 
 # ── In-memory SQLite for tests ────────────────────────────────────────────────
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -74,6 +75,7 @@ def registered_user(client):
         "username": "testuser",
         "password": "TestPass123!",
         "confirm_password": "TestPass123!",
+        "csrf_token": "test",  # Bypass CSRF in testing
     }, follow_redirects=False)
     return resp
 
@@ -84,5 +86,6 @@ def auth_client(client, registered_user):
     client.post("/login", data={
         "email": "test@example.com",
         "password": "TestPass123!",
+        "csrf_token": "test",  # Bypass CSRF in testing
     }, follow_redirects=False)
     return client

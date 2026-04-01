@@ -3,11 +3,14 @@ Admin panel routes — user management, analytics overview, moderation scaffold.
 
 All routes require the authenticated user to have role='admin'.
 """
+import logging
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db, require_admin
+logger = logging.getLogger(__name__)
+
+from app.core.dependencies import get_db, require_admin, require_csrf
 from app.core.templates import templates
 from app.models.user import User
 from app.models.analytics import AnalyticsEvent
@@ -81,10 +84,12 @@ def admin_users(
 # ── Toggle user active state ──────────────────────────────────────────────────
 
 @router.post("/users/{user_id}/toggle-active", response_class=HTMLResponse)
-def toggle_user_active(
+async def toggle_user_active(
     user_id: int,
+    csrf_token: str = Depends(require_csrf),
     admin=Depends(require_admin),
     db: Session = Depends(get_db),
+    request: Request = None,
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if user and user.id != admin.id:   # admins cannot deactivate themselves
@@ -96,9 +101,10 @@ def toggle_user_active(
 # ── Change user role ──────────────────────────────────────────────────────────
 
 @router.post("/users/{user_id}/set-role", response_class=HTMLResponse)
-def set_user_role(
+async def set_user_role(
     user_id: int,
     role: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
     admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):

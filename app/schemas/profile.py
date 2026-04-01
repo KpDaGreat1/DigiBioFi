@@ -14,7 +14,7 @@ class ExperienceCreate(BaseModel):
     start_date: str = Field(default="", max_length=50)
     end_date: str = Field(default="", max_length=50)
     is_current: bool = False
-    description: str = Field(default="", max_length=3000)
+    description: str = Field(default="", max_length=1000)
     display_order: int = 0
 
 
@@ -30,7 +30,8 @@ class EducationCreate(BaseModel):
     field: str = Field(default="", max_length=200)
     start_date: str = Field(default="", max_length=50)
     end_date: str = Field(default="", max_length=50)
-    description: str = Field(default="", max_length=3000)
+    description: str = Field(default="", max_length=1000)
+    certificate_url: str = Field(default="", max_length=500)
     display_order: int = 0
 
 
@@ -54,7 +55,7 @@ class SkillRead(SkillCreate):
 
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(default="", max_length=3000)
+    description: str = Field(default="", max_length=1000)
     url: str = Field(default="", max_length=500)
     display_order: int = 0
 
@@ -112,15 +113,17 @@ class ProfileUpdate(BaseModel):
     """Fields the user can update via the dashboard form."""
     full_name: Optional[str] = Field(default=None, max_length=200)
     headline: Optional[str] = Field(default=None, max_length=200)
-    bio: Optional[str] = Field(default=None, max_length=2000)
+    bio: Optional[str] = Field(default=None, max_length=1000)
     email: Optional[str] = Field(default=None, max_length=200)
     phone: Optional[str] = Field(default=None, max_length=20)
     location: Optional[str] = Field(default=None, max_length=200)
     website: Optional[str] = Field(default=None, max_length=500)
-    linkedin: Optional[str] = Field(default=None, max_length=500)
     twitter: Optional[str] = Field(default=None, max_length=500)
     github: Optional[str] = Field(default=None, max_length=500)
+    telegram: Optional[str] = Field(default=None, max_length=500)
     is_public: Optional[bool] = None
+    recruiter_visibility: Optional[bool] = None
+    freelance_availability: Optional[bool] = None
     slug: Optional[str] = None
     profile_image: Optional[str] = None
     resume_pdf: Optional[str] = None
@@ -148,9 +151,9 @@ class ProfileRead(BaseModel):
     phone: str
     location: str
     website: str
-    linkedin: str
     twitter: str
     github: str
+    telegram: str
     profile_image: str
     resume_pdf: str
     is_public: bool

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+  <!-- Mobile Header -->
+  <header class="lg:hidden bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <a href="/dashboard" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <div class="bg-brand-600 p-1 rounded-lg shadow-lg shadow-brand-500/20">
+        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+      </div>
+      <span>Digi<span class="text-slate-900">BioFi</span></span>
+    </a>
+    <button id="mobile-menu-btn" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors">
+      <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+  </header>
+
+  <!-- Sidebar (Desktop) -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="p-6 hidden lg:block">
+      <a href="/dashboard" class="flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tight">
+        <div class="bg-brand-600 p-1.5 rounded-lg shadow-lg shadow-brand-500/20">
+          <i data-lucide="layers" class="w-6 h-6 text-white"></i>
+        </div>
+        <span>Digi<span class="text-slate-900">BioFi</span></span>
+      </a>
+    </div>
+    
+    <nav class="flex-1 px-4 py-4 lg:py-2 space-y-1 overflow-y-auto">
+      {% set nav_items = [
+        ('/dashboard', 'layout-dashboard', 'Dashboard'),
+        ('/dashboard/profile', 'user', 'Profile'),
+        ('/dashboard/experience', 'briefcase', 'Experience'),
+        ('/dashboard/education', 'graduation-cap', 'Education'),
+        ('/dashboard/skills', 'cpu', 'Skills'),
+        ('/dashboard/projects', 'code-2', 'Projects'),
+        ('/dashboard/qr', 'qr-code', 'QR Identity'),
+        ('/dashboard/upgrade', 'sparkles', 'Upgrade')
+      ] %}
+      
+      {% for path, icon, label in nav_items %}
+      <a href="{{ path }}" 
+         class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all group {% if request.url.path == path %}bg-brand-50 text-brand-700 shadow-sm shadow-brand-500/5{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+        <i data-lucide="{{ icon }}" class="w-5 h-5 {% if request.url.path == path %}text-brand-600{% else %}text-slate-400 group-hover:text-brand-500{% endif %} transition-colors"></i>
+        {{ label }}
+      </a>
+      {% endfor %}
+    </nav>
+
+    <div class="p-4 border-t border-slate-100 mt-auto">
+      <div class="bg-slate-50 rounded-2xl p-4 mb-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-white border-2 border-brand-100 shadow-sm flex items-center justify-center font-bold text-brand-600">
+            {{ user.username[0].upper() }}
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-slate-900 truncate">{{ user.username }}</p>
+            <p class="text-xs font-medium text-slate-500 truncate">{{ user.email }}</p>
+          </div>
+        </div>
+        {% if user.subscription_tier in ('elite', 'premium') %}
+        <a href="/billing/portal" class="flex items-center gap-2 text-xs font-bold text-brand-500 hover:text-brand-700 transition-colors mb-2">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+          Manage Billing
+        </a>
+        {% endif %}
+        <a href="/logout" class="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          Sign out
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
+
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0 flex flex-col pt-16 lg:pt-0">
+        <div class="max-w-[1400px] w-full mx-auto flex flex-col flex-1">
+            <!-- Desktop Top Nav -->
+            <header class="hidden lg:flex bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 items-center justify-between sticky top-0 z-30">
+      <div>
+        {% block breadcrumbs %}
+        <nav class="flex items-center gap-2 text-sm font-bold">
+          <a href="/dashboard" class="text-slate-400 hover:text-brand-600 transition-colors">App</a>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+          <span class="text-slate-900">{% block page_title %}Overview{% endblock %}</span>
+        </nav>
+        {% endblock %}
+      </div>
+      
+      <div class="flex items-center gap-4">
+        {% if profile and profile.slug %}
+        <a href="/p/{{ profile.slug }}" target="_blank" class="flex items-center gap-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-full transition-all border border-brand-100/50 hover:border-brand-200 shadow-sm">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          Live Profile
+        </a>
+        {% endif %}
+        <!-- Dark mode toggle -->
+        <button id="dark-mode-toggle" onclick="toggleDarkMode()"
+                class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:border-brand-200 transition-all" title="Toggle dark mode">
+          <i data-lucide="moon" class="w-5 h-5 dark-icon hidden"></i>
+          <i data-lucide="sun" class="w-5 h-5 light-icon hidden"></i>
+        </button>
+        <button class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:border-brand-200 transition-all">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 p-6 lg:p-10">
+      {% block dashboard_content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="px-10 py-10 border-t border-slate-200 bg-white/50 text-center">
+      <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">"Let all things be done decently and in order." — 1 Corinthians 14:40</p>
+      <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">&copy; 2026 DigiBioFi • Professional Identity System</p>
+    </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dark mode
+  function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateDarkModeIcons();
+  }
+  function updateDarkModeIcons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    document.querySelectorAll('.dark-icon').forEach(el => el.classList.toggle('hidden', !isDark));
+    document.querySelectorAll('.light-icon').forEach(el => el.classList.toggle('hidden', isDark));
+  }
+  // Apply saved preference on load
+  (function() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+    // Wait for icons to render
+    setTimeout(updateDarkModeIcons, 50);
+  })();
+
+  // Mobile Sidebar Toggle
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  
+  function toggleSidebar() {
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+    setTimeout(() => overlay.classList.toggle('opacity-0'), 10);
+    document.body.classList.toggle('overflow-hidden');
+  }
+  
+  menuBtn?.addEventListener('click', toggleSidebar);
+  overlay?.addEventListener('click', toggleSidebar);
+
+  // Initialize Lucide icons (already in base.html but just in case)
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+</script>
+
+<style>
+  .nav-link-active { @apply bg-brand-50 text-brand-700 shadow-sm shadow-brand-500/5; }
+  .nav-link-inactive { @apply text-slate-500 hover:bg-slate-50 hover:text-slate-900; }
+</style>
+{% endblock %}

@@ -18,7 +18,7 @@
       <div class="flex-1">
         <!-- Photo -->
         {% if profile and profile.profile_image %}
-        <img src="/{{ profile.profile_image }}" alt=""
+        <img src="{{ profile.profile_image }}" alt=""
              class="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 mb-4 shadow-md" />
         {% else %}
         <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold mb-4">
@@ -38,7 +38,7 @@
 
         <div class="mt-4 pt-4 border-t border-white/20">
           <p class="text-brand-200 text-xs font-mono break-all">
-            {{ profile.qr_code.profile_url if profile and profile.qr_code else 'digibiofi.com/p/yourname' }}
+            {{ profile.qr_code.qr_url if profile and profile.qr_code else 'digibiofi.com/p/yourname' }}
           </p>
         </div>
       </div>

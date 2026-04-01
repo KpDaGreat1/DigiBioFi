@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+  .section-card {
+    @apply bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200/60 shadow-premium mb-10 transition-all hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5;
+  }
+  .pill-link {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 rounded-full text-sm font-bold transition-all border border-slate-100 hover:border-brand-100;
+  }
+  .contact-action {
+    @apply flex items-center justify-center w-14 h-14 bg-white rounded-2xl shadow-premium border border-slate-100 text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-all hover:-translate-y-1.5 hover:shadow-lg;
+  }
+  .experience-item:last-child .timeline-line {
+    @apply hidden;
+  }
+  .verified-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 bg-brand-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-500/30;
+  }
+</style>
+{% block profile_head %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50/50 flex flex-col selection:bg-brand-100 selection:text-brand-900">
+  <!-- Minimal Public Nav -->
+  <nav class="glass-effect sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-slate-200/40">
+    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <div class="bg-brand-600 p-1 rounded-lg shadow-lg shadow-brand-500/20">
+        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+      </div>
+      <span>Digi<span class="text-slate-900">BioFi</span></span>
+    </a>
+    
+    <div class="flex items-center gap-4">
+      {% if not user %}
+      <a href="/register" class="hidden md:block text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Create your own</a>
+      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black px-5 py-2.5 rounded-full transition-all shadow-lg hover:-translate-y-0.5 uppercase tracking-widest">
+        Join DigiBioFi
+      </a>
+      {% elif user.subscription_tier == 'free' %}
+      <a href="/dashboard/upgrade" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-black px-5 py-2.5 rounded-full transition-all shadow-lg hover:-translate-y-0.5 uppercase tracking-widest">
+        Upgrade to Elite
+      </a>
+      {% else %}
+      <a href="/dashboard" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black px-6 py-2.5 rounded-full transition-all shadow-lg hover:-translate-y-0.5 uppercase tracking-widest">
+        Dashboard
+      </a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="flex-1 pb-24">
+    {% block profile_content %}{% endblock %}
+  </main>
+
+  <!-- Public Footer -->
+  <footer class="py-12 border-t border-slate-200 bg-white">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <div class="flex items-center justify-center gap-2 font-black text-slate-400 text-lg tracking-tight mb-4 opacity-60">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+        <span>DigiBioFi Identity</span>
+      </div>
+      <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">"Let all things be done decently and in order." — 1 Corinthians 14:40</p>
+      <p class="text-xs font-bold text-slate-300 uppercase tracking-[0.2em] mb-8">Professional Verification Powered by DigiBioFi</p>
+      <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400">
+        <a href="/" class="hover:text-brand-600 transition-colors">Platform</a>
+        <a href="/login" class="hover:text-brand-600 transition-colors">Sign In</a>
+        <a href="/register" class="hover:text-brand-600 transition-colors">Get Verified</a>
+      </div>
+    </div>
+  </footer>
+</div>
+{% endblock %}

@@ -12,6 +12,7 @@ class TestRegistration:
             "username": "newuser",
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 303
         assert resp.headers["location"] == "/login?registered=1"
@@ -22,9 +23,10 @@ class TestRegistration:
             "username": "otheruser",
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 400
-        assert b"already exists" in resp.content
+        assert b"already registered" in resp.content or b"already exists" in resp.content
 
     def test_register_duplicate_username(self, client, registered_user):
         resp = client.post("/register", data={
@@ -32,6 +34,7 @@ class TestRegistration:
             "username": "testuser",         # same username
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 400
 
@@ -41,8 +44,9 @@ class TestRegistration:
             "username": "mismatchuser",
             "password": "TestPass123!",
             "confirm_password": "different",
+            "csrf_token": "test",
         }, follow_redirects=False)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_register_short_password(self, client):
         resp = client.post("/register", data={
@@ -50,8 +54,9 @@ class TestRegistration:
             "username": "shortpw",
             "password": "123",
             "confirm_password": "123",
+            "csrf_token": "test",
         }, follow_redirects=False)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_register_invalid_username(self, client):
         resp = client.post("/register", data={
@@ -59,8 +64,9 @@ class TestRegistration:
             "username": "user name!",   # spaces/special chars not allowed
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
 
 class TestLogin:
@@ -68,6 +74,7 @@ class TestLogin:
         resp = client.post("/login", data={
             "email": "test@example.com",
             "password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 303
         assert AUTH_COOKIE_NAME in resp.cookies
@@ -76,6 +83,7 @@ class TestLogin:
         resp = client.post("/login", data={
             "email": "test@example.com",
             "password": "wrongpassword",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 401
         assert b"Invalid" in resp.content
@@ -84,6 +92,7 @@ class TestLogin:
         resp = client.post("/login", data={
             "email": "nobody@example.com",
             "password": "TestPass123!",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 401
 

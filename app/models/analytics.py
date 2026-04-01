@@ -39,7 +39,7 @@ class AnalyticsEvent(Base):
     # Stored only for aggregation; strip PII before production if required
     user_agent: Mapped[str] = mapped_column(String(500), nullable=False, default="")
 
-    # Link click target (social link clicked, e.g. "linkedin")
+    # Link click target (social link clicked, e.g. "github")
     link_target: Mapped[str] = mapped_column(String(100), nullable=False, default="")
 
     created_at: Mapped[datetime] = mapped_column(

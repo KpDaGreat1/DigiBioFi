@@ -16,6 +16,7 @@ class TestProfileCreation:
             "username": "profileuser",
             "password": "TestPass123!",
             "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         })
         user = db.query(User).filter(User.email == "profile@example.com").first()
         assert user is not None
@@ -30,6 +31,7 @@ class TestProfileCreation:
                 "username": f"dupuser{i}",
                 "password": "TestPass123!",
                 "confirm_password": "TestPass123!",
+                "csrf_token": "test",
             })
         from app.models.profile import Profile
         slugs = [p.slug for p in db.query(Profile).all()]
@@ -46,11 +48,11 @@ class TestProfileUpdate:
             "phone": "555-1234",
             "location": "NYC",
             "website": "",
-            "linkedin": "",
             "twitter": "",
             "github": "",
             "slug": "testuser",
             "is_public": "on",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 303
 
@@ -67,19 +69,22 @@ class TestProfileUpdate:
         client.post("/register", data={
             "email": "u1@example.com", "username": "userslug1",
             "password": "TestPass123!", "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         })
         client.post("/register", data={
             "email": "u2@example.com", "username": "userslug2",
             "password": "TestPass123!", "confirm_password": "TestPass123!",
+            "csrf_token": "test",
         })
         # Log in as user2 and try to steal user1's slug
-        client.post("/login", data={"email": "u2@example.com", "password": "TestPass123!"})
+        client.post("/login", data={"email": "u2@example.com", "password": "TestPass123!", "csrf_token": "test"})
         resp = client.post("/dashboard/profile", data={
             "full_name": "User Two",
             "slug": "userslug1",   # taken by user1
             "is_public": "on",
             "headline": "", "bio": "", "email": "", "phone": "",
-            "location": "", "website": "", "linkedin": "", "twitter": "", "github": "",
+            "location": "", "website": "", "twitter": "", "github": "",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 400
 
@@ -94,6 +99,7 @@ class TestExperience:
             "end_date": "",
             "is_current": "on",
             "description": "Built cool things.",
+            "csrf_token": "test",
         }, follow_redirects=False)
         assert resp.status_code == 303
 
@@ -109,12 +115,13 @@ class TestExperience:
         auth_client.post("/dashboard/experience/add", data={
             "company": "To Delete", "title": "Dev", "location": "",
             "start_date": "2020", "end_date": "2021", "description": "",
+            "csrf_token": "test",
         })
         from app.models.user import User
         from app.models.profile import Experience
         user = db.query(User).filter(User.email == "test@example.com").first()
         exp = db.query(Experience).filter(Experience.profile_id == user.profile.id).first()
 
-        resp = auth_client.post(f"/dashboard/experience/{exp.id}/delete", follow_redirects=False)
+        resp = auth_client.post(f"/dashboard/experience/{exp.id}/delete", data={"csrf_token": "test"}, follow_redirects=False)
         assert resp.status_code == 303
         assert db.query(Experience).filter(Experience.id == exp.id).first() is None

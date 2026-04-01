@@ -20,8 +20,20 @@ class User(Base):
     # Role: "user" | "admin"
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
 
+    # Subscription tier: "free" | "premium" | "elite"
+    subscription_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
+    subscription_status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Stripe customer identifier (set on first checkout)
+    stripe_customer_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    stripe_subscription_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+
+    @property
+    def is_premium(self) -> bool:
+        return self.subscription_tier in ("premium", "elite")
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
