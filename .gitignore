@@ -136,6 +136,14 @@ celerybeat.pid
 
 # Environments
 .env
+# DigiBioFi specific ignores (critical)
+.idea/
+*.db
+uploads/
+qr_codes/
+__pycache__/
+*.pyc
+.DS_Store
 .envrc
 .venv
 env/
