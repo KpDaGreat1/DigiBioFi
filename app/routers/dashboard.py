@@ -6,9 +6,8 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPExc
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
-import logging
 
-from app.core.dependencies import get_db, get_current_user, require_elite, require_csrf
+from app.core.dependencies import get_db, get_current_user, require_csrf
 from app.core.security import generate_csrf_token
 from app.core.templates import templates, flash, get_csrf_token
 from app.models.user import User
@@ -130,7 +129,6 @@ def dashboard_home(
 def profile_edit_page(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -159,7 +157,6 @@ async def profile_edit_submit(
     recruiter_visibility: str = Form("off"),
     freelance_availability: str = Form("off"),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -225,7 +222,6 @@ async def upload_profile_image(
     csrf_token: str = Depends(require_csrf),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -253,7 +249,6 @@ async def upload_resume(
     csrf_token: str = Depends(require_csrf),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -279,7 +274,6 @@ async def upload_resume(
 def experience_page(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -301,7 +295,6 @@ def add_experience(
     is_current: str = Form("off"),
     description: str = Form(""),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -333,7 +326,6 @@ def edit_experience_page(
     request: Request,
     exp_id: int,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Experience
@@ -363,7 +355,6 @@ def edit_experience_submit(
     is_current: str = Form("off"),
     description: str = Form(""),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -386,7 +377,6 @@ def delete_experience(
     exp_id: int,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -401,7 +391,6 @@ def delete_experience(
 def education_page(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -423,7 +412,6 @@ async def add_education(
     description: str = Form(""),
     certificate: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -461,7 +449,6 @@ def edit_education_page(
     request: Request,
     edu_id: int,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Education
@@ -491,7 +478,6 @@ async def edit_education_submit(
     description: str = Form(""),
     certificate: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -502,16 +488,74 @@ async def edit_education_submit(
         except Exception as e:
             logger.warning(f"Certificate upload failed: {e}")
     try:
+        from app.models.profile import Education
+        edu = db.query(Education).filter(
+            Education.id == edu_id, Education.profile_id == profile.id
+        ).first()
+        if not edu:
+            flash(request, "Education not found.", "error")
+            return RedirectResponse("/dashboard/education", status_code=303)
+
+        new_certificate_url = edu.certificate_url
+        if certificate and certificate.filename:
+            try:
+                # Remove old file if it exists
+                if edu.certificate_url:
+                    from pathlib import Path
+                    from app.core.config import settings
+                    old_path = Path(settings.upload_dir).parent / edu.certificate_url.lstrip("/")
+                    if old_path.exists():
+                        old_path.unlink()
+                
+                new_certificate_url = await _save_certificate(certificate, current_user.id)
+            except Exception as e:
+                logger.warning(f"Certificate upload failed: {e}")
+                flash(request, f"Upload failed: {str(e)}", "error")
+
         data = EducationCreate(
             school=school, degree=degree, field=field,
             start_date=start_date, end_date=end_date, description=description,
-            certificate_url=certificate_url,
+            certificate_url=new_certificate_url,
         )
         profile_service.update_education(edu_id, profile, data, db)
         flash(request, "Education updated!", "success")
     except ValidationError as e:
         flash(request, "Invalid data. Please check your input.", "error")
+    except Exception as e:
+        logger.error(f"Error updating education: {e}")
+        flash(request, "An error occurred while updating education.", "error")
     return RedirectResponse("/dashboard/education", status_code=303)
+
+
+@router.post("/education/{edu_id}/remove-certificate", response_class=HTMLResponse)
+async def remove_education_certificate(
+    request: Request,
+    edu_id: int,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.profile import Education
+    profile = _get_profile(current_user, db)
+    edu = db.query(Education).filter(
+        Education.id == edu_id, Education.profile_id == profile.id
+    ).first()
+    
+    if edu and edu.certificate_url:
+        try:
+            from pathlib import Path
+            from app.core.config import settings
+            old_path = Path(settings.upload_dir).parent / edu.certificate_url.lstrip("/")
+            if old_path.exists():
+                old_path.unlink()
+        except Exception as e:
+            logger.warning(f"Failed to delete certificate file: {e}")
+        
+        edu.certificate_url = ""
+        db.commit()
+        flash(request, "Certificate removed.", "success")
+    
+    return RedirectResponse(f"/dashboard/education/{edu_id}/edit", status_code=303)
 
 
 @router.post("/education/{edu_id}/delete", response_class=HTMLResponse)
@@ -520,7 +564,6 @@ def delete_education(
     edu_id: int,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -535,7 +578,6 @@ def delete_education(
 def skills_page(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -551,7 +593,6 @@ def save_skills(
     csrf_token: str = Depends(require_csrf),
     skills_raw: str = Form(""),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -581,7 +622,6 @@ def edit_skill(
     name: str = Form(...),
     category: str = Form(""),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -603,7 +643,6 @@ def delete_skill(
     skill_id: int,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -623,7 +662,6 @@ def delete_skill(
 def projects_page(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -633,21 +671,72 @@ def projects_page(
     )
 
 
+async def _get_project_thumbnail(url: str) -> str:
+    """Return a thumbnail URL for known video platforms; empty string otherwise."""
+    if not url:
+        return ""
+
+    import re
+    import httpx
+
+    # 1. YouTube — derive thumbnail from video ID (no HTTP request needed)
+    yt_match = re.search(
+        r"(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^\"&?\/\s]{11})",
+        url,
+    )
+    if yt_match:
+        return f"https://img.youtube.com/vi/{yt_match.group(1)}/maxresdefault.jpg"
+
+    # 2. Vimeo — official JSON API (safe, no HTML parsing)
+    vimeo_match = re.search(r"vimeo\.com\/(?:.*\/)?([0-9]+)", url)
+    if vimeo_match:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    f"https://vimeo.com/api/v2/video/{vimeo_match.group(1)}.json",
+                    timeout=5.0,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data[0].get("thumbnail_large", "")
+        except Exception:
+            pass
+
+    return ""
+
+
 @router.post("/projects/add", response_class=HTMLResponse)
-def add_project(
+async def add_project(
     request: Request,
     csrf_token: str = Depends(require_csrf),
     name: str = Form(...),
     description: str = Form(""),
     url: str = Form(""),
+    thumbnail: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
+    thumbnail_url = ""
+    
+    # Priority A: Uploaded image
+    if thumbnail and thumbnail.filename:
+        try:
+            thumbnail_url = await file_service.save_project_thumbnail(thumbnail, current_user.id)
+        except Exception as e:
+            logger.warning(f"Project thumbnail upload failed: {e}")
+            flash(request, f"Thumbnail upload failed: {str(e)}", "error")
+    
+    # Priority B & C: Video URL or Open Graph (only if no upload)
+    if not thumbnail_url and url:
+        thumbnail_url = await _get_project_thumbnail(url)
+        
     try:
-        data = ProjectCreate(name=name, description=description, url=url,
-                             display_order=len(profile.projects))
+        data = ProjectCreate(
+            name=name, description=description, url=url,
+            thumbnail_url=thumbnail_url,
+            display_order=len(profile.projects),
+        )
         profile_service.add_project(profile, data, db)
         flash(request, "Project added!", "success")
         return RedirectResponse("/dashboard/projects", status_code=303)
@@ -669,7 +758,6 @@ def edit_project_page(
     request: Request,
     proj_id: int,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Project
@@ -687,25 +775,95 @@ def edit_project_page(
 
 
 @router.post("/projects/{proj_id}/edit", response_class=HTMLResponse)
-def edit_project_submit(
+async def edit_project_submit(
     request: Request,
     proj_id: int,
     csrf_token: str = Depends(require_csrf),
     name: str = Form(...),
     description: str = Form(""),
     url: str = Form(""),
+    thumbnail: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
+    from app.models.profile import Project
     profile = _get_profile(current_user, db)
+    proj = db.query(Project).filter(
+        Project.id == proj_id, Project.profile_id == profile.id
+    ).first()
+    if not proj:
+        flash(request, "Project not found.", "error")
+        return RedirectResponse("/dashboard/projects", status_code=303)
+
+    thumbnail_url = proj.thumbnail_url
+    
+    # Priority A: New upload
+    if thumbnail and thumbnail.filename:
+        try:
+            # Delete old local thumbnail if it was an upload
+            if proj.thumbnail_url and proj.thumbnail_url.startswith("/uploads/project_thumbnails/"):
+                try:
+                    from pathlib import Path
+                    from app.core.config import settings
+                    old_path = Path(settings.upload_dir).parent / proj.thumbnail_url.lstrip("/")
+                    if old_path.exists():
+                        old_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Failed to delete old project thumbnail: {e}")
+            
+            thumbnail_url = await file_service.save_project_thumbnail(thumbnail, current_user.id)
+        except Exception as e:
+            logger.warning(f"Project thumbnail upload failed: {e}")
+            flash(request, f"Upload failed: {str(e)}", "error")
+    
+    # Priority B & C: Only refresh if no current thumbnail or it was an auto-generated one
+    elif not thumbnail_url or not thumbnail_url.startswith("/uploads/"):
+         refreshed_thumb = await _get_project_thumbnail(url)
+         if refreshed_thumb:
+             thumbnail_url = refreshed_thumb
+
     try:
-        data = ProjectCreate(name=name, description=description, url=url)
+        data = ProjectCreate(
+            name=name, description=description, url=url,
+            thumbnail_url=thumbnail_url,
+        )
         profile_service.update_project(proj_id, profile, data, db)
         flash(request, "Project updated!", "success")
     except ValidationError as e:
         flash(request, "Invalid data. Please check your input.", "error")
     return RedirectResponse("/dashboard/projects", status_code=303)
+
+
+@router.post("/projects/{proj_id}/remove-thumbnail", response_class=HTMLResponse)
+async def remove_project_thumbnail(
+    request: Request,
+    proj_id: int,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.profile import Project
+    profile = _get_profile(current_user, db)
+    proj = db.query(Project).filter(
+        Project.id == proj_id, Project.profile_id == profile.id
+    ).first()
+    
+    if proj and proj.thumbnail_url:
+        if proj.thumbnail_url.startswith("/uploads/"):
+            try:
+                from pathlib import Path
+                from app.core.config import settings
+                old_path = Path(settings.upload_dir).parent / proj.thumbnail_url.lstrip("/")
+                if old_path.exists():
+                    old_path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to delete thumbnail file: {e}")
+        
+        proj.thumbnail_url = ""
+        db.commit()
+        flash(request, "Thumbnail removed.", "success")
+    
+    return RedirectResponse(f"/dashboard/projects/{proj_id}/edit", status_code=303)
 
 
 @router.post("/projects/{proj_id}/delete", response_class=HTMLResponse)
@@ -714,7 +872,6 @@ def delete_project(
     proj_id: int,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -729,7 +886,6 @@ def delete_project(
 def qr_view(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -755,7 +911,6 @@ def qr_regenerate(
     request: Request,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -771,7 +926,6 @@ def delete_profile_image(
     request: Request,
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -799,7 +953,7 @@ def upgrade_page(
 ):
     from app.core.config import settings as _settings
     profile = _get_profile(current_user, db)
-    stripe_enabled = bool(_settings.stripe_secret_key and _settings.stripe_price_id)
+    stripe_enabled = bool(_settings.stripe_secret_key and (_settings.stripe_price_basic or _settings.stripe_price_premium))
     return templates.TemplateResponse(
         "dashboard/upgrade.html",
         {
@@ -815,6 +969,7 @@ def upgrade_page(
 async def subscribe(
     request: Request,
     csrf_token: str = Depends(require_csrf),
+    plan: str = Form("elite"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -822,6 +977,17 @@ async def subscribe(
     if not _settings.stripe_secret_key:
         flash(request, "Stripe is not configured yet.", "error")
         return RedirectResponse("/dashboard/upgrade", status_code=303)
+
+    # Resolve price ID based on plan
+    if plan == "basic":
+        price_id = _settings.stripe_price_basic
+    else:
+        price_id = _settings.stripe_price_premium
+
+    if not price_id:
+        flash(request, "Selected plan is not configured.", "error")
+        return RedirectResponse("/dashboard/upgrade", status_code=303)
+
     try:
         import stripe
         stripe.api_key = _settings.stripe_secret_key
@@ -834,11 +1000,11 @@ async def subscribe(
         session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=["card"],
-            line_items=[{"price": _settings.stripe_price_id, "quantity": 1}],
+            line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
             success_url=str(request.base_url).rstrip("/") + "/billing/success",
             cancel_url=str(request.base_url).rstrip("/") + "/billing/cancel",
-            metadata={"user_id": str(current_user.id)},
+            metadata={"user_id": str(current_user.id), "plan": plan},
         )
         from fastapi.responses import RedirectResponse as RR
         return RR(session.url, status_code=303)
@@ -857,7 +1023,6 @@ async def subscribe(
 def card_preview(
     request: Request,
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_elite),
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
@@ -868,3 +1033,97 @@ def card_preview(
         "dashboard/card_preview.html",
         {"request": request, "user": current_user, "profile": profile},
     )
+
+
+# ── Elite Customization Uploads ───────────────────────────────────────────────
+
+def _require_elite_tier(current_user: User) -> None:
+    """Raise 403 if user does not have an active elite subscription."""
+    if current_user.role == "admin":
+        return
+    if current_user.subscription_tier != "elite" or current_user.subscription_status != "active":
+        raise HTTPException(status_code=403, detail="Elite subscription required")
+
+
+@router.post("/profile/elite/header", response_class=HTMLResponse)
+async def upload_elite_header(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_elite_tier(current_user)
+    profile = _get_profile(current_user, db)
+    try:
+        path = await file_service.save_profile_image(file, current_user.id)
+        from app.schemas.profile import ProfileUpdate
+        profile_service.update_profile(profile, ProfileUpdate(custom_header_url=path), db)
+        flash(request, "Custom header updated!", "success")
+    except Exception as e:
+        logger.error(f"Header upload error: {e}", exc_info=True)
+        flash(request, "Failed to upload header image.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/elite/background", response_class=HTMLResponse)
+async def upload_elite_background(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_elite_tier(current_user)
+    profile = _get_profile(current_user, db)
+    try:
+        path = await file_service.save_profile_image(file, current_user.id)
+        from app.schemas.profile import ProfileUpdate
+        profile_service.update_profile(profile, ProfileUpdate(custom_background_url=path), db)
+        flash(request, "Custom background updated!", "success")
+    except Exception as e:
+        logger.error(f"Background upload error: {e}", exc_info=True)
+        flash(request, "Failed to upload background image.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/elite/image2", response_class=HTMLResponse)
+async def upload_elite_image2(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_elite_tier(current_user)
+    profile = _get_profile(current_user, db)
+    try:
+        path = await file_service.save_profile_image(file, current_user.id)
+        from app.schemas.profile import ProfileUpdate
+        profile_service.update_profile(profile, ProfileUpdate(profile_image_2=path), db)
+        flash(request, "Additional photo uploaded!", "success")
+    except Exception as e:
+        logger.error(f"Image2 upload error: {e}", exc_info=True)
+        flash(request, "Failed to upload image.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/elite/image3", response_class=HTMLResponse)
+async def upload_elite_image3(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_elite_tier(current_user)
+    profile = _get_profile(current_user, db)
+    try:
+        path = await file_service.save_profile_image(file, current_user.id)
+        from app.schemas.profile import ProfileUpdate
+        profile_service.update_profile(profile, ProfileUpdate(profile_image_3=path), db)
+        flash(request, "Additional photo uploaded!", "success")
+    except Exception as e:
+        logger.error(f"Image3 upload error: {e}", exc_info=True)
+        flash(request, "Failed to upload image.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)

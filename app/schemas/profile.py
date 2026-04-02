@@ -57,6 +57,7 @@ class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field(default="", max_length=1000)
     url: str = Field(default="", max_length=500)
+    thumbnail_url: str = Field(default="", max_length=500)
     display_order: int = 0
 
 
@@ -127,6 +128,11 @@ class ProfileUpdate(BaseModel):
     slug: Optional[str] = None
     profile_image: Optional[str] = None
     resume_pdf: Optional[str] = None
+    # Elite customization fields
+    profile_image_2: Optional[str] = None
+    profile_image_3: Optional[str] = None
+    custom_background_url: Optional[str] = None
+    custom_header_url: Optional[str] = None
 
     @field_validator("slug")
     @classmethod

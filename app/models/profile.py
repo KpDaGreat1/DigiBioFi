@@ -171,6 +171,7 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    thumbnail_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="projects")

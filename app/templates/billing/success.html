@@ -1,7 +1,7 @@
 {% extends "layouts/dashboard.html" %}
 
-{% block title %}Upgrade Successful — DigiBioFi{% endblock %}
-{% block page_title %}Upgrade{% endblock %}
+{% block title %}Subscription Activated — DigiBioFi{% endblock %}
+{% block page_title %}Subscription{% endblock %}
 
 {% block dashboard_content %}
 <div class="max-w-xl mx-auto text-center py-20">
@@ -11,20 +11,20 @@
 
   <div class="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 text-brand-700 text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-6">
     <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-    Elite Identity Activated
+    {% if user.subscription_tier == 'basic' %}Basic Plan Activated{% else %}Elite Identity Activated{% endif %}
   </div>
 
   <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-4">
-    You're Elite!
+    You're on {{ user.subscription_tier | capitalize }}!
   </h1>
   <p class="text-slate-500 font-medium text-lg mb-10 max-w-md mx-auto">
-    Your subscription is now active. Welcome to the Elite tier — all premium features are unlocked.
+    Your subscription is now active. All features for your plan are unlocked.
   </p>
 
-  {% if user.subscription_tier not in ('elite', 'premium') %}
+  {% if user.subscription_tier not in ('basic', 'elite', 'premium') %}
   <div class="p-4 bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl text-sm font-medium mb-8 text-left flex items-start gap-3">
     <i data-lucide="clock" class="w-5 h-5 shrink-0 mt-0.5"></i>
-    <span>Your account is being updated. Refresh in a moment if your Elite badge hasn't appeared yet.</span>
+    <span>Your account is being updated. Refresh in a moment if your plan badge hasn't appeared yet.</span>
   </div>
   {% endif %}
 
@@ -33,10 +33,12 @@
       <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
       Go to Dashboard
     </a>
+    {% if user.stripe_customer_id %}
     <a href="/billing/portal" class="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-brand-200 text-slate-700 font-bold px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5">
       <i data-lucide="settings" class="w-5 h-5"></i>
       Manage Billing
     </a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

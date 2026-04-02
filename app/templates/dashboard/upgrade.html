@@ -1,82 +1,144 @@
 {% extends "layouts/dashboard.html" %}
 
-{% block title %}Upgrade to Elite — DigiBioFi{% endblock %}
+{% block title %}Upgrade — DigiBioFi{% endblock %}
 {% block page_title %}Upgrade{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-3xl mx-auto">
+<div class="max-w-4xl mx-auto">
   <div class="text-center mb-12">
     <div class="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 text-brand-700 text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-6">
       <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-      Elite Identity
+      Level Up
     </div>
-    <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">Unlock Elite Access</h1>
-    <p class="text-slate-500 font-medium text-lg max-w-xl mx-auto">Supercharge your professional presence with advanced analytics, priority support, and premium branding.</p>
+    <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">Choose Your Plan</h1>
+    <p class="text-slate-500 font-medium text-lg max-w-xl mx-auto">Unlock your full professional identity with a plan that fits your goals.</p>
   </div>
 
-  <div class="bg-white rounded-[3rem] border border-slate-200 shadow-2xl shadow-slate-200/40 overflow-hidden">
-    <!-- Pricing Header -->
-    <div class="bg-gradient-to-br from-brand-600 to-indigo-600 p-10 text-white text-center relative overflow-hidden">
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-      </div>
-      <div class="relative z-10">
-        <div class="text-6xl font-black mb-2">$3<span class="text-3xl font-bold opacity-70">/mo</span></div>
-        <p class="text-brand-100 font-bold uppercase tracking-widest text-sm">Elite Plan</p>
-      </div>
-    </div>
-
-    <!-- Features -->
-    <div class="p-10">
-      <ul class="space-y-4 mb-10">
-        {% for feature in [
-          'Unlimited profile views',
-          'Advanced analytics dashboard',
-          'Priority QR code generation',
-          'Custom domain support (coming soon)',
-          'Verified identity badge',
-          'Priority support',
-          'Early access to new features',
-        ] %}
-        <li class="flex items-center gap-4 text-slate-700 font-bold">
-          <div class="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-            <i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>
-          </div>
-          {{ feature }}
-        </li>
-        {% endfor %}
-      </ul>
-
-      {% if user.subscription_tier in ('elite', 'premium') %}
-      <div class="p-6 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
-        <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i>
-        <p class="font-black text-emerald-800 text-lg">You're already on Elite!</p>
-        <p class="text-emerald-600 font-medium text-sm mt-1">Enjoy all premium features.</p>
-      </div>
-
-      {% elif stripe_enabled %}
-      <form action="/dashboard/subscribe" method="post">
-        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <button type="submit" data-loading-text="REDIRECTING TO CHECKOUT..."
-                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-brand-500/20 hover:-translate-y-1 text-lg flex items-center justify-center gap-3">
-          <i data-lucide="credit-card" class="w-6 h-6"></i>
-          Upgrade Now — $3/month
-        </button>
-      </form>
-      <p class="text-center text-xs text-slate-400 font-bold mt-4 uppercase tracking-widest">Secure payment via Stripe · Cancel anytime</p>
-
-      {% else %}
-      <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-        <i data-lucide="clock" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
-        <p class="font-black text-slate-700 text-lg">Elite is coming soon</p>
-        <p class="text-slate-500 font-medium text-sm mt-1">We're finalizing our payment system. Check back shortly.</p>
-      </div>
-      {% endif %}
-    </div>
+  {% if user.subscription_status == 'active' and user.subscription_tier in ('basic', 'elite', 'premium') %}
+  <!-- Already subscribed and active -->
+  <div class="p-10 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 text-center shadow-sm">
+    <i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-500 mx-auto mb-3"></i>
+    <p class="font-black text-emerald-800 text-xl">You're already on the {{ user.subscription_tier | capitalize }} plan!</p>
+    <p class="text-emerald-600 font-medium text-sm mt-1">Enjoy all your features. Manage your subscription below.</p>
+    {% if user.stripe_customer_id %}
+    <a href="/billing/portal" class="inline-flex items-center gap-2 mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-3 rounded-2xl transition-all shadow-lg shadow-emerald-500/20">
+      <i data-lucide="settings" class="w-4 h-4"></i>
+      Manage Subscription
+    </a>
+    {% endif %}
   </div>
 
-  <div class="text-center mt-8">
+  {% else %}
+  <!-- Pricing Grid -->
+  <div class="grid md:grid-cols-2 gap-8">
+
+    <!-- Basic Plan -->
+    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-premium overflow-hidden flex flex-col">
+      <div class="bg-gradient-to-br from-slate-700 to-slate-900 p-8 text-white text-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute -top-16 -left-16 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative z-10">
+          <div class="text-5xl font-black mb-2">$1<span class="text-2xl font-bold opacity-70">/mo</span></div>
+          <p class="text-slate-300 font-bold uppercase tracking-widest text-sm">Basic Plan</p>
+        </div>
+      </div>
+      <div class="p-8 flex-1 flex flex-col">
+        <ul class="space-y-3 mb-8 flex-1">
+          {% for feature in [
+            'Digital resume profile',
+            'Unrestricted profile view',
+            'QR code identity',
+            'Experience & skills sections',
+            'Project portfolio',
+          ] %}
+          <li class="flex items-center gap-3 text-slate-700 font-bold text-sm">
+            <div class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+              <i data-lucide="check" class="w-3 h-3 text-slate-500"></i>
+            </div>
+            {{ feature }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% if stripe_enabled %}
+        <form action="/dashboard/subscribe" method="post">
+          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+          <input type="hidden" name="plan" value="basic">
+          <button type="submit" data-loading-text="REDIRECTING..."
+                  class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+            Get Basic — $1/month
+          </button>
+        </form>
+        {% else %}
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+          <p class="font-black text-slate-600 text-sm">Coming soon</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Elite Plan -->
+    <div class="bg-white rounded-[3rem] border-2 border-brand-300 shadow-2xl shadow-brand-500/10 overflow-hidden flex flex-col relative">
+      <div class="absolute top-4 right-4 z-20">
+        <span class="bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Most Popular</span>
+      </div>
+      <div class="bg-gradient-to-br from-brand-600 to-indigo-600 p-8 text-white text-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute -top-16 -left-16 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+          <div class="absolute -bottom-16 -right-16 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative z-10">
+          <div class="text-5xl font-black mb-2">$3<span class="text-2xl font-bold opacity-70">/mo</span></div>
+          <p class="text-brand-100 font-bold uppercase tracking-widest text-sm">Elite Plan</p>
+        </div>
+      </div>
+      <div class="p-8 flex-1 flex flex-col">
+        <ul class="space-y-3 mb-8 flex-1">
+          {% for feature in [
+            'Everything in Basic',
+            'Unrestricted profile view',
+            'Advanced analytics dashboard',
+            'Physical BioFi Card (Coming soon)',
+            'Custom header & background',
+            'Multiple profile photos',
+            'Verified identity badge',
+            'Priority support',
+            'Early access to new features',
+          ] %}
+          <li class="flex items-center gap-3 text-slate-700 font-bold text-sm">
+            <div class="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>
+            </div>
+            {{ feature }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% if stripe_enabled %}
+        <form action="/dashboard/subscribe" method="post">
+          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+          <input type="hidden" name="plan" value="elite">
+          <button type="submit" data-loading-text="REDIRECTING TO CHECKOUT..."
+                  class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20 hover:-translate-y-1 flex items-center justify-center gap-2">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+            Upgrade to Elite — $3/month
+          </button>
+        </form>
+        {% else %}
+        <div class="p-4 bg-brand-50 rounded-2xl border border-brand-100 text-center">
+          <i data-lucide="clock" class="w-6 h-6 text-brand-400 mx-auto mb-1"></i>
+          <p class="font-black text-brand-700 text-sm">Elite coming soon</p>
+          <p class="text-brand-500 font-medium text-xs mt-0.5">We're finalizing payment processing.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+  <p class="text-center text-xs text-slate-400 font-bold mt-6 uppercase tracking-widest">Secure payment via Stripe · Cancel anytime · No hidden fees</p>
+  {% endif %}
+
+  <div class="text-center mt-10">
     <a href="/dashboard" class="text-sm font-bold text-slate-400 hover:text-brand-600 transition-colors">← Back to Dashboard</a>
   </div>
 </div>

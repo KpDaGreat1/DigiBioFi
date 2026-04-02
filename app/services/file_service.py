@@ -85,3 +85,38 @@ async def save_resume_pdf(upload: UploadFile, user_id: int) -> str:
         )
 
     return storage.get_url(path)
+
+
+async def save_project_thumbnail(upload: UploadFile, user_id: int) -> str:
+    """
+    Validate and save a project thumbnail.
+    """
+    validate_image_upload(upload)
+
+    ext_map = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+    }
+    ext = ext_map.get(upload.content_type)
+    if not ext:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported image type. Use JPG, PNG, or WEBP."
+        )
+
+    random_suffix = secrets.token_hex(4)
+    filename = f"project_{user_id}_{random_suffix}.{ext}"
+    path = f"project_thumbnails/{filename}"
+
+    storage.save(upload.file, path)
+    
+    full_path = Path(settings.upload_dir) / path
+    if full_path.stat().st_size > settings.max_upload_bytes:
+        storage.delete(path)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum size of {settings.max_upload_size_mb} MB.",
+        )
+
+    return storage.get_url(path)

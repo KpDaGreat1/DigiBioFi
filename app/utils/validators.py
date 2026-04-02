@@ -38,10 +38,24 @@ def validate_pdf_upload(file: UploadFile) -> None:
 
 
 def _check_size_header(file: UploadFile) -> None:
-    """Check Content-Length header if present (best-effort pre-check)."""
-    # The actual byte-count check happens during streaming in file_service.
-    # This is just a fast reject for obviously over-limit requests.
-    pass
+    """
+    Pre-reject uploads that declare an oversized Content-Length header.
+    The authoritative byte-count check still happens after writing in file_service;
+    this is a fast early reject to avoid writing obviously-too-large files.
+    """
+    try:
+        headers = getattr(file, "headers", None)
+        if headers:
+            content_length = int(headers.get("content-length") or 0)
+            if content_length > settings.max_upload_bytes:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File exceeds maximum size of {settings.max_upload_size_mb} MB.",
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # If header check fails for any reason, fall through to post-write check
 
 
 def safe_filename(original: str) -> str:

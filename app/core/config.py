@@ -58,7 +58,16 @@ class Settings(BaseSettings):
     # ── Stripe ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
-    stripe_price_id: str = ""
+
+    # Multiple pricing tiers
+    stripe_price_basic: str = ""
+    stripe_price_premium: str = ""
+    def get_stripe_price(self, plan: str) -> str:
+        if plan == "basic":
+            return self.stripe_price_basic
+        elif plan == "premium":
+            return self.stripe_price_premium
+        raise ValueError(f"Invalid plan: {plan}")
 
     # ── CORS ─────────────────────────────────────────────────────────────────
     allowed_origins: str = "http://localhost:8000"

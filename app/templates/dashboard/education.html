@@ -66,13 +66,18 @@
         </div>
       </div>
 
-      {% if edu.certificate_path %}
+      {% if edu.certificate_url %}
       <div class="mt-8 pt-6 border-t border-slate-100">
-        <a href="/{{ edu.certificate_path }}" target="_blank" class="flex items-center gap-3 text-emerald-600 hover:text-emerald-700 transition-colors group/proof">
+        {% if edu.certificate_url.lower().endswith(('.jpg', '.jpeg', '.png')) %}
+        <div class="mb-4 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+          <img src="{{ edu.certificate_url }}" alt="Certificate" class="w-full h-auto object-cover max-h-48 hover:scale-105 transition-transform duration-500 cursor-zoom-in" onclick="window.open(this.src, '_blank')">
+        </div>
+        {% endif %}
+        <a href="{{ edu.certificate_url }}" target="_blank" class="flex items-center gap-3 text-emerald-600 hover:text-emerald-700 transition-colors group/proof">
           <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center group-hover/proof:scale-110 transition-transform">
             <i data-lucide="file-check" class="w-5 h-5"></i>
           </div>
-          <span class="text-sm font-black uppercase tracking-widest">View Proof of Degree</span>
+          <span class="text-sm font-black uppercase tracking-widest">{% if edu.certificate_url.lower().endswith('.pdf') %}View Document{% else %}Full View{% endif %}</span>
           <i data-lucide="external-link" class="w-3 h-3 ml-auto opacity-0 group-hover/proof:opacity-100 transition-opacity"></i>
         </a>
       </div>
@@ -207,7 +212,13 @@
               <input type="file" name="certificate" accept=".jpg,.jpeg,.png,.pdf"
                      class="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white transition-all outline-none font-medium file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" />
               {% if edit_edu.certificate_url %}
-              <p class="text-xs text-brand-600 font-bold mt-1"><a href="{{ edit_edu.certificate_url }}" target="_blank">View current certificate</a></p>
+              <div class="flex items-center justify-between mt-2 px-2">
+                <p class="text-xs text-brand-600 font-bold"><a href="{{ edit_edu.certificate_url }}" target="_blank">View current certificate</a></p>
+                <form action="/dashboard/education/{{ edit_edu.id }}/remove-certificate" method="post" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+                  <button type="submit" class="text-xs text-red-500 font-bold hover:underline">Remove current</button>
+                </form>
+              </div>
               {% endif %}
             </div>
           </div>

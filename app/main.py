@@ -101,9 +101,27 @@ def _run_startup_migrations():
             user_cols = [c["name"] for c in sa_inspect(conn).get_columns("users")]
 
         if "subscription_status" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'inactive'"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'active'"))
             conn.commit()
             logger.info("Migration: added users.subscription_status")
+
+        # projects.thumbnail_url and display_order
+        proj_cols = [c["name"] for c in sa_inspect(conn).get_columns("projects")]
+        if "thumbnail_url" not in proj_cols:
+            conn.execute(text("ALTER TABLE projects ADD COLUMN thumbnail_url VARCHAR(500) DEFAULT ''"))
+            conn.commit()
+            logger.info("Migration: added projects.thumbnail_url")
+        if "display_order" not in proj_cols:
+            conn.execute(text("ALTER TABLE projects ADD COLUMN display_order INTEGER DEFAULT 0"))
+            conn.commit()
+            logger.info("Migration: added projects.display_order")
+
+        # users.subscription_tier
+        user_cols = [c["name"] for c in sa_inspect(conn).get_columns("users")]
+        if "subscription_tier" not in user_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'"))
+            conn.commit()
+            logger.info("Migration: added users.subscription_tier")
 
 
 def _seed_admin_user():
@@ -115,11 +133,19 @@ def _seed_admin_user():
         admin_email = "Antawnharris1992@gmail.com"
         user = db.query(User).filter(User.email == admin_email).first()
         if user:
+            changed = False
             if user.role != "admin":
                 user.role = "admin"
+                changed = True
+            if user.subscription_tier != "elite":
                 user.subscription_tier = "elite"
+                changed = True
+            if user.subscription_status != "active":
+                user.subscription_status = "active"
+                changed = True
+            if changed:
                 db.commit()
-                logger.info(f"Admin role assigned to {admin_email}")
+                logger.info(f"Admin role/tier/status ensured for {admin_email}")
         else:
             logger.debug(f"Admin seed: user {admin_email} not registered yet")
     except Exception as e:
@@ -151,7 +177,7 @@ async def lifespan(app: FastAPI):
     _seed_admin_user()
 
     # Ensure upload subdirectories exist
-    for sub in ("profile_images", "qr_codes", "resumes", "certificates"):
+    for sub in ("profile_images", "qr_codes", "resumes", "certificates", "project_thumbnails"):
         (settings.upload_path / sub).mkdir(parents=True, exist_ok=True)
 
     logger.info(f"DigiBioFi starting — env={settings.app_env}, base_url={settings.base_url}")
@@ -264,7 +290,7 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com; "
-        "img-src 'self' data: blob: https://images.unsplash.com https://pagead2.googlesyndication.com; "
+        "img-src 'self' data: blob: https://images.unsplash.com https://pagead2.googlesyndication.com https://img.youtube.com https://i.vimeocdn.com; "
         "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
         "connect-src 'self'; "
         "frame-ancestors 'none'; "
@@ -385,15 +411,17 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
             customer_id = obj.get("customer")
             subscription_id = obj.get("subscription")
             metadata = obj.get("metadata", {}) or {}
+            plan = metadata.get("plan", "elite")
+            tier = "elite" if plan != "basic" else "basic"
             user = _get_user_by_stripe(db, customer_id, metadata.get("user_id"))
             if user:
-                user.subscription_tier = "elite"
+                user.subscription_tier = tier
                 user.subscription_status = "active"
                 if customer_id and not user.stripe_customer_id:
                     user.stripe_customer_id = customer_id
                 if subscription_id:
                     user.stripe_subscription_id = subscription_id
-                logger.info(f"User {user.id} upgraded to elite via checkout.session.completed")
+                logger.info(f"User {user.id} upgraded to {tier} via checkout.session.completed")
             else:
                 logger.warning(f"checkout.session.completed: no user found for customer={customer_id}")
 
@@ -407,7 +435,7 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
                     user.stripe_subscription_id = subscription_id
                 if status == "active":
                     user.subscription_status = "active"
-                    user.subscription_tier = "elite"
+                    # Preserve existing tier on renewal — tier was set at checkout
                 elif status in ("past_due", "unpaid"):
                     user.subscription_status = status
                 elif status in ("canceled", "incomplete_expired"):
