@@ -8,6 +8,7 @@ import os
 import sys
 from logging.config import fileConfig
 
+import sqlalchemy as sa
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
@@ -33,6 +34,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _compare_type(context, inspected_column, metadata_column, inspected_type, metadata_type):
+    if context.dialect.name == "sqlite":
+        if isinstance(metadata_type, sa.UUID) and inspected_type.__class__.__name__.upper() == "NUMERIC":
+            return False
+    return None
+
+
 def run_migrations_offline() -> None:
     """Run migrations without a live DB connection (generates SQL script)."""
     url = config.get_main_option("sqlalchemy.url")
@@ -41,7 +49,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        compare_type=True,
+        compare_type=_compare_type,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -58,7 +66,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            compare_type=True,
+            compare_type=_compare_type,
         )
         with context.begin_transaction():
             context.run_migrations()

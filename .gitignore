@@ -139,6 +139,9 @@ celerybeat.pid
 # DigiBioFi specific ignores (critical)
 .idea/
 *.db
+*.sqlite
+*.sqlite3
+pycache/
 uploads/
 qr_codes/
 *.pyc

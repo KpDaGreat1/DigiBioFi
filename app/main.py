@@ -25,7 +25,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.owner import apply_owner_access, is_owner_email
 from app.core.templates import templates
-from app.db.database import engine, Base
+from app.db.database import engine
+from app.db.schema import assert_schema_ready
 from app.routers import auth, dashboard, public, admin, billing
 from app.core.dependencies import get_current_user_optional, get_db
 
@@ -39,92 +40,6 @@ logger = logging.getLogger(__name__)
 
 
 # ── Application lifespan ──────────────────────────────────────────────────────
-
-def _run_startup_migrations():
-    """Add any new columns that don't exist yet (safe for existing SQLite DBs)."""
-    from sqlalchemy import text, inspect as sa_inspect
-    # Ensure stripe_events table exists
-    with engine.connect() as conn:
-        insp = sa_inspect(conn)
-        if "stripe_events" not in insp.get_table_names():
-            conn.execute(text("""
-                CREATE TABLE stripe_events (
-                    event_id VARCHAR(255) PRIMARY KEY,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-            conn.execute(text("CREATE INDEX idx_stripe_event_id ON stripe_events(event_id)"))
-            conn.commit()
-            logger.info("Migration: created stripe_events table")
-    
-    with engine.connect() as conn:
-        inspector = sa_inspect(engine)
-        columns = [c["name"] for c in inspector.get_columns("profiles")]
-        
-        new_cols = [
-            ("recruiter_visibility", "BOOLEAN DEFAULT 0"),
-            ("freelance_availability", "BOOLEAN DEFAULT 0"),
-            ("profile_image_2", "VARCHAR(500) DEFAULT ''"),
-            ("profile_image_3", "VARCHAR(500) DEFAULT ''"),
-            ("custom_background_url", "VARCHAR(500) DEFAULT ''"),
-            ("custom_header_url", "VARCHAR(500) DEFAULT ''"),
-        ]
-        
-        for col_name, col_type in new_cols:
-            if col_name not in columns:
-                try:
-                    conn.execute(text(f"ALTER TABLE profiles ADD COLUMN {col_name} {col_type}"))
-                    conn.commit()
-                    logger.info(f"Migration: Added {col_name} to profiles table")
-                except Exception as e:
-                    logger.error(f"Migration failed for {col_name}: {e}")
-    with engine.connect() as conn:
-        insp = sa_inspect(conn)
-        # educations.certificate_url
-        edu_cols = [c["name"] for c in insp.get_columns("educations")]
-        if "certificate_url" not in edu_cols:
-            conn.execute(text("ALTER TABLE educations ADD COLUMN certificate_url TEXT DEFAULT ''"))
-            conn.commit()
-            logger.info("Migration: added educations.certificate_url")
-
-        # users additional billing/subscription columns
-        user_cols = [c["name"] for c in insp.get_columns("users")]
-
-        if "stripe_customer_id" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN stripe_customer_id TEXT DEFAULT ''"))
-            conn.commit()
-            logger.info("Migration: added users.stripe_customer_id")
-            user_cols = [c["name"] for c in sa_inspect(conn).get_columns("users")]
-
-        if "stripe_subscription_id" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT DEFAULT ''"))
-            conn.commit()
-            logger.info("Migration: added users.stripe_subscription_id")
-            user_cols = [c["name"] for c in sa_inspect(conn).get_columns("users")]
-
-        if "subscription_status" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'active'"))
-            conn.commit()
-            logger.info("Migration: added users.subscription_status")
-
-        # projects.thumbnail_url and display_order
-        proj_cols = [c["name"] for c in sa_inspect(conn).get_columns("projects")]
-        if "thumbnail_url" not in proj_cols:
-            conn.execute(text("ALTER TABLE projects ADD COLUMN thumbnail_url VARCHAR(500) DEFAULT ''"))
-            conn.commit()
-            logger.info("Migration: added projects.thumbnail_url")
-        if "display_order" not in proj_cols:
-            conn.execute(text("ALTER TABLE projects ADD COLUMN display_order INTEGER DEFAULT 0"))
-            conn.commit()
-            logger.info("Migration: added projects.display_order")
-
-        # users.subscription_tier
-        user_cols = [c["name"] for c in sa_inspect(conn).get_columns("users")]
-        if "subscription_tier" not in user_cols:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'"))
-            conn.commit()
-            logger.info("Migration: added users.subscription_tier")
-
 
 def _owner_username() -> str:
     base = re.sub(r"[^a-zA-Z0-9_-]", "", settings.admin_email.split("@", 1)[0]).strip()
@@ -213,28 +128,17 @@ def _seed_admin_user():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Startup: create tables (dev only — use Alembic for production).
-    Ensure upload directories exist.
+    Startup requires a migrated schema.
     """
-    # Import all models so SQLAlchemy knows about them before create_all
-    import app.models  # noqa: F401
+    # Import models so relationship access in startup paths is registered.
+    import app.models as app_models  # noqa: F401
 
-    if not settings.is_production:
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables ensured (dev mode).")
-
-    # Run safe column migrations for new fields on existing tables
-    try:
-        _run_startup_migrations()
-    except Exception as e:
-        logger.warning(f"Startup migration skipped: {e}")
-
-    # Seed admin user
-    _seed_admin_user()
-
-    # Ensure upload subdirectories exist
     for sub in ("profile_images", "qr_codes", "resumes", "certificates", "project_thumbnails"):
         (settings.upload_path / sub).mkdir(parents=True, exist_ok=True)
+
+    if app.state.environment != "testing":
+        assert_schema_ready(engine)
+        _seed_admin_user()
 
     logger.info(f"DigiBioFi starting — env={settings.app_env}, base_url={settings.base_url}")
     yield

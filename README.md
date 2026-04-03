@@ -1,7 +1,4 @@
 # DigiBioFi
-<<<<<<< HEAD
-Modern Resume App &amp; Site.  
-=======
 
 **A modern digital resume & identity platform.**  
 Build a professional profile page with a unique URL and QR code. Replace paper resumes with a live, mobile-first digital card.
@@ -64,7 +61,13 @@ cp .env.example .env
 # Edit .env — at minimum, set a strong SECRET_KEY
 ```
 
-### 3. Run (SQLite auto-created on first start)
+### 3. Run migrations
+
+```bash
+.venv/bin/alembic upgrade head
+```
+
+### 4. Start the app
 
 ```bash
 python run.py
@@ -104,7 +107,7 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-> **Note:** In development with SQLite, `Base.metadata.create_all()` runs automatically on startup — Alembic is optional for local dev but **required for production**.
+> **Note:** The app now requires a migrated schema before startup in every non-test environment. Run `alembic upgrade head` before starting it.
 
 ---
 
@@ -244,4 +247,3 @@ digibiofi/
 - [ ] Cloud file storage (S3/Cloudinary)
 - [ ] QR analytics heatmap
 - [ ] Custom domain mapping
->>>>>>> 0daa704 (Security & UX Phase 1: Critical fixes)

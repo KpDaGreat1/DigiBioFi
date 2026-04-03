@@ -1,0 +1,10 @@
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+pycache/
+*.pyc
+uploads/
+qr_codes/
+.venv/
+.env
