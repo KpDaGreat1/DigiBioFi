@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # Default is long enough to pass validation during development
     secret_key: str = "digibiofi-dev-secret-key-32-chars-at-least-!!"
     base_url: str = "http://localhost:8000"
-
+    redis_url: str = "redis://localhost:6379/0"
     # ── Security ─────────────────────────────────────────────────────────────
     # Session / CSRF / Rate limiting
     csrf_secret_key: str = "csrf-secret-key-change-me"

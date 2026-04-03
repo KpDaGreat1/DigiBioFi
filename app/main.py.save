@@ -248,7 +248,7 @@ app.state.environment = settings.app_env
 
 @app.middleware("http")
 async def security_and_rate_limit_middleware(request: Request, call_next):
-    
+
     #   Admin bypass (FIRST, before anything else)
     if request.url.path.startswith("/admin"):
         return await call_next(request)
@@ -279,10 +279,8 @@ async def rate_limit_middleware(request: Request, call_next):
     # 3. Security Headers
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    
+    response.headers
+
     # CSP: 'unsafe-inline' is used for Tailwind CDN, Google Fonts, and dynamic JS
     # elements required for the modern identity dashboard.
     csp = (
