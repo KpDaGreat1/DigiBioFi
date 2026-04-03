@@ -7,26 +7,26 @@ from app.services.analytics_service import record_page_view, get_summary
 
 
 class TestAnalyticsEvents:
-    def test_page_view_recorded_on_public_profile_visit(self, db, auth_client):
+    def test_page_view_recorded_on_public_profile_visit(self, db, client, registered_user):
         """Visiting /p/{slug} should record a page_view event."""
         from app.models.user import User
         user = db.query(User).filter(User.email == "test@example.com").first()
         slug = user.profile.slug
 
-        resp = auth_client.get(f"/p/{slug}")
+        resp = client.get(f"/p/{slug}")
         assert resp.status_code == 200
 
         events = db.query(AnalyticsEvent).filter(AnalyticsEvent.profile_id == user.profile.id).all()
         assert len(events) >= 1
         assert any(e.event_type == "page_view" for e in events)
 
-    def test_qr_source_recorded(self, db, auth_client):
+    def test_qr_source_recorded(self, db, client, registered_user):
         """Visiting with ?src=qr should record source as 'qr'."""
         from app.models.user import User
         user = db.query(User).filter(User.email == "test@example.com").first()
         slug = user.profile.slug
 
-        auth_client.get(f"/p/{slug}?src=qr")
+        client.get(f"/p/{slug}?src=qr")
 
         events = db.query(AnalyticsEvent).filter(
             AnalyticsEvent.profile_id == user.profile.id,
@@ -70,12 +70,12 @@ class TestAnalyticsEvents:
         assert summary.total_views == 2
         assert summary.qr_scans == 1
 
-    def test_private_profile_returns_404(self, db, auth_client):
+    def test_private_profile_returns_404(self, db, client, registered_user):
         """Private profiles should return 404 on public page."""
         from app.models.user import User
         user = db.query(User).filter(User.email == "test@example.com").first()
         user.profile.is_public = False
         db.commit()
 
-        resp = auth_client.get(f"/p/{user.profile.slug}")
+        resp = client.get(f"/p/{user.profile.slug}")
         assert resp.status_code == 404

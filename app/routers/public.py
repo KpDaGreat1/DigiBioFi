@@ -68,13 +68,8 @@ def public_profile(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    # Access control: Only one clean block
-    if not profile.is_public:
-        if not user:
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-        if user.id != profile.user_id:
-            raise HTTPException(status_code=403, detail="This profile is private")
+    if not profile.is_public and (not user or user.id != profile.user_id):
+        raise HTTPException(status_code=404, detail="Profile not found")
 
     # Normalise source value
     source = src if src in ("qr", "referral") else "direct"

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user, get_db
+from app.core.owner import is_owner_email
 from app.core.templates import flash, templates
 from app.models.user import User
 
@@ -60,6 +61,10 @@ def billing_portal(
     Launch the Stripe Customer Portal for existing subscribers.
     Allows them to update payment method, cancel, or view invoices.
     """
+    if is_owner_email(current_user.email):
+        flash(request, "Billing is not required for the owner account.", "info")
+        return RedirectResponse("/dashboard", status_code=303)
+
     if not current_user.stripe_customer_id:
         flash(request, "No active subscription found.", "error")
         return RedirectResponse("/dashboard/upgrade", status_code=303)

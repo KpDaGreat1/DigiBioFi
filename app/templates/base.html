@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#4f46e5" />
+  <meta name="theme-color" content="#127a67" />
   <meta name="description" content="DigiBioFi — The elite digital identity platform for high-impact professionals." />
   
   <!-- Favicon (SVG for better scaling) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f46e5%22/><path d=%22M25 30h50M25 50h40M25 70h30%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22/><circle cx=%2270%22 cy=%2270%22 r=%2212%22 fill=%22white%22/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23127a67%22/><path d=%22M25 30h50M25 50h40M25 70h30%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22/><circle cx=%2270%22 cy=%2270%22 r=%2212%22 fill=%22white%22/></svg>">
   
   <title>{% block title %}DigiBioFi — Your Digital Identity{% endblock %}</title>
 
@@ -20,25 +20,35 @@
         extend: {
           colors: {
             brand: {
-              50:  '#f5f7ff',
-              100: '#ebf0fe',
-              200: '#dce5fd',
-              300: '#c1cffa',
-              400: '#9baaf7',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-              800: '#3730a3',
-              900: '#1e1b4b',
-            }
+              50: 'rgb(var(--brand-50) / <alpha-value>)',
+              100: 'rgb(var(--brand-100) / <alpha-value>)',
+              200: 'rgb(var(--brand-200) / <alpha-value>)',
+              300: 'rgb(var(--brand-300) / <alpha-value>)',
+              400: 'rgb(var(--brand-400) / <alpha-value>)',
+              500: 'rgb(var(--brand-500) / <alpha-value>)',
+              600: 'rgb(var(--brand-600) / <alpha-value>)',
+              700: 'rgb(var(--brand-700) / <alpha-value>)',
+              800: 'rgb(var(--brand-800) / <alpha-value>)',
+              900: 'rgb(var(--brand-900) / <alpha-value>)',
+              950: 'rgb(var(--brand-950) / <alpha-value>)',
+            },
+            accent: {
+              50: 'rgb(var(--accent-50) / <alpha-value>)',
+              100: 'rgb(var(--accent-100) / <alpha-value>)',
+              200: 'rgb(var(--accent-200) / <alpha-value>)',
+              300: 'rgb(var(--accent-300) / <alpha-value>)',
+              400: 'rgb(var(--accent-400) / <alpha-value>)',
+              500: 'rgb(var(--accent-500) / <alpha-value>)',
+              600: 'rgb(var(--accent-600) / <alpha-value>)',
+            },
           },
           fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-            display: ['Inter', 'system-ui', 'sans-serif'],
+            sans: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
           },
           boxShadow: {
-            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-            'premium': '0 10px 15px -3px rgba(0, 0, 0, 0.02), 0 4px 6px -2px rgba(0, 0, 0, 0.01)',
+            'glass': '0 24px 60px -36px rgba(15, 23, 42, 0.35)',
+            'premium': 'var(--shadow-premium)',
           },
           animation: {
             'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -55,10 +65,10 @@
     }
   </script>
 
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
 
   <!-- Lucide Icons (better than FontAwesome for modern UI) -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -68,22 +78,22 @@
 
   <style>
     .text-gradient {
-      background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+      background: linear-gradient(135deg, rgb(var(--brand-500)) 0%, rgb(var(--accent-400)) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .glass-effect {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
     }
     .hover-lift {
-      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      transition: transform 0.24s var(--curve-out), box-shadow 0.24s var(--curve-out);
     }
     .hover-lift:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      transform: translateY(-4px);
+      box-shadow: 0 24px 42px -28px rgba(15, 23, 42, 0.55);
     }
     [v-cloak] { display: none; }
   </style>

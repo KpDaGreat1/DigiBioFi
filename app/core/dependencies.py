@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 
+from app.core.owner import apply_owner_access, is_owner_email
 from app.core.security import AUTH_COOKIE_NAME, decode_access_token, validate_csrf
 from app.db.database import SessionLocal  # adjust if your path differs
 
@@ -54,21 +55,22 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user_id = payload.get("sub")
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.query(User).filter(User.id == user_id).first()
 
-    if not user or not user.is_active:
+    if not user:
         raise HTTPException(status_code=401, detail="User invalid")
 
-    # ── ADMIN / ELITE USER OVERRIDE ──────────────────────────────────────────
-    # Ensure: Antawnharris1992@gmail.com is ALWAYS: plan = "elite", role = "admin"
-    if user.email.lower() == "antawnharris1992@gmail.com":
-        if user.role != "admin" or user.subscription_tier != "elite":
-            user.role = "admin"
-            user.subscription_tier = "elite"
-            user.subscription_status = "active"
-            db.commit()
-            db.refresh(user)
+    if is_owner_email(user.email) and apply_owner_access(user):
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=401, detail="User invalid")
 
     return user
 

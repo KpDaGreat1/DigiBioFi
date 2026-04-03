@@ -8,6 +8,7 @@ Production:
     gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 4
 """
 import logging
+import re
 from dotenv import load_dotenv
 load_dotenv()
 import time
@@ -22,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
+from app.core.owner import apply_owner_access, is_owner_email
 from app.core.templates import templates
 from app.db.database import engine, Base
 from app.routers import auth, dashboard, public, admin, billing
@@ -124,30 +126,84 @@ def _run_startup_migrations():
             logger.info("Migration: added users.subscription_tier")
 
 
+def _owner_username() -> str:
+    base = re.sub(r"[^a-zA-Z0-9_-]", "", settings.admin_email.split("@", 1)[0]).strip()
+    return base or "owner"
+
+
+def _unique_username(base: str, db) -> str:
+    from app.models.user import User
+
+    username = base
+    suffix = 1
+    while db.query(User).filter(User.username == username).first():
+        username = f"{base}{suffix}"
+        suffix += 1
+    return username
+
+
 def _seed_admin_user():
-    """Ensure Antawnharris1992@gmail.com has admin role."""
+    """Ensure the configured owner account exists with permanent elite access."""
     from app.db.database import SessionLocal
+    from app.core.security import hash_password
+    from sqlalchemy import func
+
     db = SessionLocal()
     try:
         from app.models.user import User
-        admin_email = "Antawnharris1992@gmail.com"
-        user = db.query(User).filter(User.email == admin_email).first()
-        if user:
-            changed = False
-            if user.role != "admin":
-                user.role = "admin"
-                changed = True
-            if user.subscription_tier != "elite":
-                user.subscription_tier = "elite"
-                changed = True
-            if user.subscription_status != "active":
-                user.subscription_status = "active"
-                changed = True
-            if changed:
-                db.commit()
-                logger.info(f"Admin role/tier/status ensured for {admin_email}")
-        else:
-            logger.debug(f"Admin seed: user {admin_email} not registered yet")
+        from app.models.profile import Profile
+        from app.services import qr_service
+        from app.utils.slug import unique_slug
+
+        user = (
+            db.query(User)
+            .filter(func.lower(User.email) == settings.admin_email.lower())
+            .first()
+        )
+        if not user:
+            username = _unique_username(_owner_username(), db)
+            user = User(
+                email=settings.admin_email.lower(),
+                username=username,
+                hashed_password=hash_password(settings.admin_password),
+                role="admin",
+                subscription_tier="elite",
+                subscription_status="active",
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(user)
+            db.flush()
+            profile = Profile(user_id=user.id, slug=unique_slug(username, db))
+            db.add(profile)
+            db.commit()
+            db.refresh(user)
+            db.refresh(profile)
+            try:
+                qr_service.generate_qr_for_profile(profile, db)
+            except Exception as e:
+                logger.warning(f"Owner QR seed failed: {e}")
+            logger.info("Owner account created")
+            return
+
+        changed = apply_owner_access(user)
+        profile = user.profile
+        if not profile:
+            profile = Profile(user_id=user.id, slug=unique_slug(user.username, db))
+            db.add(profile)
+            changed = True
+
+        if changed:
+            db.commit()
+            db.refresh(user)
+            db.refresh(profile)
+            logger.info("Owner access ensured")
+
+        if profile and not profile.qr_code:
+            try:
+                qr_service.generate_qr_for_profile(profile, db)
+            except Exception as e:
+                logger.warning(f"Owner QR sync failed: {e}")
     except Exception as e:
         logger.warning(f"Admin seed failed: {e}")
     finally:
@@ -415,12 +471,15 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
             tier = "elite" if plan != "basic" else "basic"
             user = _get_user_by_stripe(db, customer_id, metadata.get("user_id"))
             if user:
-                user.subscription_tier = tier
-                user.subscription_status = "active"
-                if customer_id and not user.stripe_customer_id:
-                    user.stripe_customer_id = customer_id
-                if subscription_id:
-                    user.stripe_subscription_id = subscription_id
+                if is_owner_email(user.email):
+                    apply_owner_access(user)
+                else:
+                    user.subscription_tier = tier
+                    user.subscription_status = "active"
+                    if customer_id and not user.stripe_customer_id:
+                        user.stripe_customer_id = customer_id
+                    if subscription_id:
+                        user.stripe_subscription_id = subscription_id
                 logger.info(f"User {user.id} upgraded to {tier} via checkout.session.completed")
             else:
                 logger.warning(f"checkout.session.completed: no user found for customer={customer_id}")
@@ -431,46 +490,41 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
             status = obj.get("status")  # active, past_due, canceled, unpaid, etc.
             user = _get_user_by_stripe(db, customer_id, None)
             if user:
-                if subscription_id:
-                    user.stripe_subscription_id = subscription_id
-                if status == "active":
-                    user.subscription_status = "active"
-                    # Preserve existing tier on renewal — tier was set at checkout
-                elif status in ("past_due", "unpaid"):
-                    user.subscription_status = status
-                elif status in ("canceled", "incomplete_expired"):
-                    # Don't downgrade admin users
-                    if user.email != "Antawnharris1992@gmail.com":
+                if is_owner_email(user.email):
+                    apply_owner_access(user)
+                else:
+                    if subscription_id:
+                        user.stripe_subscription_id = subscription_id
+                    if status == "active":
+                        user.subscription_status = "active"
+                    elif status in ("past_due", "unpaid"):
+                        user.subscription_status = status
+                    elif status in ("canceled", "incomplete_expired"):
                         user.subscription_status = "canceled"
                         user.subscription_tier = "free"
-                    else:
-                        user.subscription_status = "canceled"
-                        # Keep admin as elite regardless of billing status
-                        logger.info(f"Admin user {user.id} subscription canceled but elite status retained")
                 logger.info(f"User {user.id} subscription updated: status={status}")
 
         elif event_type == "customer.subscription.deleted":
             customer_id = obj.get("customer")
             user = _get_user_by_stripe(db, customer_id, None)
             if user:
-                # Don't downgrade admin users
-                if user.email != "Antawnharris1992@gmail.com":
+                if is_owner_email(user.email):
+                    apply_owner_access(user)
+                else:
                     user.subscription_status = "canceled"
                     user.subscription_tier = "free"
                     user.stripe_subscription_id = ""
-                else:
-                    user.subscription_status = "canceled"
-                    user.stripe_subscription_id = ""
-                    # Keep admin as elite regardless of billing status
-                    logger.info(f"Admin user {user.id} subscription deleted but elite status retained")
-                logger.info(f"User {user.id} subscription deleted — downgraded to free" if user.email != "Antawnharris1992@gmail.com" else f"User {user.id} is admin, elite status preserved")
+                logger.info(f"User {user.id} subscription deleted")
 
         elif event_type == "invoice.payment_failed":
             customer_id = obj.get("customer")
             user = _get_user_by_stripe(db, customer_id, None)
             if user:
-                user.subscription_status = "past_due"
-                logger.warning(f"User {user.id} invoice payment failed — status set to past_due")
+                if is_owner_email(user.email):
+                    apply_owner_access(user)
+                else:
+                    user.subscription_status = "past_due"
+                    logger.warning(f"User {user.id} invoice payment failed — status set to past_due")
 
         # After successful processing, record the event ID for idempotency
         if event_id:

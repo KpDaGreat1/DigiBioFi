@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
 from app.core.dependencies import get_db, get_current_user, require_csrf
+from app.core.owner import is_owner_email
 from app.core.security import generate_csrf_token
 from app.core.templates import templates, flash, get_csrf_token
 from app.models.user import User
@@ -974,6 +975,10 @@ async def subscribe(
     db: Session = Depends(get_db),
 ):
     from app.core.config import settings as _settings
+    if is_owner_email(current_user.email):
+        flash(request, "Billing is disabled for the owner account.", "info")
+        return RedirectResponse("/dashboard", status_code=303)
+
     if not _settings.stripe_secret_key:
         flash(request, "Stripe is not configured yet.", "error")
         return RedirectResponse("/dashboard/upgrade", status_code=303)

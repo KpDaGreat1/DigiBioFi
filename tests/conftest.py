@@ -89,3 +89,17 @@ def auth_client(client, registered_user):
         "csrf_token": "test",  # Bypass CSRF in testing
     }, follow_redirects=False)
     return client
+
+
+@pytest.fixture
+def admin_client(auth_client, db):
+    """Logged-in admin client."""
+    from app.models.user import User
+
+    user = db.query(User).filter(User.email == "test@example.com").first()
+    user.role = "admin"
+    user.subscription_tier = "elite"
+    user.subscription_status = "active"
+    db.commit()
+    db.refresh(user)
+    return auth_client

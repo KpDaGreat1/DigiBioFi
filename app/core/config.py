@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
+    password_reset_expire_minutes: int = 30
 
     # ── File uploads ─────────────────────────────────────────────────────────
     upload_dir: str = "uploads"

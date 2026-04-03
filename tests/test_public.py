@@ -33,14 +33,14 @@ class TestPublicProfile:
         resp = client.get("/p/this-slug-does-not-exist-xyz")
         assert resp.status_code == 404
 
-    def test_private_profile_returns_404(self, db, auth_client):
+    def test_private_profile_returns_404(self, db, client, registered_user):
         """Private profiles should not be publicly accessible."""
         from app.models.user import User
         user = db.query(User).filter(User.email == "test@example.com").first()
         user.profile.is_public = False
         db.commit()
 
-        resp = auth_client.get(f"/p/{user.profile.slug}")
+        resp = client.get(f"/p/{user.profile.slug}")
         assert resp.status_code == 404
 
     def test_profile_contains_qr_section(self, db, auth_client):

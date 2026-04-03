@@ -3,19 +3,76 @@
 {% block head %}
 <style>
   .section-card {
-    @apply bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200/60 shadow-premium mb-10 transition-all hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5;
+    margin-bottom: 2.5rem;
+    border: 1px solid rgba(var(--brand-200), 0.28);
+    border-radius: 2.5rem;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 2rem;
+    box-shadow: var(--shadow-premium);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   .pill-link {
-    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 rounded-full text-sm font-bold transition-all border border-slate-100 hover:border-brand-100;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgb(var(--border-subtle));
+    border-radius: 9999px;
+    background: rgb(var(--surface-2));
+    padding: 0.625rem 1.25rem;
+    color: rgb(var(--text-secondary));
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
   }
   .contact-action {
-    @apply flex items-center justify-center w-14 h-14 bg-white rounded-2xl shadow-premium border border-slate-100 text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-all hover:-translate-y-1.5 hover:shadow-lg;
+    display: flex;
+    height: 3.5rem;
+    width: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(var(--border-subtle));
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-premium);
+    color: rgb(var(--text-secondary));
+    transition: all 0.2s ease;
   }
   .experience-item:last-child .timeline-line {
-    @apply hidden;
+    display: none;
   }
   .verified-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 bg-brand-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-500/30;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    background: rgb(var(--brand-600));
+    padding: 0.25rem 0.75rem;
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    box-shadow: 0 18px 38px -24px rgba(18, 122, 103, 0.45);
+  }
+  .section-card:hover {
+    border-color: rgba(var(--brand-200), 0.55);
+    box-shadow: 0 24px 48px -32px rgba(18, 122, 103, 0.22);
+  }
+  .pill-link:hover {
+    border-color: rgba(var(--brand-200), 0.8);
+    background: rgba(var(--brand-50), 0.95);
+    color: rgb(var(--brand-700));
+  }
+  .contact-action:hover {
+    transform: translateY(-0.375rem);
+    border-color: rgba(var(--brand-200), 0.9);
+    color: rgb(var(--brand-600));
+    box-shadow: 0 28px 48px -30px rgba(15, 23, 42, 0.3);
+  }
+  @media (min-width: 768px) {
+    .section-card {
+      padding: 2.5rem;
+    }
   }
 </style>
 {% block profile_head %}{% endblock %}
