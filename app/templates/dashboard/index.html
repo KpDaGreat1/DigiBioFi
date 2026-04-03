@@ -134,7 +134,7 @@
               <i data-lucide="download" class="w-4 h-4"></i>
               Get QR Assets
            </a>
-           <button onclick="copyProfileLink()" class="flex items-center justify-center gap-2 w-full bg-white text-slate-700 border border-slate-200 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-200">
+           <button onclick="copyProfileLink(event)" class="flex items-center justify-center gap-2 w-full bg-white text-slate-700 border border-slate-200 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-200">
               <i data-lucide="copy" class="w-4 h-4"></i>
               Copy URL
            </button>
@@ -145,7 +145,7 @@
 </div>
 
 <script>
-  function copyProfileLink() {
+  function copyProfileLink(event) {
     const url = "{{ base_url }}/p/{{ profile.slug }}";
     navigator.clipboard.writeText(url).then(() => {
       // Could add a toast here

@@ -20,7 +20,7 @@ class User(Base):
     # Role: "user" | "admin"
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
 
-    # Subscription tier: "free" | "premium" | "elite"
+    # Subscription tier: "free" | "basic" | "premium" | "elite"
     subscription_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
     subscription_status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
 
@@ -33,7 +33,7 @@ class User(Base):
 
     @property
     def is_premium(self) -> bool:
-        return self.subscription_tier in ("premium", "elite")
+        return self.subscription_tier in ("basic", "premium", "elite")
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

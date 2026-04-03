@@ -212,7 +212,7 @@
                   <i data-lucide="code" class="w-6 h-6"></i>
                 </div>
                 {% if proj.url %}
-                <a href="{{ proj.url }}" target="_blank" class="text-slate-300 hover:text-brand-600 transition-colors">
+                <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-brand-600 transition-colors">
                   <i data-lucide="external-link" class="w-6 h-6"></i>
                 </a>
                 {% endif %}
@@ -220,7 +220,7 @@
               <h3 class="text-xl font-black text-slate-900 mb-3">{{ proj.name }}</h3>
               <p class="text-slate-500 font-medium text-sm leading-relaxed mb-6 flex-1">{{ proj.description }}</p>
               {% if proj.url %}
-              <a href="{{ proj.url }}" target="_blank" class="text-xs font-black text-brand-600 uppercase tracking-widest flex items-center gap-2 group/link">
+              <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer" class="text-xs font-black text-brand-600 uppercase tracking-widest flex items-center gap-2 group/link">
                 Review Artifact
                 <i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
               </a>

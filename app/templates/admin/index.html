@@ -19,7 +19,8 @@
   <h1 class="text-2xl font-bold text-slate-800 mb-1">Admin Overview</h1>
   <p class="text-sm text-slate-400 mb-8">Logged in as <strong>{{ admin.email }}</strong></p>
 
-  <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+  <!-- Primary stats grid -->
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
     {% for label, value, color in [
       ('Total Users', stats.total_users, 'bg-blue-50 text-blue-700'),
       ('Active Users', stats.active_users, 'bg-green-50 text-green-700'),
@@ -35,52 +36,128 @@
     {% endfor %}
   </div>
 
-  <div class="grid lg:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="text-lg font-semibold text-slate-800">Top Profiles</h2>
-          <p class="text-sm text-slate-400">Highest event volume across public analytics.</p>
+  <!-- Tier breakdown + profile visibility -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    {% for label, value, color in [
+      ('Free Tier', stats.tier_counts.free, 'bg-slate-100 text-slate-600'),
+      ('Basic Tier', stats.tier_counts.basic, 'bg-sky-50 text-sky-700'),
+      ('Elite Tier', stats.tier_counts.elite, 'bg-brand-50 text-brand-700'),
+      ('Public Profiles', stats.public_profiles, 'bg-emerald-50 text-emerald-700'),
+    ] %}
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div class="text-2xl font-bold text-slate-800">{{ value }}</div>
+      <div class="text-xs {{ color }} font-medium mt-1 px-2 py-0.5 rounded-full w-fit">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid lg:grid-cols-[minmax(0,1fr)_22rem] gap-6">
+    <!-- Left: top profiles + recent signups -->
+    <div class="space-y-6">
+      <!-- Top profiles -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-800">Top Profiles</h2>
+            <p class="text-sm text-slate-400">Highest event volume across public analytics.</p>
+          </div>
+          <a href="/admin/users" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Manage users</a>
         </div>
-        <a href="/admin/users" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Manage users</a>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="border-b border-slate-100">
+              <tr>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Profile</th>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Slug</th>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Views</th>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Events</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              {% for profile in top_profiles %}
+              <tr>
+                <td class="py-3 font-medium text-slate-700">{{ profile.username }}</td>
+                <td class="py-3 text-slate-500">
+                  <a href="/p/{{ profile.slug }}" target="_blank" class="hover:text-brand-600 transition-colors">{{ profile.slug }}</a>
+                </td>
+                <td class="py-3 text-slate-500">{{ profile.page_views }}</td>
+                <td class="py-3 text-slate-500">{{ profile.event_count }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" class="py-6 text-center text-slate-400">No analytics recorded yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="border-b border-slate-100">
-            <tr>
-              <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Profile</th>
-              <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Slug</th>
-              <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Views</th>
-              <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Events</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-50">
-            {% for profile in top_profiles %}
-            <tr>
-              <td class="py-3 font-medium text-slate-700">{{ profile.username }}</td>
-              <td class="py-3 text-slate-500">{{ profile.slug }}</td>
-              <td class="py-3 text-slate-500">{{ profile.page_views }}</td>
-              <td class="py-3 text-slate-500">{{ profile.event_count }}</td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="4" class="py-6 text-center text-slate-400">No analytics recorded yet.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <!-- Recent signups -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Recent Signups</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="border-b border-slate-100">
+              <tr>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">User</th>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Tier</th>
+                <th class="text-left py-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Joined</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              {% for u in recent_users %}
+              <tr>
+                <td class="py-3">
+                  <div class="font-medium text-slate-700">{{ u.username }}</div>
+                  <div class="text-xs text-slate-400">{{ u.email }}</div>
+                </td>
+                <td class="py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
+                    {% if u.subscription_tier in ('elite', 'premium') %}bg-brand-50 text-brand-700
+                    {% elif u.subscription_tier == 'basic' %}bg-sky-50 text-sky-700
+                    {% else %}bg-slate-100 text-slate-600{% endif %}">
+                    {% if u.subscription_tier == 'premium' %}elite{% else %}{{ u.subscription_tier }}{% endif %}
+                  </span>
+                </td>
+                <td class="py-3 text-xs text-slate-400">{{ u.created_at.strftime('%b %d, %Y') }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="3" class="py-6 text-center text-slate-400">No users yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-      <h2 class="text-lg font-semibold text-slate-800 mb-2">Actions</h2>
-      <p class="text-sm text-slate-400 mb-4">Use the admin panel for account cleanup and manual access control.</p>
-      <div class="space-y-3">
-        <a href="/admin/users" class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          User management
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-        </a>
+    <!-- Right: actions -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-2">Quick Actions</h2>
+        <p class="text-sm text-slate-400 mb-4">Account cleanup and access control.</p>
+        <div class="space-y-3">
+          <a href="/admin/users" class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            User management
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Profile Visibility</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-600">Public</span>
+            <span class="font-bold text-emerald-600">{{ stats.public_profiles }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-600">Private</span>
+            <span class="font-bold text-slate-500">{{ stats.private_profiles }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

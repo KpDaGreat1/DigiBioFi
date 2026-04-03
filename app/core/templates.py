@@ -1,18 +1,16 @@
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
-import time
-from itsdangerous import URLSafeSerializer
-from app.core.config import settings
+from app.core.security import generate_csrf_token
 
 templates = Jinja2Templates(directory="app/templates")
 
-csrf_serializer = URLSafeSerializer(settings.csrf_secret_key)
-
-def get_csrf_token(request) -> str:
+def get_csrf_token(request: Request) -> str:
     token = request.cookies.get("csrf_token")
     if not token:
-        # Fallback for templates if cookie not yet set
-        token = csrf_serializer.dumps(time.time())
+        token = getattr(request.state, "csrf_token", None)
+    if not token:
+        token = generate_csrf_token(request)
+        request.state.csrf_token = token
     return token
 
 def flash(request: Request, message: str, category: str = "info"):

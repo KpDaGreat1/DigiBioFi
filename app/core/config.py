@@ -4,6 +4,7 @@ All settings are validated by Pydantic at startup.
 """
 from functools import lru_cache
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -63,29 +64,46 @@ class Settings(BaseSettings):
     # Multiple pricing tiers
     stripe_price_basic: str = ""
     stripe_price_premium: str = ""
+    stripe_price_elite: str = ""
+
     def get_stripe_price(self, plan: str) -> str:
         if plan == "basic":
             return self.stripe_price_basic
-        elif plan == "premium":
-            return self.stripe_price_premium
+        if plan in {"premium", "elite"}:
+            return self.stripe_price_elite or self.stripe_price_premium
         raise ValueError(f"Invalid plan: {plan}")
 
     # ── CORS ─────────────────────────────────────────────────────────────────
     allowed_origins: str = "http://localhost:8000"
 
     # ── Validation ───────────────────────────────────────────────────────────
+    # Known insecure defaults that must never reach production
+    _INSECURE_SECRET_KEYS: ClassVar[frozenset[str]] = frozenset({
+        "insecure-default-change-me",
+        "digibiofi-dev-secret-key-32-chars-at-least-!!",
+    })
+
     @field_validator("secret_key")
     @classmethod
     def validate_secret_key(cls, v: str, info) -> str:
-        """Enforce strong SECRET_KEY in production."""
-        # Simple rule: Must be > 32 chars and not the default
-        if v == "insecure-default-change-me" or len(v) < 32:
-            # We only HARD-fail if app_env is production
-            # But the requirement says "app must fail startup if weak key detected"
-            # So I'll make it always fail for simplicity and safety.
+        """Reject known weak defaults and any key shorter than 32 chars."""
+        if len(v) < 32 or v in cls._INSECURE_SECRET_KEYS:
             raise ValueError(
-                "SECRET_KEY is too weak. Must be at least 32 characters long "
-                "and not the default value."
+                "SECRET_KEY is too weak. Set a unique SECRET_KEY of at least "
+                "32 characters via the environment or .env file."
+            )
+        return v
+
+    @field_validator("csrf_secret_key")
+    @classmethod
+    def validate_csrf_secret_key(cls, v: str, info) -> str:
+        app_env = (info.data.get("app_env") or "").lower()
+        if app_env == "production" and (
+            v == "csrf-secret-key-change-me" or len(v) < 32
+        ):
+            raise ValueError(
+                "CSRF_SECRET_KEY is too weak. Must be at least 32 characters long "
+                "and not the default value in production."
             )
         return v
 

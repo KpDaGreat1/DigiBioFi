@@ -54,7 +54,7 @@
             Download Print Quality
           </a>
           
-          <button onclick="copyQRLink()" class="flex items-center justify-center gap-3 w-full bg-white text-slate-700 border border-slate-200 font-black py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-300 group">
+          <button onclick="copyQRLink(event)" class="flex items-center justify-center gap-3 w-full bg-white text-slate-700 border border-slate-200 font-black py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-300 group">
             <i data-lucide="copy" class="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors"></i>
             Copy Direct Link
           </button>
@@ -83,7 +83,7 @@
 </div>
 
 <script>
-  function copyQRLink() {
+  function copyQRLink(event) {
     const url = "{{ base_url }}/p/{{ profile.slug }}?src=qr";
     navigator.clipboard.writeText(url).then(() => {
       const btn = event.currentTarget;

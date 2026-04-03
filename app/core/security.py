@@ -87,8 +87,13 @@ def clear_csrf_cookie(response: Response):
 
 def generate_csrf_token(request: Request) -> str:
     token = request.cookies.get(CSRF_COOKIE_NAME)
+    if token:
+        return token
+
+    token = getattr(request.state, "csrf_token", None)
     if not token:
         token = secrets.token_urlsafe(32)
+        request.state.csrf_token = token
     return token
 
 

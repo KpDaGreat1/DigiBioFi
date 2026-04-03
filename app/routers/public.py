@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.templates import templates
 from app.core.dependencies import get_db, get_current_user_optional
 from app.services import profile_service, qr_service, analytics_service
+from app.services.storage import storage
 from app.schemas.analytics import TrackEventRequest
 from app.utils.validators import hash_visitor
 
@@ -53,6 +54,11 @@ def _record_view_protected(profile, source, ip, ua, db, user, qr_id=None):
         analytics_service.record_page_view(profile, source, ip, ua, db, qr_id=qr_id)
 
 
+def _ensure_profile_access(profile, user) -> None:
+    if not profile.is_public and (not user or user.id != profile.user_id):
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+
 # ── Public profile page ───────────────────────────────────────────────────────
 
 @router.get("/p/{slug}", response_class=HTMLResponse)
@@ -68,8 +74,7 @@ def public_profile(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    if not profile.is_public and (not user or user.id != profile.user_id):
-        raise HTTPException(status_code=404, detail="Profile not found")
+    _ensure_profile_access(profile, user)
 
     # Normalise source value
     source = src if src in ("qr", "referral") else "direct"
@@ -98,10 +103,12 @@ def track_event(
     event: TrackEventRequest,
     request: Request,
     db: Session = Depends(get_db),
+    user=Depends(get_current_user_optional),
 ):
     profile = profile_service.get_profile_by_slug(slug, db)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+    _ensure_profile_access(profile, user)
 
     ip = _get_client_ip(request)
     ua = request.headers.get("user-agent", "")
@@ -138,24 +145,15 @@ def download_resume(slug: str, request: Request, db: Session = Depends(get_db), 
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    # Access control for resume: same as profile
-    if not profile.is_public:
-        if not user:
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-        if user.id != profile.user_id:
-            raise HTTPException(status_code=403, detail="This profile is private")
+    _ensure_profile_access(profile, user)
 
     if not profile.resume_pdf:
         # Graceful fallback: redirect back to profile with a message
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"/p/{slug}?error=no_resume", status_code=status.HTTP_303_SEE_OTHER)
 
-    from pathlib import Path
-    # resume_pdf is stored as a URL path like "/uploads/resumes/file.pdf"
-    # Strip the leading "/" to get a path relative to CWD (project root)
-    pdf_path = Path(profile.resume_pdf.lstrip("/"))
-    if not pdf_path.exists():
+    pdf_path = storage.resolve_url(profile.resume_pdf)
+    if not pdf_path or not pdf_path.exists():
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"/p/{slug}?error=no_resume", status_code=status.HTTP_303_SEE_OTHER)
 

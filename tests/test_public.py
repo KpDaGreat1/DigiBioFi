@@ -2,7 +2,9 @@
 Tests for the public profile page rendering and access control.
 """
 import pytest
+from pathlib import Path
 
+from app.core.config import settings
 
 class TestPublicProfile:
     def test_public_profile_renders(self, db, auth_client):
@@ -41,6 +43,24 @@ class TestPublicProfile:
         db.commit()
 
         resp = client.get(f"/p/{user.profile.slug}")
+        assert resp.status_code == 404
+
+    def test_private_resume_returns_404(self, db, client, registered_user, monkeypatch, tmp_path):
+        from app.models.user import User
+
+        monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+
+        resume_dir = tmp_path / "resumes"
+        resume_dir.mkdir(parents=True, exist_ok=True)
+        resume_path = resume_dir / "resume_test.pdf"
+        resume_path.write_bytes(b"%PDF-1.4\n")
+
+        user = db.query(User).filter(User.email == "test@example.com").first()
+        user.profile.is_public = False
+        user.profile.resume_pdf = "/uploads/resumes/resume_test.pdf"
+        db.commit()
+
+        resp = client.get(f"/resume/download/{user.profile.slug}", follow_redirects=False)
         assert resp.status_code == 404
 
     def test_profile_contains_qr_section(self, db, auth_client):

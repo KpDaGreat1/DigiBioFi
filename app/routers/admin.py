@@ -53,6 +53,31 @@ def admin_home(
         .filter(AnalyticsEvent.event_type == "qr_scan")
         .count()
     )
+
+    # Tier distribution — treat "premium" as equivalent to "elite" for display
+    raw_tier_counts = dict(
+        db.query(User.subscription_tier, func.count(User.id))
+        .group_by(User.subscription_tier)
+        .all()
+    )
+    tier_counts = {
+        "free": raw_tier_counts.get("free", 0),
+        "basic": raw_tier_counts.get("basic", 0),
+        "elite": raw_tier_counts.get("elite", 0) + raw_tier_counts.get("premium", 0),
+    }
+
+    # Public vs private profiles
+    public_profiles = db.query(Profile).filter(Profile.is_public.is_(True)).count()
+    private_profiles = db.query(Profile).filter(Profile.is_public.is_(False)).count()
+
+    # Recent signups
+    recent_users = (
+        db.query(User)
+        .order_by(User.created_at.desc())
+        .limit(7)
+        .all()
+    )
+
     top_profiles = (
         db.query(
             Profile.slug.label("slug"),
@@ -85,7 +110,11 @@ def admin_home(
                 "total_events": total_events,
                 "total_page_views": total_page_views,
                 "total_qr_scans": total_qr_scans,
+                "tier_counts": tier_counts,
+                "public_profiles": public_profiles,
+                "private_profiles": private_profiles,
             },
+            "recent_users": recent_users,
             "top_profiles": top_profiles,
         },
     )

@@ -1,8 +1,10 @@
 """
 Pydantic schemas for Profile and all sub-section models.
 """
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+
+from app.utils.validators import normalize_external_url
 
 
 # ── Sub-section schemas ───────────────────────────────────────────────────────
@@ -60,6 +62,11 @@ class ProjectCreate(BaseModel):
     thumbnail_url: str = Field(default="", max_length=500)
     display_order: int = 0
 
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        return normalize_external_url(v)
+
 
 class ProjectRead(ProjectCreate):
     id: int
@@ -74,6 +81,11 @@ class CertificationCreate(BaseModel):
     credential_id: str = Field(default="", max_length=200)
     url: str = Field(default="", max_length=500)
     display_order: int = 0
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        return normalize_external_url(v)
 
 
 class CertificationRead(CertificationCreate):
@@ -144,6 +156,13 @@ class ProfileUpdate(BaseModel):
         if not re.match(r"^[a-z0-9-]{3,50}$", v):
             raise ValueError("Slug must be 3–50 chars, lowercase letters, numbers, and hyphens only")
         return v
+
+    @field_validator("website", "twitter", "github", "telegram")
+    @classmethod
+    def validate_links(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return normalize_external_url(v)
 
 
 class ProfileRead(BaseModel):

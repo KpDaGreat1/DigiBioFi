@@ -3,6 +3,7 @@ File upload and input validation helpers.
 """
 import hashlib
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import UploadFile, HTTPException, status
 from pydantic import ValidationError
@@ -10,7 +11,7 @@ from pydantic import ValidationError
 from app.core.config import settings
 
 # Allowed MIME types per upload category
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_PDF_TYPES = {"application/pdf"}
 
 # Max file name length to prevent path traversal / long-name attacks
@@ -22,7 +23,7 @@ def validate_image_upload(file: UploadFile) -> None:
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Image must be JPEG, PNG, WebP, or GIF. Got: {file.content_type}",
+            detail=f"Image must be JPEG, PNG, or WebP. Got: {file.content_type}",
         )
     _check_size_header(file)
 
@@ -88,6 +89,18 @@ def sanitize_text(value: str) -> str:
     allowed_attrs = {"a": ["href", "rel", "target"]}
     cleaned = bleach.clean(value, tags=allowed_tags, attributes=allowed_attrs, strip=True)
     return cleaned
+
+
+def normalize_external_url(value: str) -> str:
+    value = value.strip()
+    if not value:
+        return ""
+
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("URL must start with http:// or https://")
+
+    return value
 
 
 _BLOCKED_WORDS: set[str] = {

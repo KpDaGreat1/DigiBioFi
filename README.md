@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum, set a strong SECRET_KEY
+# Edit .env — at minimum, set strong `SECRET_KEY` and `CSRF_SECRET_KEY`
 ```
 
 ### 3. Run migrations

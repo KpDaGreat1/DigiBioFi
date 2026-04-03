@@ -18,32 +18,11 @@ from app.schemas.profile import (
     ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
 )
 from app.services import profile_service, qr_service, file_service, analytics_service
+from app.services.storage import storage
 from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 logger = logging.getLogger(__name__)
-
-
-async def _save_certificate(upload: UploadFile, user_id: int) -> str:
-    """Save certificate file (JPG/PNG/PDF) to uploads/certificates/."""
-    import secrets
-    from pathlib import Path
-    from app.core.config import settings
-
-    allowed = {"image/jpeg", "image/png", "application/pdf"}
-    if upload.content_type not in allowed:
-        raise ValueError("Certificate must be JPG, PNG, or PDF")
-    ext_map = {"image/jpeg": "jpg", "image/png": "png", "application/pdf": "pdf"}
-    ext = ext_map[upload.content_type]
-    suffix = secrets.token_hex(4)
-    filename = f"cert_{user_id}_{suffix}.{ext}"
-    dest = Path(settings.upload_dir) / "certificates" / filename
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    content = await upload.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise ValueError("Certificate file exceeds 5MB limit")
-    dest.write_bytes(content)
-    return f"/uploads/certificates/{filename}"
 
 
 def _get_profile(user: User, db: Session):
@@ -95,6 +74,15 @@ def _get_profile_completion_score(profile) -> int:
             continue
 
     return min(score, 100)
+
+
+def _delete_upload_url(url: str) -> None:
+    if not url:
+        return
+    try:
+        storage.delete_url(url)
+    except Exception as exc:
+        logger.warning("Failed to delete upload %s: %s", url, exc)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -161,7 +149,32 @@ async def profile_edit_submit(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
-    
+
+    def _render_edit_with_errors(errors: dict, status_code: int):
+        """Return the edit form with submitted values still populated."""
+        # Update profile fields in-memory so the template reflects what the user typed.
+        # db.commit() is never called here, so these changes are discarded after the response.
+        if profile:
+            profile.full_name = full_name
+            profile.headline = headline
+            profile.bio = bio
+            profile.email = email
+            profile.phone = phone
+            profile.location = location
+            profile.website = website
+            profile.twitter = twitter
+            profile.github = github
+            profile.telegram = telegram
+            profile.slug = slug or profile.slug
+            profile.is_public = (is_public == "on")
+            profile.recruiter_visibility = (recruiter_visibility == "on")
+            profile.freelance_availability = (freelance_availability == "on")
+        return templates.TemplateResponse(
+            "dashboard/profile_edit.html",
+            {"request": request, "user": current_user, "profile": profile, "errors": errors},
+            status_code=status_code,
+        )
+
     try:
         data = ProfileUpdate(
             full_name=full_name,
@@ -184,35 +197,13 @@ async def profile_edit_submit(
         return RedirectResponse("/dashboard/profile", status_code=303)
 
     except ValidationError as e:
-        return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {
-                "request": request,
-                "user": current_user,
-                "profile": profile,
-                "errors": format_pydantic_errors(e),
-            },
-            status_code=422,
-        )
+        return _render_edit_with_errors(format_pydantic_errors(e), 422)
     except profile_service.SlugTaken:
-        return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {
-                "request": request,
-                "user": current_user,
-                "profile": profile,
-                "errors": {"slug": "That profile URL is already taken."},
-            },
-            status_code=400,
-        )
+        return _render_edit_with_errors({"slug": "That profile URL is already taken."}, 400)
     except Exception as e:
         logger.error(f"Profile update error for user {current_user.id}: {e}", exc_info=True)
         flash(request, "An error occurred while saving your profile.", "error")
-        return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile},
-            status_code=500,
-        )
+        return _render_edit_with_errors({}, 500)
 
 
 # ── Profile image upload ───────────────────────────────────────────────────────
@@ -226,10 +217,13 @@ async def upload_profile_image(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
+    old_profile_image = profile.profile_image
     try:
         path = await file_service.save_profile_image(file, current_user.id)
         data = ProfileUpdate(profile_image=path)
         profile_service.update_profile(profile, data, db)
+        if old_profile_image and old_profile_image != path:
+            _delete_upload_url(old_profile_image)
         flash(request, "Profile image updated!", "success")
     except Exception as e:
         logger.error(f"Image upload error for user {current_user.id}: {e}", exc_info=True)
@@ -253,10 +247,13 @@ async def upload_resume(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
+    old_resume = profile.resume_pdf
     try:
         path = await file_service.save_resume_pdf(file, current_user.id)
         data = ProfileUpdate(resume_pdf=path)
         profile_service.update_profile(profile, data, db)
+        if old_resume and old_resume != path:
+            _delete_upload_url(old_resume)
         flash(request, "Resume uploaded successfully!", "success")
     except Exception as e:
         logger.error(f"Resume upload error for user {current_user.id}: {e}", exc_info=True)
@@ -358,6 +355,7 @@ def edit_experience_submit(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from types import SimpleNamespace
     profile = _get_profile(current_user, db)
     try:
         data = ExperienceCreate(
@@ -367,9 +365,25 @@ def edit_experience_submit(
         )
         profile_service.update_experience(exp_id, profile, data, db)
         flash(request, "Experience updated!", "success")
+        return RedirectResponse("/dashboard/experience", status_code=303)
     except ValidationError as e:
-        flash(request, "Invalid data. Please check your input.", "error")
-    return RedirectResponse("/dashboard/experience", status_code=303)
+        # Return the edit form with submitted values and field-level errors
+        edit_exp = SimpleNamespace(
+            id=exp_id, company=company, title=title, location=location,
+            start_date=start_date, end_date=end_date,
+            is_current=(is_current == "on"), description=description,
+        )
+        return templates.TemplateResponse(
+            "dashboard/experience.html",
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "edit_exp": edit_exp,
+                "errors": format_pydantic_errors(e),
+            },
+            status_code=422,
+        )
 
 
 @router.post("/experience/{exp_id}/delete", response_class=HTMLResponse)
@@ -417,11 +431,22 @@ async def add_education(
 ):
     profile = _get_profile(current_user, db)
     certificate_url = ""
+    uploaded_certificate_url = ""
     if certificate and certificate.filename:
         try:
-            certificate_url = await _save_certificate(certificate, current_user.id)
-        except Exception as e:
-            logger.warning(f"Certificate upload failed: {e}")
+            uploaded_certificate_url = await file_service.save_certificate_file(certificate, current_user.id)
+            certificate_url = uploaded_certificate_url
+        except HTTPException as exc:
+            return templates.TemplateResponse(
+                "dashboard/education.html",
+                {
+                    "request": request,
+                    "user": current_user,
+                    "profile": profile,
+                    "errors": {"certificate": exc.detail},
+                },
+                status_code=exc.status_code,
+            )
     try:
         data = EducationCreate(
             school=school, degree=degree, field=field,
@@ -433,6 +458,8 @@ async def add_education(
         flash(request, "Education added!", "success")
         return RedirectResponse("/dashboard/education", status_code=303)
     except ValidationError as e:
+        if uploaded_certificate_url:
+            _delete_upload_url(uploaded_certificate_url)
         return templates.TemplateResponse(
             "dashboard/education.html",
             {
@@ -443,6 +470,10 @@ async def add_education(
             },
             status_code=422,
         )
+    except Exception:
+        if uploaded_certificate_url:
+            _delete_upload_url(uploaded_certificate_url)
+        raise
 
 
 @router.get("/education/{edu_id}/edit", response_class=HTMLResponse)
@@ -482,12 +513,6 @@ async def edit_education_submit(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
-    certificate_url = ""
-    if certificate and certificate.filename:
-        try:
-            certificate_url = await _save_certificate(certificate, current_user.id)
-        except Exception as e:
-            logger.warning(f"Certificate upload failed: {e}")
     try:
         from app.models.profile import Education
         edu = db.query(Education).filter(
@@ -497,32 +522,42 @@ async def edit_education_submit(
             flash(request, "Education not found.", "error")
             return RedirectResponse("/dashboard/education", status_code=303)
 
+        uploaded_certificate_url = ""
         new_certificate_url = edu.certificate_url
         if certificate and certificate.filename:
             try:
-                # Remove old file if it exists
-                if edu.certificate_url:
-                    from pathlib import Path
-                    from app.core.config import settings
-                    old_path = Path(settings.upload_dir).parent / edu.certificate_url.lstrip("/")
-                    if old_path.exists():
-                        old_path.unlink()
-                
-                new_certificate_url = await _save_certificate(certificate, current_user.id)
-            except Exception as e:
-                logger.warning(f"Certificate upload failed: {e}")
-                flash(request, f"Upload failed: {str(e)}", "error")
+                uploaded_certificate_url = await file_service.save_certificate_file(certificate, current_user.id)
+                new_certificate_url = uploaded_certificate_url
+            except HTTPException as exc:
+                return templates.TemplateResponse(
+                    "dashboard/education.html",
+                    {
+                        "request": request,
+                        "user": current_user,
+                        "profile": profile,
+                        "edit_edu": edu,
+                        "errors": {"certificate": exc.detail},
+                    },
+                    status_code=exc.status_code,
+                )
 
         data = EducationCreate(
             school=school, degree=degree, field=field,
             start_date=start_date, end_date=end_date, description=description,
             certificate_url=new_certificate_url,
         )
+        old_certificate_url = edu.certificate_url
         profile_service.update_education(edu_id, profile, data, db)
+        if uploaded_certificate_url and old_certificate_url and old_certificate_url != uploaded_certificate_url:
+            _delete_upload_url(old_certificate_url)
         flash(request, "Education updated!", "success")
     except ValidationError as e:
+        if "uploaded_certificate_url" in locals() and uploaded_certificate_url:
+            _delete_upload_url(uploaded_certificate_url)
         flash(request, "Invalid data. Please check your input.", "error")
     except Exception as e:
+        if "uploaded_certificate_url" in locals() and uploaded_certificate_url:
+            _delete_upload_url(uploaded_certificate_url)
         logger.error(f"Error updating education: {e}")
         flash(request, "An error occurred while updating education.", "error")
     return RedirectResponse("/dashboard/education", status_code=303)
@@ -543,15 +578,7 @@ async def remove_education_certificate(
     ).first()
     
     if edu and edu.certificate_url:
-        try:
-            from pathlib import Path
-            from app.core.config import settings
-            old_path = Path(settings.upload_dir).parent / edu.certificate_url.lstrip("/")
-            if old_path.exists():
-                old_path.unlink()
-        except Exception as e:
-            logger.warning(f"Failed to delete certificate file: {e}")
-        
+        _delete_upload_url(edu.certificate_url)
         edu.certificate_url = ""
         db.commit()
         flash(request, "Certificate removed.", "success")
@@ -719,11 +746,13 @@ async def add_project(
 ):
     profile = _get_profile(current_user, db)
     thumbnail_url = ""
+    uploaded_thumbnail_url = ""
     
     # Priority A: Uploaded image
     if thumbnail and thumbnail.filename:
         try:
-            thumbnail_url = await file_service.save_project_thumbnail(thumbnail, current_user.id)
+            uploaded_thumbnail_url = await file_service.save_project_thumbnail(thumbnail, current_user.id)
+            thumbnail_url = uploaded_thumbnail_url
         except Exception as e:
             logger.warning(f"Project thumbnail upload failed: {e}")
             flash(request, f"Thumbnail upload failed: {str(e)}", "error")
@@ -742,6 +771,8 @@ async def add_project(
         flash(request, "Project added!", "success")
         return RedirectResponse("/dashboard/projects", status_code=303)
     except ValidationError as e:
+        if uploaded_thumbnail_url:
+            _delete_upload_url(uploaded_thumbnail_url)
         return templates.TemplateResponse(
             "dashboard/projects.html",
             {
@@ -752,6 +783,10 @@ async def add_project(
             },
             status_code=422,
         )
+    except Exception:
+        if uploaded_thumbnail_url:
+            _delete_upload_url(uploaded_thumbnail_url)
+        raise
 
 
 @router.get("/projects/{proj_id}/edit", response_class=HTMLResponse)
@@ -801,17 +836,6 @@ async def edit_project_submit(
     # Priority A: New upload
     if thumbnail and thumbnail.filename:
         try:
-            # Delete old local thumbnail if it was an upload
-            if proj.thumbnail_url and proj.thumbnail_url.startswith("/uploads/project_thumbnails/"):
-                try:
-                    from pathlib import Path
-                    from app.core.config import settings
-                    old_path = Path(settings.upload_dir).parent / proj.thumbnail_url.lstrip("/")
-                    if old_path.exists():
-                        old_path.unlink()
-                except Exception as e:
-                    logger.warning(f"Failed to delete old project thumbnail: {e}")
-            
             thumbnail_url = await file_service.save_project_thumbnail(thumbnail, current_user.id)
         except Exception as e:
             logger.warning(f"Project thumbnail upload failed: {e}")
@@ -828,9 +852,14 @@ async def edit_project_submit(
             name=name, description=description, url=url,
             thumbnail_url=thumbnail_url,
         )
+        old_thumbnail_url = proj.thumbnail_url
         profile_service.update_project(proj_id, profile, data, db)
+        if thumbnail and thumbnail.filename and old_thumbnail_url and old_thumbnail_url != thumbnail_url:
+            _delete_upload_url(old_thumbnail_url)
         flash(request, "Project updated!", "success")
     except ValidationError as e:
+        if thumbnail and thumbnail.filename and thumbnail_url and thumbnail_url != proj.thumbnail_url:
+            _delete_upload_url(thumbnail_url)
         flash(request, "Invalid data. Please check your input.", "error")
     return RedirectResponse("/dashboard/projects", status_code=303)
 
@@ -850,16 +879,7 @@ async def remove_project_thumbnail(
     ).first()
     
     if proj and proj.thumbnail_url:
-        if proj.thumbnail_url.startswith("/uploads/"):
-            try:
-                from pathlib import Path
-                from app.core.config import settings
-                old_path = Path(settings.upload_dir).parent / proj.thumbnail_url.lstrip("/")
-                if old_path.exists():
-                    old_path.unlink()
-            except Exception as e:
-                logger.warning(f"Failed to delete thumbnail file: {e}")
-        
+        _delete_upload_url(proj.thumbnail_url)
         proj.thumbnail_url = ""
         db.commit()
         flash(request, "Thumbnail removed.", "success")
@@ -931,13 +951,7 @@ def delete_profile_image(
 ):
     profile = _get_profile(current_user, db)
     if profile.profile_image:
-        from pathlib import Path
-        try:
-            old_path = Path(profile.profile_image.lstrip("/"))
-            if old_path.exists():
-                old_path.unlink()
-        except Exception as e:
-            logger.warning(f"Failed to delete old profile image: {e}")
+        _delete_upload_url(profile.profile_image)
         data = ProfileUpdate(profile_image="")
         profile_service.update_profile(profile, data, db)
         flash(request, "Profile photo removed.", "info")
@@ -954,7 +968,14 @@ def upgrade_page(
 ):
     from app.core.config import settings as _settings
     profile = _get_profile(current_user, db)
-    stripe_enabled = bool(_settings.stripe_secret_key and (_settings.stripe_price_basic or _settings.stripe_price_premium))
+    stripe_enabled = bool(
+        _settings.stripe_secret_key
+        and (
+            _settings.stripe_price_basic
+            or _settings.stripe_price_elite
+            or _settings.stripe_price_premium
+        )
+    )
     return templates.TemplateResponse(
         "dashboard/upgrade.html",
         {
@@ -983,11 +1004,11 @@ async def subscribe(
         flash(request, "Stripe is not configured yet.", "error")
         return RedirectResponse("/dashboard/upgrade", status_code=303)
 
-    # Resolve price ID based on plan
-    if plan == "basic":
-        price_id = _settings.stripe_price_basic
-    else:
-        price_id = _settings.stripe_price_premium
+    try:
+        price_id = _settings.get_stripe_price(plan)
+    except ValueError:
+        flash(request, "Selected plan is invalid.", "error")
+        return RedirectResponse("/dashboard/upgrade", status_code=303)
 
     if not price_id:
         flash(request, "Selected plan is not configured.", "error")

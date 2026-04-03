@@ -88,6 +88,24 @@ class TestProfileUpdate:
         }, follow_redirects=False)
         assert resp.status_code == 400
 
+    def test_profile_rejects_javascript_links(self, auth_client):
+        resp = auth_client.post("/dashboard/profile", data={
+            "full_name": "Jane Doe",
+            "headline": "Engineer",
+            "bio": "Hello world",
+            "email": "jane@example.com",
+            "phone": "555-1234",
+            "location": "NYC",
+            "website": "javascript:alert(1)",
+            "twitter": "",
+            "github": "",
+            "telegram": "",
+            "slug": "testuser",
+            "is_public": "on",
+            "csrf_token": "test",
+        }, follow_redirects=False)
+        assert resp.status_code == 422
+
 
 class TestExperience:
     def test_add_experience(self, db, auth_client):
@@ -125,3 +143,14 @@ class TestExperience:
         resp = auth_client.post(f"/dashboard/experience/{exp.id}/delete", data={"csrf_token": "test"}, follow_redirects=False)
         assert resp.status_code == 303
         assert db.query(Experience).filter(Experience.id == exp.id).first() is None
+
+
+class TestProjectSecurity:
+    def test_project_rejects_javascript_url(self, auth_client):
+        resp = auth_client.post("/dashboard/projects/add", data={
+            "name": "Unsafe Project",
+            "description": "bad link",
+            "url": "javascript:alert(1)",
+            "csrf_token": "test",
+        }, follow_redirects=False)
+        assert resp.status_code == 422

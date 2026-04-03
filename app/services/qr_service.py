@@ -20,7 +20,7 @@ from app.services.storage import LocalStorage
 
 # QR codes are stored under uploads/qr_codes/ and served at /qr_codes/<slug>.png
 # The static mount in main.py maps /qr_codes/ → uploads/qr_codes/
-qr_storage = LocalStorage(base_dir=settings.upload_dir, url_prefix="/uploads")
+qr_storage = LocalStorage(url_prefix="/uploads")
 
 
 def generate_qr_for_profile(profile: Profile, db: Session, force: bool = False) -> QRCode:

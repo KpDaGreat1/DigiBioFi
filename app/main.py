@@ -244,17 +244,16 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     
-    # CSP: 'unsafe-inline' is used for Tailwind CDN, Google Fonts, and dynamic JS 
+    # CSP: 'unsafe-inline' is used for Tailwind CDN, Google Fonts, and dynamic JS
     # elements required for the modern identity dashboard.
     csp = (
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com; "
-        "img-src 'self' data: blob: https://images.unsplash.com https://pagead2.googlesyndication.com https://img.youtube.com https://i.vimeocdn.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob: https://images.unsplash.com https://img.youtube.com https://i.vimeocdn.com; "
         "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
         "connect-src 'self'; "
-        "frame-ancestors 'none'; "
-        "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com;"
+        "frame-ancestors 'none';"
     )
     
     # In production, ensure no mixed content by upgrading requests
@@ -269,7 +268,7 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
     # 4. Set CSRF cookie if not present
     if not request.cookies.get("csrf_token"):
         from app.core.security import generate_csrf_token, set_csrf_cookie
-        token = generate_csrf_token(request)
+        token = getattr(request.state, "csrf_token", None) or generate_csrf_token(request)
         set_csrf_cookie(response, token)
 
     return response
@@ -299,7 +298,14 @@ _uploads_path = Path(settings.upload_dir)
 _uploads_path.mkdir(exist_ok=True)
 qr_path = settings.upload_path / "qr_codes"
 qr_path.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+for subdir in ("profile_images", "project_thumbnails", "certificates"):
+    public_dir = settings.upload_path / subdir
+    public_dir.mkdir(parents=True, exist_ok=True)
+    app.mount(
+        f"/uploads/{subdir}",
+        StaticFiles(directory=str(public_dir)),
+        name=f"uploads-{subdir}",
+    )
 app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
 
 # ── Routers ───────────────────────────────────────────────────────────────────

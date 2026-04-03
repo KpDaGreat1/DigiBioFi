@@ -13,7 +13,7 @@ def create_checkout_session(user_id: int, plan: str, customer_id: str | None, ba
     """
     Create a Stripe checkout session for the given plan and return the session URL.
 
-    plan must be 'basic' or 'elite' (maps to stripe_price_basic / stripe_price_premium).
+    plan must be 'basic', 'premium', or 'elite'.
     """
     import stripe
     from app.core.config import settings

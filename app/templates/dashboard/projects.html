@@ -177,12 +177,9 @@
             <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-3">
               <img src="{{ edit_proj.thumbnail_url }}" alt="Current thumbnail" class="w-16 h-12 object-cover rounded-xl border border-slate-200" onerror="this.style.display='none'" />
               <span class="text-xs font-bold text-slate-500 flex-1">Current thumbnail</span>
-              <form action="/dashboard/projects/{{ edit_proj.id }}/remove-thumbnail" method="post" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-                <button type="submit" class="text-xs font-bold text-red-400 hover:text-red-600 transition-colors flex items-center gap-1">
-                  <i data-lucide="x" class="w-3 h-3"></i> Remove
-                </button>
-              </form>
+              <button type="submit" form="remove-thumbnail-form-{{ edit_proj.id }}" class="text-xs font-bold text-red-400 hover:text-red-600 transition-colors flex items-center gap-1">
+                <i data-lucide="x" class="w-3 h-3"></i> Remove
+              </button>
             </div>
             {% endif %}
             <label class="w-full flex items-center gap-3 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-brand-300 hover:bg-brand-50/30 p-4 rounded-2xl cursor-pointer transition-all group">
@@ -197,6 +194,11 @@
           <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20">Save Changes</button>
         </div>
       </form>
+      {% if edit_proj.thumbnail_url %}
+      <form id="remove-thumbnail-form-{{ edit_proj.id }}" action="/dashboard/projects/{{ edit_proj.id }}/remove-thumbnail" method="post" class="hidden">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+      </form>
+      {% endif %}
     </div>
   </div>
   {% endif %}

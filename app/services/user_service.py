@@ -3,12 +3,11 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.services.storage import storage
 
 
 def _upload_path_from_url(value: str) -> Path | None:
-    if not value or not value.startswith("/uploads/"):
-        return None
-    return Path(value.lstrip("/"))
+    return storage.resolve_url(value)
 
 
 def collect_user_file_paths(user) -> list[Path]:
@@ -39,10 +38,10 @@ def collect_user_file_paths(user) -> list[Path]:
                 paths.add(path)
 
         if profile.slug:
-            paths.add(Path(settings.upload_dir) / "qr_codes" / f"{profile.slug}.png")
+            paths.add(settings.upload_path / "qr_codes" / f"{profile.slug}.png")
 
         if getattr(profile, "qr_code", None) and profile.qr_code.image_path:
-            paths.add(Path(settings.upload_dir) / profile.qr_code.image_path)
+            paths.add(settings.upload_path / profile.qr_code.image_path)
 
     for pattern in (
         f"profile_images/profile_{user.id}_*",

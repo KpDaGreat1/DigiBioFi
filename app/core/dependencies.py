@@ -95,7 +95,9 @@ def require_admin(current_user = Depends(get_current_user)):
 
 
 def require_premium(current_user = Depends(get_current_user)):
-    if not current_user.is_premium:
+    if current_user.role == "admin":
+        return current_user
+    if not current_user.is_premium or current_user.subscription_status != "active":
         raise HTTPException(
             status_code=403,
             detail="Premium subscription required for this feature"
@@ -104,7 +106,9 @@ def require_premium(current_user = Depends(get_current_user)):
 
 
 def require_elite(current_user = Depends(get_current_user)):
-    if current_user.subscription_tier != "elite":
+    if current_user.role == "admin":
+        return current_user
+    if current_user.subscription_tier not in ("elite", "premium") or current_user.subscription_status != "active":
         raise HTTPException(
             status_code=403,
             detail="Elite subscription required for this feature"
