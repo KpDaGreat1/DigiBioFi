@@ -26,9 +26,10 @@ from app.core.owner import apply_owner_access, is_owner_email
 from app.core.templates import templates
 from app.db.database import engine
 from app.db.schema import assert_schema_ready
-from app.routers import auth, dashboard, public, admin, billing
+from app.routers import auth, dashboard, public, admin
+from app.routes import billing
+from app.routes import legal
 from app.core.dependencies import get_current_user_optional, get_db
-
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -84,7 +85,7 @@ def _seed_admin_user():
                 subscription_tier="elite",
                 subscription_status="active",
                 is_active=True,
-                is_verified=True,
+                is_verified=False,
             )
             db.add(user)
             db.flush()
@@ -340,8 +341,8 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(public.router)
 app.include_router(admin.router)
-app.include_router(billing.router)
-
+app.include_router(billing.router, prefix="/billing")
+app.include_router(legal.router)
 
 # ── Stripe Webhook ───────────────────────────────────────────────────────────
 

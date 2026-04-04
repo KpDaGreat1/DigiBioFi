@@ -357,7 +357,9 @@
            {% endif %}
            <div class="min-w-0">
               <p class="text-sm font-black text-slate-900 truncate">{{ profile.full_name or profile.slug }}</p>
+            {% if user.is_verified %}
               <p class="text-[10px] font-black text-brand-600 uppercase tracking-widest">Verified Pro</p>
+	    {% endif %}
            </div>
         </div>
         <div class="flex gap-2">

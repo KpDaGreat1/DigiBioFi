@@ -53,7 +53,7 @@ def _get_profile_completion_score(profile) -> int:
         "email": 10,
         "location": 10,
     }
-    
+ 
     # Collection fields (at least one item required)
     collections = {
         "experiences": 10,
@@ -967,7 +967,9 @@ def upgrade_page(
     db: Session = Depends(get_db),
 ):
     from app.core.config import settings as _settings
+
     profile = _get_profile(current_user, db)
+
     stripe_enabled = bool(
         _settings.stripe_secret_key
         and (
@@ -976,6 +978,7 @@ def upgrade_page(
             or _settings.stripe_price_premium
         )
     )
+
     return templates.TemplateResponse(
         "dashboard/upgrade.html",
         {
@@ -985,7 +988,6 @@ def upgrade_page(
             "stripe_enabled": stripe_enabled,
         },
     )
-
 
 @router.post("/subscribe", response_class=HTMLResponse)
 async def subscribe(

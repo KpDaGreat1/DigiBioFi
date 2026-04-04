@@ -22,9 +22,9 @@ def apply_owner_access(user) -> bool:
     if not user.is_active:
         user.is_active = True
         changed = True
-    if not user.is_verified:
-        user.is_verified = True
-        changed = True
+
+#Do not modify verification status here
+
     if user.stripe_customer_id:
         user.stripe_customer_id = ""
         changed = True

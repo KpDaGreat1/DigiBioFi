@@ -61,11 +61,12 @@
           {% endfor %}
         </ul>
         {% if stripe_enabled %}
-        <form action="/dashboard/subscribe" method="post">
+        <form action="/billing/create-checkout-session" method="post">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
           <input type="hidden" name="plan" value="basic">
-          <button type="submit" data-loading-text="REDIRECTING..."
-                  class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2">
+          <button type="submit"
+                  data-loading-text="REDIRECTING..."
+                  class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl transition-all shadow-lg">
             <i data-lucide="credit-card" class="w-5 h-5"></i>
             Get Basic — $1/month
           </button>
@@ -114,8 +115,8 @@
           </li>
           {% endfor %}
         </ul>
-        {% if stripe_enabled %}
-        <form action="/dashboard/subscribe" method="post">
+        {% if True %}
+        <form action="/billing/create-checkout-session" method="post">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
           <input type="hidden" name="plan" value="elite">
           <button type="submit" data-loading-text="REDIRECTING TO CHECKOUT..."

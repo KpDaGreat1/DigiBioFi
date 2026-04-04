@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: digibiofi_app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    command: >
+      sh -c "
+      until pg_isready -h db -p 5432; do
+        echo 'Waiting for database...';
+        sleep 2;
+      done;
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+  db:
+    image: postgres:17
+    container_name: digibiofi_db
+    restart: always
+    environment:
+      POSTGRES_USER: digibiofi_user
+      POSTGRES_PASSWORD: LifeIsLikeABoxOfChocolate!
+      POSTGRES_DB: digibiofi_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: digibiofi_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+
+
