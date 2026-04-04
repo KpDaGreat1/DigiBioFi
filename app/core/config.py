@@ -22,10 +22,9 @@ class Settings(BaseSettings):
     app_name: str = "DigiBioFi"
     app_env: str = "development"
     debug: bool = True
-    # Default is long enough to pass validation during development
-    secret_key: str = "digibiofi-dev-secret-key-32-chars-at-least-!!"
+    secret_key: str
     base_url: str = "http://localhost:8000"
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str
     # ── Security ─────────────────────────────────────────────────────────────
     # Session / CSRF / Rate limiting
     csrf_secret_key: str = "csrf-secret-key-change-me"
@@ -33,7 +32,7 @@ class Settings(BaseSettings):
     rate_limit_seconds: int = 60
 
     # ── Database ─────────────────────────────────────────────────────────────
-    database_url: str = "sqlite:///./digibiofi.db"
+    database_url: str
 
     # ── JWT ──────────────────────────────────────────────────────────────────
     jwt_algorithm: str = "HS256"
@@ -46,8 +45,8 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 5
 
     # ── Admin bootstrap ───────────────────────────────────────────────────────
-    admin_email: str = "admin@example.com"
-    admin_password: str = ""  # Must be set via environment variable
+    admin_email: str
+    admin_password: str
 
     # ── Email (scaffold) ─────────────────────────────────────────────────────
     smtp_host: str = "smtp.example.com"
@@ -83,6 +82,14 @@ class Settings(BaseSettings):
         "digibiofi-dev-secret-key-32-chars-at-least-!!",
     })
 
+    @field_validator("app_env")
+    @classmethod
+    def validate_app_env(cls, v: str) -> str:
+        value = (v or "").strip().lower()
+        if not value:
+            raise ValueError("APP_ENV must be set via the environment.")
+        return value
+
     @field_validator("secret_key")
     @classmethod
     def validate_secret_key(cls, v: str, info) -> str:
@@ -93,6 +100,13 @@ class Settings(BaseSettings):
                 "32 characters via the environment or .env file."
             )
         return v
+
+    @field_validator("database_url", "redis_url", "admin_email")
+    @classmethod
+    def validate_required_strings(cls, v: str, info) -> str:
+        if not v or not v.strip():
+            raise ValueError(f"{info.field_name.upper()} must be set via the environment.")
+        return v.strip()
 
     @field_validator("csrf_secret_key")
     @classmethod
