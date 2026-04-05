@@ -103,20 +103,25 @@
                     digibiofi.com/p/alex-rivera
                   </div>
                 </div>
-                
-                <div class="flex-1 p-8 flex flex-col items-center justify-center text-slate-200">
-                   <div class="w-20 h-20 bg-brand-500 rounded-3xl mb-6 shadow-xl animate-pulse"></div>
-                   <div class="h-4 bg-slate-100 rounded-full w-48 mb-4"></div>
-                   <div class="h-3 bg-slate-50 rounded-full w-64 mb-12"></div>
-                   <div class="grid grid-cols-3 gap-6 w-full max-w-2xl">
-                     <div class="h-32 bg-slate-50 rounded-3xl"></div>
-                     <div class="h-32 bg-slate-50 rounded-3xl"></div>
-                     <div class="h-32 bg-slate-50 rounded-3xl"></div>
-                   </div>
+
+                <div class="relative flex-1 overflow-hidden">
+                  <video class="absolute inset-0 z-10 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata" onerror="this.style.display='none'">
+                    <source src="/static/media/hero-demo.mp4" type="video/mp4" />
+                  </video>
+                  <div class="flex h-full p-8 flex-col items-center justify-center text-slate-200">
+                     <div class="w-20 h-20 bg-brand-500 rounded-3xl mb-6 shadow-xl animate-pulse"></div>
+                     <div class="h-4 bg-slate-100 rounded-full w-48 mb-4"></div>
+                     <div class="h-3 bg-slate-50 rounded-full w-64 mb-12"></div>
+                     <div class="grid grid-cols-3 gap-6 w-full max-w-2xl">
+                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
+                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
+                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
+                     </div>
+                  </div>
                 </div>
 
                 <!-- Floating QR Card -->
-                <div class="floating-card absolute bottom-12 right-12 w-48 p-6 rounded-[2rem] animate-float border border-white/70">
+                <div class="floating-card absolute bottom-12 right-12 z-20 w-48 p-6 rounded-[2rem] animate-float border border-white/70">
                   <div class="w-full aspect-square bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-50 mb-4">
                     <i data-lucide="qr-code" class="w-12 h-12 text-brand-600 opacity-20"></i>
                   </div>
@@ -188,9 +193,9 @@
       </div>
       
       <div class="flex items-center gap-10 text-sm font-black text-slate-500 uppercase tracking-widest">
-        <a href="#" class="hover:text-brand-600 transition-colors">X (Twitter)</a>
-        <a href="#" class="hover:text-brand-600 transition-colors">Telegram</a>
-        <a href="#" class="hover:text-brand-600 transition-colors">Privacy</a>
+        <a href="#features" class="hover:text-brand-600 transition-colors">Features</a>
+        <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
+        <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
       </div>
       
       <p class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">

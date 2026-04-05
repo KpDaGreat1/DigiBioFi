@@ -57,3 +57,20 @@ class TestQRGeneration:
             resp = auth_client.get(f"/qr/download/{slug}")
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "image/png"
+
+    def test_free_user_qr_page_hides_analytics_panel(self, auth_client):
+        resp = auth_client.get("/dashboard/qr")
+        assert resp.status_code == 200
+        assert b"QR Analytics" not in resp.content
+
+    def test_elite_user_qr_page_shows_analytics_panel(self, db, auth_client):
+        from app.models.user import User
+
+        user = db.query(User).filter(User.email == "test@example.com").first()
+        user.subscription_tier = "elite"
+        user.subscription_status = "active"
+        db.commit()
+
+        resp = auth_client.get("/dashboard/qr")
+        assert resp.status_code == 200
+        assert b"QR Analytics" in resp.content

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy — DigiBioFi{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50/60">
+  <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+    <div class="mb-10">
+      <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+        DigiBioFi
+      </a>
+    </div>
+
+    <article class="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium p-8 md:p-12 space-y-8">
+      <header class="space-y-3">
+        <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Legal</p>
+        <h1 class="text-4xl font-black text-slate-900 tracking-tight">Privacy Policy</h1>
+        <p class="text-slate-500 font-medium">Effective April 4, 2026</p>
+      </header>
+
+      <section class="space-y-3 text-slate-600 leading-relaxed">
+        <h2 class="text-xl font-black text-slate-900">What we collect</h2>
+        <p>DigiBioFi stores the account information, profile content, uploads, analytics events, and billing identifiers needed to operate your professional identity profile.</p>
+      </section>
+
+      <section class="space-y-3 text-slate-600 leading-relaxed">
+        <h2 class="text-xl font-black text-slate-900">How we use it</h2>
+        <p>We use account and profile data to render public profiles, power dashboard editing, generate QR codes, and provide analytics. Payment processing is handled through Stripe when billing is enabled.</p>
+      </section>
+
+      <section class="space-y-3 text-slate-600 leading-relaxed">
+        <h2 class="text-xl font-black text-slate-900">Uploads and analytics</h2>
+        <p>Uploaded assets such as profile images, resumes, project thumbnails, QR codes, and certificates are stored to support your profile. Public profile visits, scans, and downloads may be logged for analytics and abuse prevention.</p>
+      </section>
+
+      <section class="space-y-3 text-slate-600 leading-relaxed">
+        <h2 class="text-xl font-black text-slate-900">Billing data</h2>
+        <p>DigiBioFi does not store raw card numbers. Stripe processes subscription payments and may provide customer, subscription, and invoice identifiers back to the app for account state management.</p>
+      </section>
+
+      <section class="space-y-3 text-slate-600 leading-relaxed">
+        <h2 class="text-xl font-black text-slate-900">Your controls</h2>
+        <p>You can update profile visibility, edit or delete profile content, and manage billing through the dashboard when those features are enabled on your account.</p>
+      </section>
+
+      <div class="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-sm font-bold">
+        <a href="/terms" class="text-brand-600 hover:text-brand-700 transition-colors">Terms of Service</a>
+        <a href="/" class="text-slate-500 hover:text-brand-600 transition-colors">Back to DigiBioFi</a>
+      </div>
+    </article>
+  </div>
+</div>
+{% endblock %}

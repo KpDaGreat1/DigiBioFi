@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # ── File uploads ─────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 5
+    free_daily_profile_view_limit: int = 25
 
     # ── Admin bootstrap ───────────────────────────────────────────────────────
     admin_email: str
@@ -64,6 +65,12 @@ class Settings(BaseSettings):
     stripe_price_basic: str = ""
     stripe_price_premium: str = ""
     stripe_price_elite: str = ""
+
+    # ── Ads ──────────────────────────────────────────────────────────────────
+    adsense_client_id: str = ""
+    adsense_public_inline_slot: str = ""
+    adsense_public_sidebar_slot: str = ""
+    adsense_dashboard_slot: str = ""
 
     def get_stripe_price(self, plan: str) -> str:
         if plan == "basic":
@@ -132,6 +139,13 @@ class Settings(BaseSettings):
             )
         if len(v) < 8:
             raise ValueError("ADMIN_PASSWORD must be at least 8 characters long.")
+        return v
+
+    @field_validator("free_daily_profile_view_limit")
+    @classmethod
+    def validate_free_daily_profile_view_limit(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("FREE_DAILY_PROFILE_VIEW_LIMIT must be at least 1.")
         return v
 
     # ── Derived helpers ───────────────────────────────────────────────────────

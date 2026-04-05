@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 
 from app.core.owner import apply_owner_access, is_owner_email
+from app.core.permissions import can_access_elite_features, can_access_portfolio
 from app.core.security import AUTH_COOKIE_NAME, decode_access_token, validate_csrf
 from app.db.database import SessionLocal  # adjust if your path differs
 
@@ -97,7 +98,7 @@ def require_admin(current_user = Depends(get_current_user)):
 def require_premium(current_user = Depends(get_current_user)):
     if current_user.role == "admin":
         return current_user
-    if not current_user.is_premium or current_user.subscription_status != "active":
+    if not can_access_portfolio(current_user):
         raise HTTPException(
             status_code=403,
             detail="Premium subscription required for this feature"
@@ -108,7 +109,7 @@ def require_premium(current_user = Depends(get_current_user)):
 def require_elite(current_user = Depends(get_current_user)):
     if current_user.role == "admin":
         return current_user
-    if current_user.subscription_tier not in ("elite", "premium") or current_user.subscription_status != "active":
+    if not can_access_elite_features(current_user):
         raise HTTPException(
             status_code=403,
             detail="Elite subscription required for this feature"

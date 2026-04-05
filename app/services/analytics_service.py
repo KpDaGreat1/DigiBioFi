@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
-from app.models.analytics import AnalyticsEvent
+from app.models.analytics import AnalyticsEvent, ProfileView
 from app.models.profile import Profile
 from app.schemas.analytics import TrackEventRequest, AnalyticsSummary
 from app.utils.validators import hash_visitor
@@ -90,3 +90,31 @@ def get_summary(profile_id: int, db: Session) -> AnalyticsSummary:
         pdf_downloads=pdf_downloads,
         link_clicks=link_clicks,
     )
+
+
+def get_profile_view_overview(profile_id: int, db: Session, limit: int = 10) -> dict:
+    """Return basic local profile view analytics for dashboard display."""
+    base = db.query(ProfileView).filter(ProfileView.profile_id == profile_id)
+
+    total_views = base.count()
+    unique_visitors = (
+        base.with_entities(
+            func.count(
+                func.distinct(
+                    func.coalesce(func.nullif(ProfileView.viewer_ip, ""), ProfileView.visitor_hash)
+                )
+            )
+        ).scalar()
+        or 0
+    )
+    recent_visits = (
+        base.order_by(ProfileView.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "total_views": total_views,
+        "unique_visitors": unique_visitors,
+        "recent_visits": recent_visits,
+    }

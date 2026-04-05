@@ -52,3 +52,6 @@ class AnalyticsEvent(Base):
     profile: Mapped["Profile"] = relationship(  # type: ignore[name-defined]
         "Profile", back_populates="analytics_events"
     )
+
+
+from app.models.profile import ProfileView  # noqa: E402,F401

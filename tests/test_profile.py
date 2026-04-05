@@ -146,7 +146,19 @@ class TestExperience:
 
 
 class TestProjectSecurity:
-    def test_project_rejects_javascript_url(self, auth_client):
+    def test_free_user_cannot_access_projects(self, auth_client):
+        resp = auth_client.get("/dashboard/projects", follow_redirects=False)
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard/upgrade"
+
+    def test_project_rejects_javascript_url(self, db, auth_client):
+        from app.models.user import User
+
+        user = db.query(User).filter(User.email == "test@example.com").first()
+        user.subscription_tier = "basic"
+        user.subscription_status = "active"
+        db.commit()
+
         resp = auth_client.post("/dashboard/projects/add", data={
             "name": "Unsafe Project",
             "description": "bad link",

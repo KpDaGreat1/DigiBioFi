@@ -61,6 +61,7 @@
         </div>
       </div>
 
+      {% if show_qr_analytics %}
       <div class="bg-brand-50 rounded-[2rem] p-8 border border-brand-100">
         <h3 class="text-lg font-black text-brand-900 mb-2">QR Analytics</h3>
         <p class="text-sm font-medium text-brand-700 mb-6">Track how many times your identity has been scanned in the wild.</p>
@@ -70,6 +71,7 @@
           <div class="text-sm font-black text-brand-400 uppercase tracking-widest pb-1">Total Scans</div>
         </div>
       </div>
+      {% endif %}
 
       <form action="/dashboard/qr/regenerate" method="post" onsubmit="return confirm('Regenerating your QR will create a new QR asset. The target link will remain the same. Continue?')">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">

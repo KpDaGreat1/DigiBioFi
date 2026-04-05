@@ -7,9 +7,16 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
+from app.core.config import settings
 from app.core.dependencies import get_db, get_current_user, require_csrf
-from app.core.owner import is_owner_email
-from app.core.security import generate_csrf_token
+from app.core.permissions import (
+    can_access_analytics,
+    can_access_elite_features,
+    can_access_portfolio,
+    can_manage_subscription,
+    current_plan_label,
+    should_show_ads,
+)
 from app.core.templates import templates, flash, get_csrf_token
 from app.models.user import User
 from app.schemas.profile import (
@@ -23,6 +30,14 @@ from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 logger = logging.getLogger(__name__)
+
+
+def _normalize_plan(plan: str | None) -> str:
+    return (plan or "").lower().strip()
+
+
+def _query_flag_enabled(value: str | None) -> bool:
+    return (value or "").lower() == "true"
 
 
 def _get_profile(user: User, db: Session):
@@ -85,18 +100,65 @@ def _delete_upload_url(url: str) -> None:
         logger.warning("Failed to delete upload %s: %s", url, exc)
 
 
+def _require_portfolio_access(request: Request, current_user: User):
+    if can_access_portfolio(current_user):
+        return None
+    flash(request, "Portfolio access requires an active Basic or Elite plan.", "info")
+    return RedirectResponse("/dashboard/upgrade", status_code=303)
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard_home(
     request: Request,
+    success: str | None = None,
+    canceled: str | None = None,
+    plan: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    profile = _get_profile(current_user, db)
-    stats = analytics_service.get_summary(profile.id, db) if profile else None
-    
-    completion_score = _get_profile_completion_score(profile)
+    if success is not None or canceled is not None or plan is not None:
+        normalized_plan = _normalize_plan(plan)
+        db.refresh(current_user)
 
+        if _query_flag_enabled(success):
+            if (
+                normalized_plan in {"basic", "elite"}
+                and current_user.subscription_status == "active"
+                and current_user.subscription_tier == normalized_plan
+            ):
+                flash(
+                    request,
+                    f"Your {normalized_plan.capitalize()} plan is active.",
+                    "success",
+                )
+            else:
+                flash(
+                    request,
+                    "Your checkout completed. Billing is still processing.",
+                    "info",
+                )
+        elif _query_flag_enabled(canceled):
+            flash(request, "Checkout canceled. No charge was made.", "info")
+
+        return RedirectResponse("/dashboard", status_code=303)
+
+    profile = _get_profile(current_user, db)
+    show_dashboard_analytics = can_access_analytics(current_user)
+    stats = analytics_service.get_summary(profile.id, db) if profile and show_dashboard_analytics else None
+    analytics_overview = (
+        analytics_service.get_profile_view_overview(profile.id, db)
+        if profile and show_dashboard_analytics
+        else None
+    )
+    completion_score = _get_profile_completion_score(profile)
     csrf_token = get_csrf_token(request)
+    dashboard_ad_client_id = settings.adsense_client_id.strip()
+    dashboard_ad_slot = settings.adsense_dashboard_slot.strip()
+    show_dashboard_ad = (
+        should_show_ads(current_user)
+        and bool(dashboard_ad_client_id and dashboard_ad_slot)
+    )
+    plan_label = current_plan_label(current_user)
 
     return templates.TemplateResponse(
         "dashboard/index.html",
@@ -105,9 +167,17 @@ def dashboard_home(
             "user": current_user,
             "profile": profile,
             "stats": stats,
+            "analytics_overview": analytics_overview,
+            "show_dashboard_analytics": show_dashboard_analytics,
             "completion_score": completion_score,
             "base_url": str(request.base_url).rstrip("/"),
             "csrf_token": csrf_token,
+            "current_plan_label": plan_label,
+            "show_upgrade_callout": plan_label == "Free" and current_user.role != "admin",
+            "show_manage_subscription": can_manage_subscription(current_user),
+            "show_dashboard_ad": show_dashboard_ad,
+            "dashboard_ad_client_id": dashboard_ad_client_id,
+            "dashboard_ad_slot": dashboard_ad_slot,
         },
     )
 
@@ -692,6 +762,9 @@ def projects_page(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
         "dashboard/projects.html",
@@ -744,6 +817,9 @@ async def add_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     thumbnail_url = ""
     uploaded_thumbnail_url = ""
@@ -797,6 +873,9 @@ def edit_project_page(
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Project
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     proj = db.query(Project).filter(
         Project.id == proj_id, Project.profile_id == profile.id
@@ -823,6 +902,9 @@ async def edit_project_submit(
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Project
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     proj = db.query(Project).filter(
         Project.id == proj_id, Project.profile_id == profile.id
@@ -873,6 +955,9 @@ async def remove_project_thumbnail(
     db: Session = Depends(get_db),
 ):
     from app.models.profile import Project
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     proj = db.query(Project).filter(
         Project.id == proj_id, Project.profile_id == profile.id
@@ -895,6 +980,9 @@ def delete_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    access_redirect = _require_portfolio_access(request, current_user)
+    if access_redirect:
+        return access_redirect
     profile = _get_profile(current_user, db)
     profile_service.delete_project(proj_id, profile, db)
     flash(request, "Project removed.", "info")
@@ -914,13 +1002,15 @@ def qr_view(
     if not profile.qr_code:
         qr_service.generate_qr_for_profile(profile, db)
         db.refresh(profile)
-    stats = analytics_service.get_summary(profile.id, db) if profile else None
+    show_qr_analytics = can_access_analytics(current_user)
+    stats = analytics_service.get_summary(profile.id, db) if profile and show_qr_analytics else None
     return templates.TemplateResponse(
         "dashboard/qr_view.html",
         {
             "request": request,
             "user": current_user,
             "profile": profile,
+            "show_qr_analytics": show_qr_analytics,
             "qr_scans": stats.qr_scans if stats else 0,
             "base_url": str(request.base_url).rstrip("/"),
         },
@@ -966,18 +1056,9 @@ def upgrade_page(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.core.config import settings as _settings
-
     profile = _get_profile(current_user, db)
-
-    stripe_enabled = bool(
-        _settings.stripe_secret_key
-        and (
-            _settings.stripe_price_basic
-            or _settings.stripe_price_elite
-            or _settings.stripe_price_premium
-        )
-    )
+    basic_checkout_enabled = bool(settings.stripe_secret_key and settings.stripe_price_basic)
+    elite_checkout_enabled = bool(settings.stripe_secret_key and settings.get_stripe_price("elite"))
 
     return templates.TemplateResponse(
         "dashboard/upgrade.html",
@@ -985,64 +1066,10 @@ def upgrade_page(
             "request": request,
             "user": current_user,
             "profile": profile,
-            "stripe_enabled": stripe_enabled,
+            "basic_checkout_enabled": basic_checkout_enabled,
+            "elite_checkout_enabled": elite_checkout_enabled,
         },
     )
-
-@router.post("/subscribe", response_class=HTMLResponse)
-async def subscribe(
-    request: Request,
-    csrf_token: str = Depends(require_csrf),
-    plan: str = Form("elite"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    from app.core.config import settings as _settings
-    if is_owner_email(current_user.email):
-        flash(request, "Billing is disabled for the owner account.", "info")
-        return RedirectResponse("/dashboard", status_code=303)
-
-    if not _settings.stripe_secret_key:
-        flash(request, "Stripe is not configured yet.", "error")
-        return RedirectResponse("/dashboard/upgrade", status_code=303)
-
-    try:
-        price_id = _settings.get_stripe_price(plan)
-    except ValueError:
-        flash(request, "Selected plan is invalid.", "error")
-        return RedirectResponse("/dashboard/upgrade", status_code=303)
-
-    if not price_id:
-        flash(request, "Selected plan is not configured.", "error")
-        return RedirectResponse("/dashboard/upgrade", status_code=303)
-
-    try:
-        import stripe
-        stripe.api_key = _settings.stripe_secret_key
-        customer_id = current_user.stripe_customer_id or None
-        if not customer_id:
-            customer = stripe.Customer.create(email=current_user.email)
-            current_user.stripe_customer_id = customer.id
-            db.commit()
-            customer_id = customer.id
-        session = stripe.checkout.Session.create(
-            customer=customer_id,
-            payment_method_types=["card"],
-            line_items=[{"price": price_id, "quantity": 1}],
-            mode="subscription",
-            success_url=str(request.base_url).rstrip("/") + "/billing/success",
-            cancel_url=str(request.base_url).rstrip("/") + "/billing/cancel",
-            metadata={"user_id": str(current_user.id), "plan": plan},
-        )
-        from fastapi.responses import RedirectResponse as RR
-        return RR(session.url, status_code=303)
-    except ImportError:
-        flash(request, "Stripe library not installed.", "error")
-        return RedirectResponse("/dashboard/upgrade", status_code=303)
-    except Exception as e:
-        logger.error(f"Stripe checkout error: {e}")
-        flash(request, "Could not start checkout. Please try again.", "error")
-        return RedirectResponse("/dashboard/upgrade", status_code=303)
 
 
 # ── Digital Card Preview ──────────────────────────────────────────────────────
@@ -1067,9 +1094,7 @@ def card_preview(
 
 def _require_elite_tier(current_user: User) -> None:
     """Raise 403 if user does not have an active elite subscription."""
-    if current_user.role == "admin":
-        return
-    if current_user.subscription_tier != "elite" or current_user.subscription_status != "active":
+    if not can_access_elite_features(current_user):
         raise HTTPException(status_code=403, detail="Elite subscription required")
 
 

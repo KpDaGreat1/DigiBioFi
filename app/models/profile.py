@@ -259,6 +259,8 @@ class ProfileView(Base):
     profile_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    viewer_ip: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    user_agent: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     visitor_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -266,3 +268,7 @@ class ProfileView(Base):
         nullable=False,
         index=True,
     )
+
+    @property
+    def timestamp(self) -> datetime:
+        return self.created_at

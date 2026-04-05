@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 VALID_ROLES = {"user", "admin"}
-VALID_TIERS = {"free", "basic", "premium", "elite"}
+VALID_TIERS = {"free", "basic", "elite"}
 
 
 def _users_redirect() -> RedirectResponse:

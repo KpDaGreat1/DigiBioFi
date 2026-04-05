@@ -60,7 +60,7 @@
           </li>
           {% endfor %}
         </ul>
-        {% if stripe_enabled %}
+        {% if basic_checkout_enabled %}
         <form action="/billing/create-checkout-session" method="post">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
           <input type="hidden" name="plan" value="basic">
@@ -73,7 +73,7 @@
         </form>
         {% else %}
         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-          <p class="font-black text-slate-600 text-sm">Coming soon</p>
+          <p class="font-black text-slate-600 text-sm">Basic billing is unavailable.</p>
         </div>
         {% endif %}
       </div>
@@ -103,7 +103,6 @@
             'Physical BioFi Card (Coming soon)',
             'Custom header & background',
             'Multiple profile photos',
-            'Verified identity badge',
             'Priority support',
             'Early access to new features',
           ] %}
@@ -115,7 +114,7 @@
           </li>
           {% endfor %}
         </ul>
-        {% if True %}
+        {% if elite_checkout_enabled %}
         <form action="/billing/create-checkout-session" method="post">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
           <input type="hidden" name="plan" value="elite">
@@ -127,16 +126,18 @@
         </form>
         {% else %}
         <div class="p-4 bg-brand-50 rounded-2xl border border-brand-100 text-center">
-          <i data-lucide="clock" class="w-6 h-6 text-brand-400 mx-auto mb-1"></i>
-          <p class="font-black text-brand-700 text-sm">Elite coming soon</p>
-          <p class="text-brand-500 font-medium text-xs mt-0.5">We're finalizing payment processing.</p>
+          <p class="font-black text-brand-700 text-sm">Elite billing is unavailable.</p>
         </div>
         {% endif %}
       </div>
     </div>
 
   </div>
-  <p class="text-center text-xs text-slate-400 font-bold mt-6 uppercase tracking-widest">Secure payment via Stripe · Cancel anytime · No hidden fees</p>
+  <p class="text-center text-xs text-slate-400 font-bold mt-6 uppercase tracking-widest">
+    Secure payment via Stripe · Cancel anytime · No hidden fees ·
+    <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a> ·
+    <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
+  </p>
   {% endif %}
 
   <div class="text-center mt-10">

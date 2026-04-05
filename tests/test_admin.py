@@ -36,13 +36,13 @@ class TestAdminPanel:
 
         tier_resp = admin_client.post(
             f"/admin/users/{user.id}/set-tier",
-            data={"tier": "premium", "csrf_token": "test"},
+            data={"tier": "elite", "csrf_token": "test"},
             follow_redirects=False,
         )
         assert tier_resp.status_code == 303
 
         db.refresh(user)
-        assert user.subscription_tier == "premium"
+        assert user.subscription_tier == "elite"
         assert user.subscription_status == "active"
 
         active_resp = admin_client.post(

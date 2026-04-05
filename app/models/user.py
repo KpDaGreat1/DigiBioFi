@@ -26,6 +26,8 @@ class User(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    daily_profile_views: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_view_reset: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Stripe customer identifier (set on first checkout)
     stripe_customer_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")

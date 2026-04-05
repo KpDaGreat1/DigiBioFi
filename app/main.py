@@ -17,18 +17,17 @@ from typing import Dict, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
 from app.core.owner import apply_owner_access, is_owner_email
+from app.core.security import AUTH_COOKIE_NAME, clear_auth_cookie, clear_csrf_cookie
 from app.core.templates import templates
 from app.db.database import engine
 from app.db.schema import assert_schema_ready
-from app.routers import auth, dashboard, public, admin
-from app.routes import billing
-from app.routes import legal
+from app.routers import auth, dashboard, public, admin, billing, legal
 from app.core.dependencies import get_current_user_optional, get_db
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -136,6 +135,38 @@ async def lifespan(app: FastAPI):
     for sub in ("profile_images", "qr_codes", "resumes", "certificates", "project_thumbnails"):
         (settings.upload_path / sub).mkdir(parents=True, exist_ok=True)
 
+    if settings.free_daily_profile_view_limit < 1:
+        raise RuntimeError("FREE_DAILY_PROFILE_VIEW_LIMIT must be at least 1.")
+
+    stripe_enabled = bool(
+        settings.stripe_webhook_secret.strip()
+        or settings.stripe_price_basic.strip()
+        or settings.stripe_price_elite.strip()
+        or settings.stripe_price_premium.strip()
+    )
+    if stripe_enabled and not settings.stripe_secret_key.strip():
+        raise RuntimeError("Stripe is enabled but STRIPE_SECRET_KEY is missing.")
+
+    if app.state.environment != "testing":
+        if not settings.adsense_client_id.strip():
+            logger.warning("AdSense not configured; ad placements remain disabled.")
+        elif not any(
+            slot.strip()
+            for slot in (
+                settings.adsense_public_inline_slot,
+                settings.adsense_public_sidebar_slot,
+                settings.adsense_dashboard_slot,
+            )
+        ):
+            logger.warning("AdSense client configured without any slots; ad placements remain disabled.")
+
+        if (
+            settings.smtp_host == "smtp.example.com"
+            or not settings.smtp_user.strip()
+            or not settings.smtp_password.strip()
+        ):
+            logger.warning("Email is not fully configured; email delivery features remain disabled.")
+
     if app.state.environment != "testing":
         assert_schema_ready(engine)
         _seed_admin_user()
@@ -236,13 +267,41 @@ def _apply_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
 
+    script_src = (
+        "'self' 'unsafe-inline' https://cdn.tailwindcss.com "
+        "https://unpkg.com https://cdnjs.cloudflare.com"
+    )
+    img_src = (
+        "'self' data: blob: https://images.unsplash.com "
+        "https://img.youtube.com https://i.vimeocdn.com"
+    )
+    connect_src = "'self'"
+    frame_src = "'self'"
+
+    if settings.adsense_client_id:
+        script_src += " https://pagead2.googlesyndication.com"
+        img_src += (
+            " https://pagead2.googlesyndication.com"
+            " https://tpc.googlesyndication.com"
+            " https://googleads.g.doubleclick.net"
+        )
+        connect_src += (
+            " https://pagead2.googlesyndication.com"
+            " https://googleads.g.doubleclick.net"
+        )
+        frame_src += (
+            " https://googleads.g.doubleclick.net"
+            " https://tpc.googlesyndication.com"
+        )
+
     csp = (
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: blob: https://images.unsplash.com https://img.youtube.com https://i.vimeocdn.com; "
+        f"script-src {script_src}; "
+        f"img-src {img_src}; "
         "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
-        "connect-src 'self'; "
+        f"connect-src {connect_src}; "
+        f"frame-src {frame_src}; "
         "frame-ancestors 'none';"
     )
 
@@ -255,6 +314,44 @@ def _apply_security_headers(response):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
     return response
+
+
+def _request_expects_html(request: Request) -> bool:
+    accept = request.headers.get("accept", "")
+    return "text/html" in accept or "application/xhtml+xml" in accept
+
+
+def _response_is_html(response) -> bool:
+    content_type = response.headers.get("content-type", "")
+    return content_type.startswith("text/html")
+
+
+def _apply_no_cache_headers(response):
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+def _redirect_to_login() -> RedirectResponse:
+    response = RedirectResponse("/login", status_code=303)
+    clear_auth_cookie(response)
+    clear_csrf_cookie(response)
+    response.delete_cookie("digibiofi_session", path="/")
+    return _apply_no_cache_headers(response)
+
+
+def _safe_error_response(request: Request, status_code: int = 500):
+    if _request_expects_html(request):
+        return templates.TemplateResponse(
+            "errors/500.html",
+            {"request": request},
+            status_code=status_code,
+        )
+    return JSONResponse(
+        status_code=status_code,
+        content={"detail": "Internal server error"},
+    )
 
 # ── Rate Limiting ─────────────────────────────────────────────────────────────
 
@@ -274,6 +371,8 @@ app.state.environment = settings.app_env
 
 @app.middleware("http")
 async def security_and_rate_limit_middleware(request: Request, call_next):
+    auth_cookie_present = bool(request.cookies.get(AUTH_COOKIE_NAME))
+
     try:
         if not request.url.path.startswith("/admin"):
             limited_response = await rate_limiter(request)
@@ -282,13 +381,19 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
 
         response = await call_next(request)
     except HTTPException as exc:
-        response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        if exc.status_code == 401 and _request_expects_html(request):
+            response = _redirect_to_login()
+        else:
+            response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     except Exception:
         logger.exception("Unhandled request error")
-        response = JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error"},
-        )
+        response = _safe_error_response(request, status_code=500)
+
+    if response.status_code == 401 and _request_expects_html(request):
+        response = _redirect_to_login()
+
+    if auth_cookie_present and (_response_is_html(response) or _request_expects_html(request)):
+        _apply_no_cache_headers(response)
 
     response = _apply_security_headers(response)
 
@@ -341,7 +446,7 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(public.router)
 app.include_router(admin.router)
-app.include_router(billing.router, prefix="/billing")
+app.include_router(billing.router)
 app.include_router(legal.router)
 
 # ── Stripe Webhook ───────────────────────────────────────────────────────────
@@ -497,6 +602,8 @@ def root(request: Request, user=Depends(get_current_user_optional)):
 
 @app.exception_handler(404)
 def not_found(request: Request, exc):
+    if not _request_expects_html(request):
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
     return templates.TemplateResponse(
         "errors/404.html", {"request": request}, status_code=404
     )
@@ -505,10 +612,10 @@ def not_found(request: Request, exc):
 @app.exception_handler(500)
 async def internal_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled 500 error", exc_info=exc)
-    return HTMLResponse(content="Something went wrong. Please try again.", status_code=500)
+    return _safe_error_response(request, status_code=500)
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Global exception caught", exc_info=exc)
-    return HTMLResponse(content="Something went wrong. Please try again.", status_code=500)
+    return _safe_error_response(request, status_code=500)

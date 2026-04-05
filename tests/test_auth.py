@@ -103,11 +103,57 @@ class TestLogin:
         }, follow_redirects=False)
         assert resp.status_code == 401
 
+    def test_unauthenticated_html_request_redirects_to_login(self, client):
+        resp = client.get(
+            "/dashboard",
+            headers={"Accept": "text/html"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/login"
+
+    def test_unauthenticated_json_request_stays_401(self, client):
+        resp = client.get(
+            "/dashboard",
+            headers={"Accept": "application/json"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 401
+        assert resp.json()["detail"] == "Not authenticated"
+
+    def test_authenticated_html_response_is_not_cached(self, auth_client):
+        resp = auth_client.get("/dashboard", headers={"Accept": "text/html"})
+        assert resp.status_code == 200
+        assert resp.headers["cache-control"] == "no-store"
+        assert resp.headers["pragma"] == "no-cache"
+        assert resp.headers["expires"] == "0"
+
     def test_logout_clears_cookie(self, auth_client):
         resp = auth_client.get("/logout", follow_redirects=False)
         assert resp.status_code == 303
         # Cookie should be cleared (empty value or expired)
         assert AUTH_COOKIE_NAME not in resp.cookies or resp.cookies[AUTH_COOKIE_NAME] == ""
+        set_cookie = ", ".join(resp.headers.get_list("set-cookie"))
+        assert "digibiofi_session=" in set_cookie
+
+    def test_logout_followed_by_refresh_redirects_cleanly(self, auth_client):
+        auth_client.get("/logout", follow_redirects=False)
+        resp = auth_client.get(
+            "/dashboard",
+            headers={"Accept": "text/html"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/login"
+
+    def test_unauthenticated_admin_html_request_redirects_to_login(self, client):
+        resp = client.get(
+            "/admin",
+            headers={"Accept": "text/html"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/login"
 
 
 class TestPasswordReset:

@@ -178,10 +178,14 @@ def login_submit(
 
 @router.get("/logout")
 def logout(request: Request):
+    request.session.clear()
     response = RedirectResponse("/login", status_code=303)
     clear_auth_cookie(response)
     clear_csrf_cookie(response)
-    flash(request, "You have been logged out.", "info")
+    response.delete_cookie("digibiofi_session", path="/")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
 
 

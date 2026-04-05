@@ -1,14 +1,17 @@
 """
 Public-facing routes — profile page, QR download, PDF download, analytics tracking.
 """
+import logging
+from threading import Lock
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, Response, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, Response, FileResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 
 from app.core.config import settings
-from app.core.templates import templates
+from app.core.permissions import can_access_portfolio, can_view_profile, should_show_ads
+from app.core.templates import templates, flash
 from app.core.dependencies import get_db, get_current_user_optional
 from app.services import profile_service, qr_service, analytics_service
 from app.services.storage import storage
@@ -16,6 +19,10 @@ from app.schemas.analytics import TrackEventRequest
 from app.utils.validators import hash_visitor
 
 router = APIRouter(tags=["public"])
+logger = logging.getLogger(__name__)
+_ANONYMOUS_DAILY_PROFILE_VIEW_LIMIT = 100
+_anonymous_profile_views: dict[str, tuple[date, int]] = {}
+_anonymous_profile_views_lock = Lock()
 
 
 def _get_client_ip(request: Request) -> str:
@@ -40,23 +47,93 @@ def _record_view_protected(profile, source, ip, ua, db, user, qr_id=None):
         return  # Don't count owner's own views
 
     from app.models.profile import ProfileView
-    visitor_hash = hash_visitor(ip, ua)
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    already_viewed = db.query(ProfileView).filter(
-        ProfileView.profile_id == profile.id,
-        ProfileView.visitor_hash == visitor_hash,
-        ProfileView.created_at >= cutoff,
-    ).first()
-    if not already_viewed:
-        pv = ProfileView(profile_id=profile.id, visitor_hash=visitor_hash)
+    now = datetime.now(timezone.utc)
+    visitor_hash = hash_visitor(ip or "unknown", ua or "")
+    cutoff = now - timedelta(hours=24)
+    rapid_cutoff = now - timedelta(seconds=60)
+
+    try:
+        if ip:
+            recent_same_ip = db.query(ProfileView).filter(
+                ProfileView.profile_id == profile.id,
+                ProfileView.viewer_ip == ip,
+                ProfileView.created_at >= rapid_cutoff,
+            ).first()
+            if recent_same_ip:
+                return
+
+        already_viewed = db.query(ProfileView).filter(
+            ProfileView.profile_id == profile.id,
+            ProfileView.visitor_hash == visitor_hash,
+            ProfileView.created_at >= cutoff,
+        ).first()
+        if already_viewed:
+            return
+
+        pv = ProfileView(
+            profile_id=profile.id,
+            viewer_ip=(ip or "")[:64],
+            user_agent=(ua or "")[:500],
+            visitor_hash=visitor_hash,
+        )
         db.add(pv)
         db.commit()
-        analytics_service.record_page_view(profile, source, ip, ua, db, qr_id=qr_id)
+    except Exception:
+        db.rollback()
+        logger.exception("Profile view logging failed for slug=%s", profile.slug)
+        return
+
+    try:
+        analytics_service.record_page_view(profile, source, ip or "unknown", ua or "", db, qr_id=qr_id)
+    except Exception:
+        logger.exception("Analytics page_view record failed for slug=%s", profile.slug)
 
 
 def _ensure_profile_access(profile, user) -> None:
     if not profile.is_public and (not user or user.id != profile.user_id):
         raise HTTPException(status_code=404, detail="Profile not found")
+
+
+def _same_calendar_day(value: datetime | None, now: datetime) -> bool:
+    if value is None:
+        return False
+    if value.tzinfo is None:
+        return value.date() == now.date()
+    return value.astimezone(timezone.utc).date() == now.date()
+
+
+def _current_daily_view_count(user, now: datetime) -> int:
+    current_count = int(getattr(user, "daily_profile_views", 0) or 0)
+    if not _same_calendar_day(getattr(user, "last_view_reset", None), now):
+        user.daily_profile_views = 0
+        user.last_view_reset = now
+        current_count = 0
+    return current_count
+
+
+def _consume_daily_profile_view(user, db: Session, now: datetime) -> bool:
+    current_count = _current_daily_view_count(user, now)
+    if not can_view_profile(user, current_count):
+        return False
+    user.daily_profile_views = current_count + 1
+    user.last_view_reset = now
+    db.commit()
+    return True
+
+
+def _allow_anonymous_profile_view(ip: str, now: datetime) -> bool:
+    key = (ip or "unknown")[:64]
+    today = now.date()
+
+    with _anonymous_profile_views_lock:
+        day, count = _anonymous_profile_views.get(key, (today, 0))
+        if day != today:
+            count = 0
+        if count >= _ANONYMOUS_DAILY_PROFILE_VIEW_LIMIT:
+            _anonymous_profile_views[key] = (today, count)
+            return False
+        _anonymous_profile_views[key] = (today, count + 1)
+    return True
 
 
 # ── Public profile page ───────────────────────────────────────────────────────
@@ -75,14 +152,42 @@ def public_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
 
     _ensure_profile_access(profile, user)
+    now = datetime.now(timezone.utc)
+    ip = _get_client_ip(request)
+    ua = request.headers.get("user-agent", "")
+
+    if user is None and not _allow_anonymous_profile_view(ip, now):
+        logger.warning("Anonymous public profile throttle exceeded slug=%s viewer_ip=%s", slug, ip)
+        return templates.TemplateResponse(
+            "errors/429.html",
+            {"request": request},
+            status_code=429,
+        )
+
+    if user and user.id != profile.user_id:
+        if not _consume_daily_profile_view(user, db, now):
+            flash(
+                request,
+                "Free accounts have a daily public profile view limit. Upgrade for unlimited access.",
+                "info",
+            )
+            return RedirectResponse("/dashboard/upgrade", status_code=303)
 
     # Normalise source value
     source = src if src in ("qr", "referral") else "direct"
 
     # Record server-side page view with deduplication (1 view per IP/device per 24h)
-    ip = _get_client_ip(request)
-    ua = request.headers.get("user-agent", "")
+    logger.info(
+        "Public profile view slug=%s viewer_ip=%s user_agent=%s",
+        slug,
+        ip,
+        ua,
+    )
     _record_view_protected(profile, source, ip, ua, db, user, qr_id)
+    adsense_client_id = settings.adsense_client_id.strip()
+    public_inline_ad_slot = settings.adsense_public_inline_slot.strip()
+    public_sidebar_ad_slot = settings.adsense_public_sidebar_slot.strip()
+    show_ads = should_show_ads(profile.user)
 
     return templates.TemplateResponse(
         "public/profile.html",
@@ -91,6 +196,12 @@ def public_profile(
             "profile": profile,
             "base_url": settings.base_url,
             "user": user,
+            "show_public_inline_ad": show_ads and bool(adsense_client_id and public_inline_ad_slot),
+            "show_public_sidebar_ad": show_ads and bool(adsense_client_id and public_sidebar_ad_slot),
+            "show_public_portfolio": can_access_portfolio(profile.user),
+            "adsense_client_id": adsense_client_id,
+            "public_inline_ad_slot": public_inline_ad_slot,
+            "public_sidebar_ad_slot": public_sidebar_ad_slot,
         },
     )
 
@@ -112,7 +223,10 @@ def track_event(
 
     ip = _get_client_ip(request)
     ua = request.headers.get("user-agent", "")
-    analytics_service.record_event(profile, event, ip, ua, db)
+    try:
+        analytics_service.record_event(profile, event, ip, ua, db)
+    except Exception:
+        logger.exception("Analytics event logging failed for slug=%s", slug)
     return JSONResponse({"ok": True})
 
 
@@ -160,11 +274,14 @@ def download_resume(slug: str, request: Request, db: Session = Depends(get_db), 
     # Record analytics event
     ip = _get_client_ip(request)
     ua = request.headers.get("user-agent", "")
-    analytics_service.record_event(
-        profile,
-        TrackEventRequest(event_type="pdf_download", source="direct"),
-        ip, ua, db,
-    )
+    try:
+        analytics_service.record_event(
+            profile,
+            TrackEventRequest(event_type="pdf_download", source="direct"),
+            ip, ua, db,
+        )
+    except Exception:
+        logger.exception("Resume download analytics failed for slug=%s", slug)
 
     return FileResponse(
         path=str(pdf_path),

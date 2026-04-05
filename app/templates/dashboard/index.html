@@ -1,5 +1,12 @@
 {% extends "layouts/dashboard.html" %}
 
+{% block head %}
+  {{ super() }}
+  {% if show_dashboard_ad %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ dashboard_ad_client_id }}" crossorigin="anonymous"></script>
+  {% endif %}
+{% endblock %}
+
 {% block page_title %}Overview{% endblock %}
 
 {% block dashboard_content %}
@@ -21,6 +28,39 @@
          <i data-lucide="qr-code" class="w-5 h-5"></i>
          Share Identity
        </a>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-[2rem] border border-slate-200 shadow-premium p-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div>
+        <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-3">Current Plan</p>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">{{ current_plan_label }}</h2>
+        <p class="text-sm font-medium text-slate-500 mt-2">
+          {% if current_plan_label == "Admin" %}
+          Full platform access is enabled for this admin account.
+          {% elif current_plan_label == "Elite" %}
+          Portfolio access, no ads, and elite analytics are active.
+          {% elif current_plan_label == "Basic" %}
+          Portfolio access and ad-free browsing are active.
+          {% else %}
+          Upgrade to unlock portfolio access and unlimited profile views.
+          {% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        {% if show_upgrade_callout %}
+        <a href="/dashboard/upgrade" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-brand-500/20 hover:-translate-y-0.5">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          Upgrade Plan
+        </a>
+        {% elif show_manage_subscription %}
+        <a href="/billing/portal" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-slate-900/15 hover:-translate-y-0.5">
+          <i data-lucide="credit-card" class="w-4 h-4"></i>
+          Manage Subscription
+        </a>
+        {% endif %}
+      </div>
     </div>
   </section>
 
@@ -55,6 +95,7 @@
   </div>
   {% endif %}
 
+  {% if show_dashboard_analytics %}
   <!-- Stats Grid -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     {% set stat_items = [
@@ -73,6 +114,38 @@
     </div>
     {% endfor %}
   </div>
+
+  <section class="bg-white rounded-[2rem] border border-slate-200 shadow-premium p-8 space-y-6">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-black text-slate-900">Recent Visits</h2>
+        <p class="text-sm font-medium text-slate-500">Local profile view activity for elite analytics.</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-black text-slate-400 uppercase tracking-[0.16em]">Total Views</p>
+        <p class="text-2xl font-black text-slate-900">{{ analytics_overview.total_views if analytics_overview else 0 }}</p>
+      </div>
+    </div>
+    <div class="text-sm font-medium text-slate-500">
+      Unique visitors: <span class="font-black text-slate-900">{{ analytics_overview.unique_visitors if analytics_overview else 0 }}</span>
+    </div>
+    {% if analytics_overview and analytics_overview.recent_visits %}
+    <div class="space-y-3">
+      {% for visit in analytics_overview.recent_visits %}
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+        <div>
+          <p class="text-sm font-black text-slate-900">{{ visit.viewer_ip or "Unknown IP" }}</p>
+          <p class="text-xs text-slate-500 break-all">{{ visit.user_agent or "Unknown device" }}</p>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.16em]">{{ visit.timestamp.strftime("%Y-%m-%d %H:%M") }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm font-medium text-slate-400">No recent visits recorded yet.</p>
+    {% endif %}
+  </section>
+  {% endif %}
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Manage Content -->
@@ -140,6 +213,15 @@
            </button>
         </div>
       </div>
+
+      {% if show_dashboard_ad %}
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-premium">
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-left">Sponsored</p>
+        {% with adsense_client_id=dashboard_ad_client_id, adsense_slot=dashboard_ad_slot, ad_label="Dashboard sponsorship" %}
+          {% include "partials/adsense_ad.html" %}
+        {% endwith %}
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

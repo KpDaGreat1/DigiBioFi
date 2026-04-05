@@ -12,6 +12,9 @@
 {% if profile.profile_image %}
 <meta property="og:image" content="{{ base_url }}{{ profile.profile_image }}" />
 {% endif %}
+{% if show_public_inline_ad or show_public_sidebar_ad %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
+{% endif %}
 {% endblock %}
 
 {% block profile_content %}
@@ -150,6 +153,15 @@
         </section>
         {% endif %}
 
+        {% if show_public_inline_ad %}
+        <section class="section-card">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Sponsored</p>
+          {% with adsense_client_id=adsense_client_id, adsense_slot=public_inline_ad_slot, ad_label="Profile sponsorship" %}
+            {% include "partials/adsense_ad.html" %}
+          {% endwith %}
+        </section>
+        {% endif %}
+
         <!-- Experience Timeline -->
         {% if profile.experiences %}
         <section class="section-card">
@@ -195,7 +207,7 @@
         {% endif %}
 
         <!-- Projects Grid -->
-        {% if profile.projects %}
+        {% if show_public_portfolio and profile.projects %}
         <section class="section-card">
           <div class="flex items-center gap-3 mb-10">
             <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-sm">
@@ -327,6 +339,15 @@
         </section>
         {% endif %}
 
+        {% if show_public_sidebar_ad %}
+        <section class="section-card">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Sponsored</p>
+          {% with adsense_client_id=adsense_client_id, adsense_slot=public_sidebar_ad_slot, ad_label="Sidebar sponsorship" %}
+            {% include "partials/adsense_ad.html" %}
+          {% endwith %}
+        </section>
+        {% endif %}
+
         <!-- Verified Branding -->
         <div class="text-center py-10">
           <div class="bg-white border border-slate-200/60 rounded-[2rem] p-8 shadow-sm">
@@ -336,7 +357,7 @@
             </div>
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Signature Identity Platform</p>
             <a href="/register" class="block w-full bg-slate-50 hover:bg-brand-50 text-brand-700 text-xs font-black py-3 rounded-xl border border-slate-100 hover:border-brand-200 transition-all">
-              Verify your identity
+              Create your own profile
             </a>
           </div>
         </div>
@@ -357,9 +378,9 @@
            {% endif %}
            <div class="min-w-0">
               <p class="text-sm font-black text-slate-900 truncate">{{ profile.full_name or profile.slug }}</p>
-            {% if user.is_verified %}
+            {% if profile.user.is_verified %}
               <p class="text-[10px] font-black text-brand-600 uppercase tracking-widest">Verified Pro</p>
-	    {% endif %}
+            {% endif %}
            </div>
         </div>
         <div class="flex gap-2">
