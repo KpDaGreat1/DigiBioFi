@@ -440,6 +440,17 @@ for subdir in ("profile_images", "project_thumbnails", "certificates"):
     )
 app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
 
+
+# ── Robots.txt ───────────────────────────────────────
+
+from fastapi.responses import FileResponse
+
+@app.get("/robots.txt")
+def robots():
+    return FileResponse("app/static/robots.txt")
+
+
+
 # ── Routers ───────────────────────────────────────────────────────────────────
 
 app.include_router(auth.router)
