@@ -91,6 +91,33 @@ def sanitize_text(value: str) -> str:
     return cleaned
 
 
+def sanitize_article_html(value: str) -> str:
+    """
+    Sanitize admin-authored article HTML before it is stored or rendered publicly.
+    Allows basic editorial formatting while stripping active content.
+    """
+    import re
+    import bleach
+
+    cleaned = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", "", value or "")
+    cleaned = re.sub(r"(?is)<iframe[^>]*>.*?</iframe>", "", cleaned)
+
+    allowed_tags = [
+        "p", "br", "ul", "ol", "li",
+        "a", "strong", "em", "b", "i",
+        "blockquote", "code", "pre", "hr",
+        "h2", "h3", "h4",
+    ]
+    allowed_attrs = {"a": ["href", "rel", "target"]}
+    return bleach.clean(
+        cleaned,
+        tags=allowed_tags,
+        attributes=allowed_attrs,
+        protocols=["http", "https", "mailto"],
+        strip=True,
+    )
+
+
 def normalize_external_url(value: str) -> str:
     value = value.strip()
     if not value:
@@ -101,6 +128,16 @@ def normalize_external_url(value: str) -> str:
         raise ValueError("URL must start with http:// or https://")
 
     return value
+
+
+def normalize_optional_external_url(value: str | None) -> str | None:
+    if not value:
+        return None
+
+    try:
+        return normalize_external_url(value)
+    except ValueError:
+        return None
 
 
 _BLOCKED_WORDS: set[str] = {

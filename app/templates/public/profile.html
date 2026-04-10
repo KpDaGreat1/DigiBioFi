@@ -1,6 +1,6 @@
 {% extends "layouts/public_profile.html" %}
 
-{% block title %}{{ profile.full_name or profile.slug }} | DigiBioFi Identity{% endblock %}
+{% block title %}{{ profile.full_name or profile.slug }} | DigiBioFi Profile{% endblock %}
 
 {% block profile_head %}
 <!-- SEO / Open Graph -->
@@ -12,230 +12,197 @@
 {% if profile.profile_image %}
 <meta property="og:image" content="{{ base_url }}{{ profile.profile_image }}" />
 {% endif %}
+{% if is_example_profile %}
+<meta name="robots" content="noindex,follow" />
+{% endif %}
 {% if show_public_inline_ad or show_public_sidebar_ad %}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
 {% endif %}
 {% endblock %}
 
 {% block profile_content %}
-<div class="relative overflow-hidden">
-  <!-- Signature Header / Cover Area -->
-  <div class="h-80 md:h-[450px] bg-gradient-to-br from-slate-950 via-brand-950 to-slate-950 relative overflow-hidden">
-    <!-- Animated background layers -->
-    <div class="absolute inset-0">
-      <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.15)_0%,transparent_70%)]"></div>
-      <div class="absolute -top-48 -left-48 w-[600px] h-[600px] bg-brand-600 rounded-full blur-[160px] opacity-20 animate-pulse-slow"></div>
-      <div class="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[160px] opacity-20 animate-pulse-slow"></div>
-    </div>
-    
-    <!-- Hero Text Overlay (Subtle) -->
-    <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-      <span class="text-[20vw] font-black uppercase tracking-tighter select-none">{{ (profile.full_name or profile.slug).split(' ')[0] }}</span>
-    </div>
+<div class="relative pt-12 pb-32">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-col lg:grid lg:grid-cols-12 gap-12 items-start">
 
-    <!-- Avatar Glow -->
-    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-80 h-80 bg-brand-500/30 rounded-full blur-[100px] animate-pulse-slow"></div>
-  </div>
+      <!-- Left Sidebar: Identity Card -->
+      <aside class="lg:col-span-4 w-full lg:sticky lg:top-32">
+        <div class="premium-panel p-8 md:p-10 text-center">
+          <!-- Avatar with Glow -->
+          <div class="relative inline-block mb-8 group">
+            <div class="absolute -inset-4 bg-gradient-to-tr from-brand-blue to-brand-purple rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700"></div>
+            {% if profile.profile_image %}
+            <img src="{{ profile.profile_image }}" alt="{{ profile.full_name }}"
+                 class="relative w-48 h-48 md:w-56 md:h-56 rounded-[2rem] object-cover border-4 border-white/10 shadow-premium transition-transform duration-700 group-hover:scale-[1.02]" />
+            {% else %}
+            <div class="relative w-48 h-48 md:w-56 md:h-56 rounded-[2rem] bg-slate-800 flex items-center justify-center border-4 border-white/10 shadow-premium">
+               <span class="text-7xl font-bold text-slate-700">{{ (profile.full_name or profile.slug)[0].upper() }}</span>
+            </div>
+            {% endif %}
 
-  <div class="max-w-6xl mx-auto px-6 -mt-48 md:-mt-56 relative z-10">
-    <!-- Profile Header Card -->
-    <div class="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] p-10 md:p-16 shadow-2xl shadow-slate-950/20 border border-white/50 mb-16 group/header transition-all hover:shadow-brand-500/10">
-      <div class="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-20">
-        <!-- Profile Image with Interactive Glow -->
-        <div class="relative group/avatar">
-          <div class="absolute -inset-4 bg-gradient-to-tr from-brand-500 to-indigo-600 rounded-[3rem] blur-2xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-700"></div>
-          {% if profile.profile_image %}
-          <img src="{{ profile.profile_image }}" alt="{{ profile.full_name }}"
-               class="relative w-56 h-56 lg:w-72 lg:h-72 rounded-[2.8rem] object-cover border-8 border-white shadow-2xl transition-transform duration-700 group-hover/avatar:scale-[1.02]" />
-          {% else %}
-          <div class="relative w-56 h-56 lg:w-72 lg:h-72 rounded-[2.8rem] bg-slate-50 flex items-center justify-center border-8 border-white shadow-2xl">
-             <span class="text-8xl font-black text-slate-200">{{ (profile.full_name or profile.slug)[0].upper() }}</span>
+            {% if profile.user.is_verified %}
+            <div class="absolute -bottom-2 -right-2 bg-brand-blue p-2 rounded-xl shadow-glow">
+              <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Name & Headline -->
+          <h1 class="text-3xl font-bold text-white mb-3 tracking-tight">{{ profile.full_name or profile.slug }}</h1>
+          {% if profile.headline %}
+          <p class="text-brand-blue font-bold text-sm uppercase tracking-widest mb-8 leading-relaxed">{{ profile.headline }}</p>
+          {% endif %}
+          {% if is_example_profile %}
+          <div class="mb-8 rounded-2xl border border-brand-blue/20 bg-brand-blue/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">
+            Example Profile
           </div>
           {% endif %}
-          
-            <!-- Identity Badge -->
-          <div class="absolute -bottom-4 -right-4 flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white shadow-slate-900/30 text-xs font-black rounded-full transition-transform hover:scale-110">
-            <i data-lucide="layers" class="w-4 h-4 text-brand-400"></i>
-            DigiBioFi Identity
-          </div>
-        </div>
 
-        <!-- Basic Info -->
-        <div class="flex-1 text-center lg:text-left pt-6">
-          <div class="space-y-6 mb-12">
-            <div>
-              <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 mb-4 tracking-tighter leading-none">
-                {{ profile.full_name or profile.slug }}
-              </h1>
-              {% if profile.headline %}
-              <p class="text-2xl md:text-3xl text-brand-600 font-bold tracking-tight max-w-2xl">{{ profile.headline }}</p>
-              {% endif %}
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
+              <div class="text-xl font-bold text-white">{{ profile.experiences|length }}</div>
+              <div class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Experience</div>
             </div>
-            
-            <div class="flex flex-wrap justify-center lg:justify-start gap-4">
-              {% if profile.email %}
-              <a href="mailto:{{ profile.email }}" class="group bg-slate-900 hover:bg-slate-800 text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-3 transition-all hover:-translate-y-1.5 shadow-2xl shadow-slate-950/20 text-base">
-                <i data-lucide="mail" class="w-5 h-5"></i>
-                Connect Now
-              </a>
-              {% endif %}
-              
-              {% if profile.resume_pdf %}
-              <a href="/resume/download/{{ profile.slug }}" class="group bg-white hover:bg-slate-50 text-slate-900 px-10 py-5 rounded-[2rem] font-black flex items-center gap-3 transition-all hover:-translate-y-1.5 border border-slate-200 shadow-xl shadow-slate-200/50 text-base" onclick="trackLink('resume')">
-                <i data-lucide="file-text" class="w-5 h-5 text-brand-600"></i>
-                Download Resume
-              </a>
-              {% endif %}
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
+              <div class="text-xl font-bold text-white">{{ profile.skills|length }}</div>
+              <div class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Skills</div>
             </div>
           </div>
-          
-            <div class="flex flex-wrap justify-center lg:justify-start items-center gap-8 text-slate-400 font-black text-xs uppercase tracking-[0.25em]">
-            {% if profile.recruiter_visibility %}
-            <span class="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 shadow-sm animate-pulse-slow">
-              <i data-lucide="zap" class="w-4 h-4 fill-emerald-500"></i>
-              Hire Me
-            </span>
-            {% endif %}
-            {% if profile.freelance_availability %}
-            <span class="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-600 rounded-full border border-brand-100 shadow-sm">
-              <i data-lucide="briefcase" class="w-4 h-4 fill-brand-500"></i>
-              Freelance Available
-            </span>
-            {% endif %}
-            {% if profile.location %}
-            <span class="flex items-center gap-2.5">
-              <i data-lucide="map-pin" class="w-4.5 h-4.5 text-brand-500"></i>
-              {{ profile.location }}
-            </span>
-            {% endif %}
-            {% if profile.website %}
-            <a href="{{ profile.website }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2.5 hover:text-brand-600 transition-colors group/site">
-              <i data-lucide="globe" class="w-4.5 h-4.5 text-brand-500 group-hover/site:rotate-12 transition-transform"></i>
-              Website
+
+          <!-- QR Identity -->
+          <div class="p-6 rounded-3xl bg-white/[0.02] border border-white/5 mb-8">
+            <div class="bg-white p-4 rounded-2xl mb-4 flex items-center justify-center aspect-square mx-auto max-w-[160px]">
+              <!-- We'll assume the QR code image is generated by the backend and passed/available -->
+              <img src="/api/qr/{{ profile.slug }}" alt="Profile QR code" class="w-full h-full" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23eee%22/><text x=%2250%22 y=%2250%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2212%22>QR</text></svg>'">
+            </div>
+            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Scan to open profile</p>
+          </div>
+
+          <!-- Actions -->
+          <div class="space-y-4">
+            {% if profile.email %}
+            <a href="mailto:{{ profile.email }}" class="btn-primary w-full flex items-center justify-center gap-3 py-4">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+              Email
             </a>
             {% endif %}
-            <div class="flex gap-6 lg:ml-auto">
-              {% for name, icon, label in [('github', 'github', 'GitHub'), ('twitter', 'twitter', 'X (Twitter)'), ('telegram', 'send', 'Telegram')] %}
+            <div class="flex gap-4">
+              {% for name, icon in [('github', 'github'), ('twitter', 'twitter'), ('website', 'globe')] %}
                 {% set url = profile | attr(name) %}
                 {% if url %}
-                <a href="{{ url }}" target="_blank" rel="noopener noreferrer" title="{{ label }}" class="hover:text-brand-600 transition-all hover:scale-125" onclick="trackLink('{{ name }}')">
-                  <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
+                <a href="{{ url }}" target="_blank" class="flex-1 py-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                  <i data-lucide="{{ icon }}" class="w-5 h-5"></i>
                 </a>
                 {% endif %}
               {% endfor %}
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Content Sections -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-      
-      <!-- Main Column -->
-      <div class="lg:col-span-2 space-y-10">
-        
-        <!-- About -->
-        {% if profile.bio %}
-        <section class="section-card relative overflow-hidden group">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-brand-50 transition-colors"></div>
-          <div class="relative z-10">
-            <div class="flex items-center gap-3 mb-8">
-              <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
-                <i data-lucide="user-check" class="w-6 h-6"></i>
-              </div>
-              <h2 class="text-3xl font-black text-slate-900 tracking-tight">Executive Summary</h2>
-            </div>
-            <div class="prose prose-slate max-w-none text-slate-600 text-lg font-medium leading-relaxed whitespace-pre-line">
-              {{ profile.bio | safe }}
-            </div>
-          </div>
-        </section>
-        {% endif %}
-
-        {% if show_public_inline_ad %}
-        <section class="section-card">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Sponsored</p>
-          {% with adsense_client_id=adsense_client_id, adsense_slot=public_inline_ad_slot, ad_label="Profile sponsorship" %}
+        {% if show_public_sidebar_ad %}
+        <div class="premium-panel p-8 mt-6 text-center border-dashed">
+          <span class="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em] mb-4 block">Sponsored</span>
+          {% with adsense_client_id=adsense_client_id, adsense_slot=public_sidebar_ad_slot, ad_label="Sponsored" %}
             {% include "partials/adsense_ad.html" %}
           {% endwith %}
+        </div>
+        {% endif %}
+      </aside>
+
+      <!-- Right Column: Structured Data -->
+      <div class="lg:col-span-8 w-full space-y-12">
+
+        <!-- About -->
+        {% if profile.bio %}
+        <section class="reveal">
+          <div class="flex items-center gap-4 mb-8">
+             <div class="w-10 h-10 bg-brand-blue/10 rounded-xl flex items-center justify-center">
+               <i data-lucide="user" class="w-5 h-5 text-brand-blue"></i>
+             </div>
+             <h2 class="text-2xl font-bold text-white tracking-tight">About</h2>
+          </div>
+          <div class="premium-panel p-8 md:p-12 text-slate-400 font-medium text-lg leading-relaxed whitespace-pre-line">
+            {{ safe_profile_bio | safe }}
+          </div>
+          {% if is_example_profile %}
+          <p class="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">This sample profile is included to show how public DigiBioFi profiles can be structured.</p>
+          {% endif %}
         </section>
         {% endif %}
 
-        <!-- Experience Timeline -->
-        {% if profile.experiences %}
-        <section class="section-card">
-          <div class="flex items-center gap-3 mb-10">
-            <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
-              <i data-lucide="briefcase" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Professional History</h2>
+        <!-- Skills -->
+        {% if profile.skills %}
+        <section class="reveal reveal-delay-1">
+          <div class="flex items-center gap-4 mb-8">
+             <div class="w-10 h-10 bg-brand-purple/10 rounded-xl flex items-center justify-center">
+               <i data-lucide="cpu" class="w-5 h-5 text-brand-purple"></i>
+             </div>
+             <h2 class="text-2xl font-bold text-white tracking-tight">Skills</h2>
           </div>
-          
-          <div class="space-y-12">
-            {% for exp in profile.experiences | sort(attribute='display_order') %}
-            <div class="experience-item relative pl-10">
-              <!-- Timeline Line -->
-              <div class="timeline-line absolute left-[15px] top-10 bottom-[-48px] w-0.5 bg-slate-100 group-hover:bg-brand-100 transition-colors"></div>
-              <!-- Timeline Marker -->
-              <div class="absolute left-0 top-2 w-8 h-8 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center shadow-sm z-10 transition-colors group-hover:border-brand-500">
-                <div class="w-2 h-2 rounded-full bg-slate-300 group-hover:bg-brand-500"></div>
-              </div>
-              
-              <div class="group">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
-                  <h3 class="text-2xl font-black text-slate-900 leading-tight group-hover:text-brand-600 transition-colors">{{ exp.title }}</h3>
-                  <span class="px-4 py-1.5 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                    {{ exp.start_date }} — {{ exp.end_date or 'Present' }}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 text-brand-600 font-black text-sm uppercase tracking-wider mb-4">
-                  {{ exp.company }}
-                  {% if exp.location %}
-                  <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                  <span class="text-slate-400">{{ exp.location }}</span>
-                  {% endif %}
-                </div>
-                {% if exp.description %}
-                <p class="text-slate-500 font-medium leading-relaxed text-lg">{{ exp.description }}</p>
-                {% endif %}
-              </div>
+          <div class="flex flex-wrap gap-3">
+            {% for skill in profile.skills | sort(attribute='display_order') %}
+            <div class="px-6 py-3 bg-white/5 border border-white/5 rounded-xl text-slate-300 font-bold text-sm hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all">
+              {{ skill.name }}
             </div>
             {% endfor %}
           </div>
         </section>
         {% endif %}
 
-        <!-- Projects Grid -->
+        <!-- Projects -->
         {% if show_public_portfolio and profile.projects %}
-        <section class="section-card">
-          <div class="flex items-center gap-3 mb-10">
-            <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-sm">
-              <i data-lucide="layers" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Signature Projects</h2>
+        <section class="reveal reveal-delay-2">
+          <div class="flex items-center gap-4 mb-8">
+             <div class="w-10 h-10 bg-brand-green/10 rounded-xl flex items-center justify-center">
+               <i data-lucide="layers" class="w-5 h-5 text-brand-green"></i>
+             </div>
+             <h2 class="text-2xl font-bold text-white tracking-tight">Projects</h2>
           </div>
-          
-          <div class="grid md:grid-cols-2 gap-8">
+          <div class="grid md:grid-cols-2 gap-6">
             {% for proj in profile.projects | sort(attribute='display_order') %}
-            <div class="group/project bg-slate-50 rounded-[2rem] p-8 border border-slate-100 hover:border-brand-200 hover:bg-white transition-all hover:shadow-2xl hover:shadow-brand-500/5 flex flex-col h-full">
-              <div class="flex justify-between items-start mb-6">
-                <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-slate-400 group-hover/project:text-brand-600 transition-colors">
-                  <i data-lucide="code" class="w-6 h-6"></i>
+            <div class="premium-card p-8 group">
+              <div class="flex justify-between mb-6">
+                <div class="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center group-hover:bg-brand-green/20 transition-colors">
+                  <i data-lucide="file-code" class="w-6 h-6 text-brand-green"></i>
                 </div>
                 {% if proj.url %}
-                <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-brand-600 transition-colors">
-                  <i data-lucide="external-link" class="w-6 h-6"></i>
+                <a href="{{ proj.url }}" target="_blank" class="text-slate-600 hover:text-white transition-colors">
+                  <i data-lucide="external-link" class="w-5 h-5"></i>
                 </a>
                 {% endif %}
               </div>
-              <h3 class="text-xl font-black text-slate-900 mb-3">{{ proj.name }}</h3>
-              <p class="text-slate-500 font-medium text-sm leading-relaxed mb-6 flex-1">{{ proj.description }}</p>
-              {% if proj.url %}
-              <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer" class="text-xs font-black text-brand-600 uppercase tracking-widest flex items-center gap-2 group/link">
-                Review Artifact
-                <i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
-              </a>
+              <h3 class="text-xl font-bold text-white mb-3 tracking-tight">{{ proj.name }}</h3>
+              <p class="text-slate-500 text-sm font-medium leading-relaxed">{{ proj.description }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        <!-- Experience -->
+        {% if profile.experiences %}
+        <section class="reveal reveal-delay-3">
+          <div class="flex items-center gap-4 mb-8">
+             <div class="w-10 h-10 bg-brand-gold/10 rounded-xl flex items-center justify-center">
+               <i data-lucide="briefcase" class="w-5 h-5 text-brand-gold"></i>
+             </div>
+             <h2 class="text-2xl font-bold text-white tracking-tight">Professional History</h2>
+          </div>
+          <div class="space-y-6">
+            {% for exp in profile.experiences | sort(attribute='display_order') %}
+            <div class="premium-panel p-8 relative group">
+              <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                <div>
+                  <h3 class="text-xl font-bold text-white tracking-tight group-hover:text-brand-blue transition-colors">{{ exp.title }}</h3>
+                  <p class="text-brand-blue font-bold text-xs uppercase tracking-widest mt-1">{{ exp.company }}</p>
+                </div>
+                <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full h-fit border border-white/5">
+                  {{ exp.start_date }} — {{ exp.end_date or 'Present' }}
+                </div>
+              </div>
+              {% if exp.description %}
+              <p class="text-slate-400 text-sm leading-relaxed font-medium">{{ exp.description }}</p>
               {% endif %}
             </div>
             {% endfor %}
@@ -243,169 +210,17 @@
         </section>
         {% endif %}
 
-        <!-- Empty State (Owner Only) -->
-        {% if user and user.id == profile.user_id and not profile.bio and not profile.experiences and not profile.projects %}
-        <section class="section-card border-dashed border-2 border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-20 h-20 bg-white rounded-[2rem] shadow-xl flex items-center justify-center mb-6 text-slate-300">
-                <i data-lucide="layout" class="w-10 h-10"></i>
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 mb-2">Your Profile is Empty</h3>
-            <p class="text-slate-500 font-medium max-w-sm mb-8">Add your experiences, projects, and bio to showcase your professional identity.</p>
-            <a href="/dashboard" class="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-brand-500/20 hover:-translate-y-1">
-                Go to Dashboard
-            </a>
-        </section>
-        {% endif %}
-      </div>
-
-      <!-- Sidebar -->
-      <div class="space-y-10">
-        <!-- Skills -->
-        {% if profile.skills %}
-        <section class="section-card">
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 shadow-sm">
-              <i data-lucide="cpu" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Core Stack</h2>
-          </div>
-          
-          <div class="flex flex-wrap gap-2.5">
-            {% for skill in profile.skills | sort(attribute='display_order') %}
-            <span class="px-5 py-2.5 bg-slate-50 border border-slate-100 text-slate-700 rounded-2xl text-sm font-black hover:bg-brand-600 hover:text-white hover:border-brand-600 transition-all cursor-default">
-              {{ skill.name }}
-            </span>
-            {% endfor %}
-          </div>
-        </section>
-        {% endif %}
-
-        <!-- Education -->
-        {% if profile.educations %}
-        <section class="section-card">
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-12 h-12 bg-violet-50 rounded-2xl flex items-center justify-center text-violet-600 shadow-sm">
-              <i data-lucide="graduation-cap" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Education</h2>
-          </div>
-          
-          <div class="space-y-8">
-            {% for edu in profile.educations | sort(attribute='display_order') %}
-            <div class="relative pl-6 border-l-2 border-slate-100">
-              <h3 class="text-lg font-black text-slate-900 mb-1 leading-tight">{{ edu.degree }}</h3>
-              <p class="text-brand-600 font-bold text-sm mb-2">{{ edu.school }}</p>
-              <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">{{ edu.start_date }} — {{ edu.end_date }}</p>
-            </div>
-            {% endfor %}
-          </div>
-        </section>
-        {% endif %}
-
-        <!-- Achievements -->
-        {% if profile.awards or profile.certifications %}
-        <section class="section-card">
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shadow-sm">
-              <i data-lucide="award" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Honors</h2>
-          </div>
-          
-          <div class="space-y-6">
-            {% for award in profile.awards | sort(attribute='display_order') %}
-            <div class="flex gap-4 group/award">
-              <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0 group-hover/award:bg-amber-100 transition-colors">
-                <i data-lucide="trophy" class="w-5 h-5 text-amber-600"></i>
-              </div>
-              <div>
-                <p class="font-black text-slate-900 leading-tight">{{ award.title }}</p>
-                <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">{{ award.issuer }} · {{ award.date }}</p>
-              </div>
-            </div>
-            {% endfor %}
-            {% for cert in profile.certifications | sort(attribute='display_order') %}
-            <div class="flex gap-4 group/cert">
-              <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0 group-hover/cert:bg-emerald-100 transition-colors">
-                <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
-              </div>
-              <div>
-                <p class="font-black text-slate-900 leading-tight">{{ cert.name }}</p>
-                <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">{{ cert.issuer }} · {{ cert.date }}</p>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </section>
-        {% endif %}
-
-        {% if show_public_sidebar_ad %}
-        <section class="section-card">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Sponsored</p>
-          {% with adsense_client_id=adsense_client_id, adsense_slot=public_sidebar_ad_slot, ad_label="Sidebar sponsorship" %}
+        <!-- Ads Zone -->
+        {% if show_public_inline_ad %}
+        <section class="premium-panel p-8 text-center border-dashed">
+          <span class="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em] mb-4 block">Sponsored</span>
+          {% with adsense_client_id=adsense_client_id, adsense_slot=public_inline_ad_slot, ad_label="Sponsored" %}
             {% include "partials/adsense_ad.html" %}
           {% endwith %}
         </section>
         {% endif %}
-
-        <!-- Verified Branding -->
-        <div class="text-center py-10">
-          <div class="bg-white border border-slate-200/60 rounded-[2rem] p-8 shadow-sm">
-            <div class="inline-flex items-center gap-2 font-black text-slate-900 text-xl mb-3 tracking-tighter">
-              <i data-lucide="layers" class="w-6 h-6 text-brand-600"></i>
-              <span>DigiBioFi</span>
-            </div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Signature Identity Platform</p>
-            <a href="/register" class="block w-full bg-slate-50 hover:bg-brand-50 text-brand-700 text-xs font-black py-3 rounded-xl border border-slate-100 hover:border-brand-200 transition-all">
-              Create your own profile
-            </a>
-          </div>
-        </div>
       </div>
     </div>
   </div>
-  
-  <!-- Mobile Contact Bar -->
-  <div class="md:hidden fixed bottom-6 left-6 right-6 z-50">
-     <div class="glass-effect rounded-[2rem] p-4 shadow-2xl flex items-center justify-between border border-white/50 bg-white/80 backdrop-blur-xl">
-        <div class="flex items-center gap-4">
-           {% if profile.profile_image %}
-           <img src="{{ profile.profile_image }}" class="w-12 h-12 rounded-2xl object-cover shadow-lg" />
-           {% else %}
-           <div class="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white font-black text-xl">
-              {{ (profile.full_name or profile.slug)[0].upper() }}
-           </div>
-           {% endif %}
-           <div class="min-w-0">
-              <p class="text-sm font-black text-slate-900 truncate">{{ profile.full_name or profile.slug }}</p>
-            {% if profile.user.is_verified %}
-              <p class="text-[10px] font-black text-brand-600 uppercase tracking-widest">Verified Pro</p>
-            {% endif %}
-           </div>
-        </div>
-        <div class="flex gap-2">
-           {% if profile.email %}
-           <a href="mailto:{{ profile.email }}" class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-              <i data-lucide="mail" class="w-6 h-6"></i>
-           </a>
-           {% endif %}
-        </div>
-     </div>
-  </div>
 </div>
-
-<script>
-  function trackLink(target) {
-    const slug = "{{ profile.slug }}";
-    fetch(`/api/analytics/event/${slug}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_type: 'link_click',
-        source: 'direct',
-        link_target: target
-      })
-    });
-  }
-</script>
 {% endblock %}

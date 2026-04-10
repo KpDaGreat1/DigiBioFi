@@ -60,7 +60,7 @@ def send_email(*, subject: str, recipient: str, text_body: str, html_body: str) 
             server.login(settings.smtp_user, settings.smtp_password)
             server.send_message(message)
     except Exception as exc:
-        logger.exception("Email delivery failed for recipient=%s", recipient)
+        logger.exception("Email delivery failed")
         raise EmailDeliveryError("Email delivery failed.") from exc
 
 
@@ -120,4 +120,3 @@ def send_password_reset_email(*, recipient: str, username: str, reset_url: str) 
         text_body=text_body,
         html_body=html_body,
     )
-

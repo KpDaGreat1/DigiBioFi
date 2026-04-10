@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.dependencies import get_current_user, get_db, require_csrf
 from app.core.owner import is_owner_email
+from app.core.permissions import can_manage_subscription
 from app.core.templates import flash
 from app.models.user import User
 from app.services import stripe_service
@@ -29,7 +30,7 @@ def _redirect_with_flash(request: Request, location: str, message: str, category
 def create_checkout_session(
     request: Request,
     csrf_token: str = Depends(require_csrf),
-    plan: str = Form(...),
+    plan: str = Form(""),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -45,10 +46,9 @@ def create_checkout_session(
 
     if plan not in _ALLOWED_PLANS:
         logger.warning(
-            "Invalid checkout plan attempt plan=%r user_id=%s email=%s",
+            "Invalid checkout plan attempt plan=%r user_id=%s",
             plan,
             current_user.id,
-            current_user.email,
         )
         return _redirect_with_flash(
             request,
@@ -58,9 +58,8 @@ def create_checkout_session(
 
     if not settings.stripe_secret_key:
         logger.error(
-            "Stripe checkout blocked: missing STRIPE_SECRET_KEY for user_id=%s email=%s plan=%s",
+            "Stripe checkout blocked: missing STRIPE_SECRET_KEY for user_id=%s plan=%s",
             current_user.id,
-            current_user.email,
             plan,
         )
         return _redirect_with_flash(
@@ -72,9 +71,8 @@ def create_checkout_session(
     price_id = settings.get_stripe_price(plan)
     if not price_id:
         logger.error(
-            "Stripe checkout blocked: missing price configuration for user_id=%s email=%s plan=%s",
+            "Stripe checkout blocked: missing price configuration for user_id=%s plan=%s",
             current_user.id,
-            current_user.email,
             plan,
         )
         return _redirect_with_flash(
@@ -108,9 +106,8 @@ def create_checkout_session(
         return RedirectResponse(checkout_url, status_code=303)
     except Exception:
         logger.exception(
-            "Stripe checkout failed for user_id=%s email=%s plan=%s",
+            "Stripe checkout failed for user_id=%s plan=%s",
             current_user.id,
-            current_user.email,
             plan,
         )
         return _redirect_with_flash(
@@ -157,15 +154,14 @@ def billing_portal(
         flash(request, "Billing is not required for the owner account.", "info")
         return RedirectResponse("/dashboard", status_code=303)
 
-    if not current_user.stripe_customer_id:
+    if not can_manage_subscription(current_user):
         flash(request, "No active subscription found.", "error")
         return RedirectResponse("/dashboard/upgrade", status_code=303)
 
     if not settings.stripe_secret_key:
         logger.error(
-            "Stripe portal blocked: missing STRIPE_SECRET_KEY for user_id=%s email=%s",
+            "Stripe portal blocked: missing STRIPE_SECRET_KEY for user_id=%s",
             current_user.id,
-            current_user.email,
         )
         flash(request, "Billing is not configured yet.", "error")
         return RedirectResponse("/dashboard", status_code=303)
@@ -178,9 +174,8 @@ def billing_portal(
         return RedirectResponse(portal_url, status_code=303)
     except Exception:
         logger.exception(
-            "Stripe portal error for user_id=%s email=%s",
+            "Stripe portal error for user_id=%s",
             current_user.id,
-            current_user.email,
         )
         flash(request, "Could not open billing portal. Please try again.", "error")
         return RedirectResponse("/dashboard", status_code=303)

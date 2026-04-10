@@ -1,201 +1,207 @@
 {% extends "base.html" %}
 
-{% block title %}DigiBioFi — Elevate Your Digital Professional Identity{% endblock %}
+{% block title %}DigiBioFi — Professional Profiles for Career Growth{% endblock %}
 
 {% block body %}
-<div class="landing-shell min-h-screen flex flex-col selection:bg-brand-100 selection:text-brand-900 bg-transparent">
-  <!-- Header -->
-  <header class="glass-effect landing-nav sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-white/60">
-    <div class="flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tight">
-      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg shadow-lg shadow-brand-500/20">
-        <i data-lucide="layers" class="w-6 h-6 text-white"></i>
-      </div>
-      <span>Digi<span class="text-slate-900">BioFi</span></span>
-    </div>
-    <div class="hidden md:flex items-center gap-8 mr-auto ml-12">
-      <a href="#features" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Features</a>
-      <a href="/what-is-digibiofi" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">How It Works</a>
-      <a href="/explore" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Explore</a>
-      <a href="/news" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">News</a>
-      <a href="/tools/job-matcher" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Tools</a>
-    </div>
-    <div class="flex items-center gap-4">
-      {% if not user %}
-      <a href="/login" class="text-sm font-bold text-slate-600 hover:text-brand-600 transition-colors">Log in</a>
-      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-3 rounded-full transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-0.5 uppercase tracking-widest">
-        Get Started
-      </a>
-      {% elif user.subscription_tier == 'free' %}
-      <a href="/dashboard" class="text-sm font-bold text-slate-600 hover:text-brand-600 transition-colors">Dashboard</a>
-      <a href="/dashboard/upgrade" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-3 rounded-full transition-all shadow-xl shadow-brand-500/10 hover:-translate-y-0.5 uppercase tracking-widest">
-        View Plans
-      </a>
-      {% else %}
-      <a href="/dashboard" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-8 py-3 rounded-full transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-0.5 uppercase tracking-widest">
-        Dashboard
-      </a>
-      {% endif %}
-    </div>
-  </header>
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
 
   <main class="flex-1">
     <!-- Hero Section -->
-    <section class="relative overflow-hidden pt-24 pb-20 md:pt-40 md:pb-40">
-      <!-- Decorative background elements -->
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] right-[-8%] w-[640px] h-[640px] bg-brand-100 rounded-full blur-[140px] opacity-70 animate-pulse-slow"></div>
-        <div class="absolute bottom-[-14%] left-[-12%] w-[620px] h-[620px] bg-accent-100 rounded-full blur-[140px] opacity-60"></div>
-      </div>
-
-      <div class="max-w-5xl mx-auto px-6 text-center relative">
-        <div class="landing-badge reveal inline-flex items-center gap-2 border text-brand-700 text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-12">
+    <section class="relative overflow-hidden pt-24 pb-20 md:pt-40 md:pb-56">
+      <div class="max-w-7xl mx-auto px-6 relative z-10">
+        <div class="reveal inline-flex items-center gap-2 border border-brand-blue/30 bg-brand-blue/10 text-brand-blue text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-12 shadow-glow">
           <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-blue opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-blue"></span>
           </span>
-          Next-Gen Professional Identity
+          Professional Profiles
         </div>
-        
-        <h1 class="reveal reveal-delay-1 font-display text-5xl md:text-8xl font-semibold text-slate-900 leading-[0.92] mb-10 tracking-[-0.05em]">
-          Your presence,<br/>
-          <span class="text-gradient">reimagined.</span>
+
+        <h1 class="reveal reveal-delay-1 font-display text-6xl md:text-9xl font-bold text-white leading-[0.85] mb-12 tracking-tight">
+          Own your<br/>
+          <span class="text-gradient-blue">presence.</span>
         </h1>
-        
-        <p class="reveal reveal-delay-2 text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto mb-14 leading-relaxed font-medium">
-          The elite digital identity platform for high-impact professionals. 
-          Stunning profiles, instant QR sharing, and smart analytics.
-        </p>
-        
-        <div class="reveal reveal-delay-3 flex flex-col sm:flex-row gap-6 justify-center items-center">
-          <a href="/register" class="group relative bg-brand-600 hover:bg-brand-700 text-white text-lg font-black px-12 py-5 rounded-[2rem] transition-all shadow-2xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-1">
-            Build Your Profile
-            <i data-lucide="arrow-right" class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
-          </a>
-          <a href="/explore" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">
-            <i data-lucide="users" class="w-4 h-4"></i>
-            Browse public profiles
-          </a>
-        </div>
 
-        <!-- Mockup/Preview Image -->
-        <div id="preview" class="reveal reveal-delay-4 mt-32 relative">
-          <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10"></div>
-          <div class="mockup-frame rounded-[3rem] p-4 max-w-5xl mx-auto border border-white/10 rotate-1 transform-gpu">
-             <div class="bg-white/95 rounded-[2rem] overflow-hidden aspect-[16/10] flex flex-col relative">
-                <!-- Browser Mockup UI -->
-                <div class="bg-slate-50/90 border-b border-slate-100 px-6 py-4 flex items-center gap-4">
-                  <div class="flex gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-emerald-400"></div>
-                  </div>
-                  <div class="bg-white rounded-lg px-4 py-1.5 flex-1 text-center text-xs font-bold text-slate-300 border border-slate-200">
-                    digibiofi.com/p/alex-rivera
-                  </div>
-                </div>
+        <div class="grid md:grid-cols-2 gap-16 items-end">
+          <div class="reveal reveal-delay-2">
+            <p class="text-xl md:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-medium">
+              DigiBioFi helps professionals present their experience, projects, links, and contact details in one polished public profile.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6">
+              <a href="/register" class="btn-primary text-center">
+                Create Your Profile
+                <i data-lucide="arrow-right" class="inline-block ml-2 w-5 h-5"></i>
+              </a>
+              <a href="/explore" class="flex items-center justify-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                Explore Profiles
+              </a>
+            </div>
+          </div>
 
-                <div class="relative flex-1 overflow-hidden">
-                  <div class="flex h-full p-8 flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-brand-50/30">
-                     <div class="w-20 h-20 bg-brand-500 rounded-3xl mb-6 shadow-xl animate-pulse"></div>
-                     <div class="h-4 bg-slate-200 rounded-full w-48 mb-4"></div>
-                     <div class="h-3 bg-slate-100 rounded-full w-64 mb-12"></div>
-                     <div class="grid grid-cols-3 gap-6 w-full max-w-2xl">
-                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
-                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
-                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
-                     </div>
-                  </div>
-                </div>
-
-                <!-- Floating QR Card -->
-                <div class="floating-card absolute bottom-12 right-12 z-20 w-48 p-6 rounded-[2rem] animate-float border border-white/70">
-                  <div class="w-full aspect-square bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-50 mb-4">
-                    <i data-lucide="qr-code" class="w-12 h-12 text-brand-600 opacity-20"></i>
-                  </div>
-                  <p class="text-[8px] font-black uppercase tracking-[0.2em] text-center text-slate-400">Scan to view</p>
-                </div>
-             </div>
+          <div class="reveal reveal-delay-3 hidden md:block">
+            <div class="grid grid-cols-3 gap-6">
+              {% for label, value in [
+                ('Profile URL', 'One shareable profile link'),
+                ('QR Access', 'Instant scans and downloads'),
+                ('Plan Logic', 'Free, Basic, and Elite tiers'),
+              ] %}
+              <div class="rounded-2xl border border-white/5 bg-white/5 p-5">
+                <div class="text-sm font-bold text-white mb-2">{{ label }}</div>
+                <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ value }}</div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-40 relative">
-      <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/0 via-white/60 to-white/0"></div>
-      <div class="max-w-6xl mx-auto px-6">
-        <div class="reveal text-center mb-24">
-          <h2 class="font-display text-4xl md:text-6xl font-semibold text-slate-900 mb-8 tracking-[-0.045em]">Everything you need<br/>to stand out.</h2>
-          <div class="w-24 h-2 bg-brand-600 mx-auto rounded-full shadow-lg shadow-brand-500/20"></div>
+    <section class="py-20 border-t border-white/5 bg-white/[0.01]">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="reveal flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+          <div>
+            <p class="text-xs font-black text-brand-purple uppercase tracking-[0.3em] mb-4">How It Works</p>
+            <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight">A clearer professional presence in three steps.</h2>
+          </div>
+          <p class="text-slate-400 font-medium max-w-xl">Create a profile, add the work you want people to see, and share one link everywhere you need it.</p>
         </div>
-
-        <div class="grid md:grid-cols-3 gap-10">
-          {% for icon, title, desc in [
-            ('globe', 'Custom URLs', 'Professional links that look great on business cards and social bios.'),
-            ('qr-code', 'Persistent QR Identity', 'Signature QR codes that never expire and track real-time engagement.'),
-            ('zap', 'Instant Updates', 'Edit your experience or projects and see changes live across the globe instantly.'),
-            ('shield-check', 'Privacy First', 'You control who sees your data. Toggle public access with a single click.'),
-            ('bar-chart-3', 'Smart Analytics', 'Track views, scans, and clicks to see how your professional brand is growing.'),
-            ('smartphone', 'Mobile Optimized', 'Your profile feels polished and app-like on any smartphone or tablet.')
+        <div class="grid md:grid-cols-3 gap-8">
+          {% for step, title, desc, href, cta in [
+            ('01', 'Create your profile', 'Start with your headline, summary, links, and the public profile basics that explain who you are.', '/register', 'Start free'),
+            ('02', 'Add proof of work', 'Show experience, projects, education, and skills so people can understand your strengths quickly.', '/what-is-digibiofi', 'See what to include'),
+            ('03', 'Share it anywhere', 'Use your profile link, QR code, and analytics-ready pages to support networking, hiring, and client conversations.', '/explore', 'See live examples'),
           ] %}
-          <div class="feature-card hover-lift reveal p-10 rounded-[2.5rem] border group" style="animation-delay: {{ loop.index0 * 80 }}ms;">
-            <div class="w-16 h-16 bg-brand-50 text-brand-600 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white transition-all shadow-sm">
-              <i data-lucide="{{ icon }}" class="w-8 h-8"></i>
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 mb-4 tracking-tight">{{ title }}</h3>
-            <p class="text-slate-500 leading-relaxed font-medium">{{ desc }}</p>
+          <div class="premium-card p-8 reveal" style="animation-delay: {{ loop.index0 * 100 }}ms;">
+            <span class="text-[10px] font-black text-brand-blue uppercase tracking-[0.3em]">{{ step }}</span>
+            <h3 class="text-2xl font-bold text-white mt-4 mb-4 tracking-tight">{{ title }}</h3>
+            <p class="text-slate-400 text-sm leading-relaxed font-medium mb-6">{{ desc }}</p>
+            <a href="{{ href }}" class="text-brand-blue text-sm font-bold hover:underline">{{ cta }}</a>
           </div>
           {% endfor %}
         </div>
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-shell py-32 relative overflow-hidden">
-      <div class="absolute inset-0 opacity-20">
-        <div class="absolute top-0 left-0 w-[800px] h-[800px] bg-brand-600 rounded-full blur-[160px] -translate-x-1/2 -translate-y-1/2"></div>
-        <div class="absolute bottom-0 right-0 w-[800px] h-[800px] bg-accent-500 rounded-full blur-[160px] translate-x-1/2 translate-y-1/2"></div>
+    <!-- The Problem / Why Now -->
+    <section class="py-32 border-y border-white/5 bg-white/[0.01]">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid md:grid-cols-3 gap-16">
+          <div class="reveal">
+            <h2 class="text-xs font-black text-brand-purple uppercase tracking-[0.3em] mb-6">The Problem</h2>
+            <h3 class="text-3xl font-bold text-white mb-6 leading-tight">Your professional presence is scattered.</h3>
+            <p class="text-slate-400 leading-relaxed font-medium">
+              Your work lives across resumes, portfolios, social profiles, and scattered links. That makes it harder for people to understand what you do well.
+            </p>
+          </div>
+          <div class="reveal reveal-delay-1">
+            <h2 class="text-xs font-black text-brand-blue uppercase tracking-[0.3em] mb-6">Why Now</h2>
+            <h3 class="text-3xl font-bold text-white mb-6 leading-tight">Hiring and networking happen online.</h3>
+            <p class="text-slate-400 leading-relaxed font-medium">
+              Recruiters, clients, collaborators, and event contacts often decide what to do next based on what they can quickly see and trust online.
+            </p>
+          </div>
+          <div class="reveal reveal-delay-2">
+            <h2 class="text-xs font-black text-brand-green uppercase tracking-[0.3em] mb-6">Our Solution</h2>
+            <h3 class="text-3xl font-bold text-white mb-6 leading-tight">One profile that stays current.</h3>
+            <p class="text-slate-400 leading-relaxed font-medium">
+              DigiBioFi gives you a single public profile for your experience, portfolio, QR sharing, and practical engagement data.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-40">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="reveal mb-24">
+          <h2 class="font-display text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight">Everything you need to present your work well.</h2>
+          <p class="text-xl text-slate-400 max-w-2xl font-medium">Built for professionals who need a clear public profile instead of another noisy social feed.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          {% for icon, title, desc in [
+            ('globe', 'Custom Profile Link', 'Share one clear profile link instead of sending a resume, portfolio, and social links separately.'),
+            ('qr-code', 'Shareable QR Code', 'Let people open your profile instantly at events, meetings, or from printed materials.'),
+            ('zap', 'Fast Updates', 'Update your profile once and keep your public information current without rebuilding everything.'),
+            ('shield-check', 'Privacy Controls', 'Choose what stays public and what remains private while keeping your profile easy to manage.'),
+            ('bar-chart-3', 'Profile Analytics', 'See visits, QR scans, and engagement data when you upgrade to advanced analytics.'),
+            ('smartphone', 'Works on Any Device', 'Your profile stays polished and readable on phones, tablets, and desktop screens.')
+          ] %}
+          <div class="premium-card p-10 group reveal" style="animation-delay: {{ loop.index0 * 100 }}ms;">
+            <div class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-brand-blue/20 group-hover:border-brand-blue/30 transition-all">
+              <i data-lucide="{{ icon }}" class="w-6 h-6 text-brand-blue"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-4 tracking-tight">{{ title }}</h3>
+            <p class="text-slate-400 leading-relaxed font-medium text-sm">{{ desc }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Density / Ads Zone -->
+    <section class="py-32 bg-white/[0.01]">
+      <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-16">
+        <div class="lg:col-span-8">
+          <h2 class="text-3xl font-bold text-white mb-12">Explore DigiBioFi</h2>
+          <div class="space-y-8">
+            {% for label, title, desc, href in [
+              ('News', 'Read current career and professional development coverage', 'Follow curated reporting and platform articles on hiring, branding, freelancing, and skills growth.', '/news'),
+              ('Explore', 'Browse live public profiles in the directory', 'See how members present their work, structure profile sections, and share a single public profile page.', '/explore'),
+              ('Tool', 'Run the job matcher with your own skills and goals', 'Use the built-in matcher to translate your experience, interests, and traits into focused job and freelance directions.', '/tools/job-matcher'),
+            ] %}
+            <div class="flex flex-col md:flex-row gap-8 items-center p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+              <div class="w-full md:w-48 h-32 bg-slate-800 rounded-2xl flex items-center justify-center">
+                <span class="text-[10px] font-black text-brand-blue uppercase tracking-[0.2em]">{{ label }}</span>
+              </div>
+              <div class="flex-1">
+                <span class="text-[10px] font-black text-brand-purple uppercase tracking-widest mb-2 block">{{ label }}</span>
+                <h4 class="text-xl font-bold text-white mb-3">{{ title }}</h4>
+                <p class="text-slate-400 text-sm mb-4">{{ desc }}</p>
+                <a href="{{ href }}" class="text-brand-blue text-sm font-bold hover:underline">Open Page</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="lg:col-span-4">
+          <div class="lg:sticky lg:top-32">
+            <div class="p-8 rounded-3xl bg-brand-blue/5 border border-brand-blue/10 mb-8">
+              <h4 class="text-white font-bold mb-4">Start with the right path</h4>
+              <p class="text-slate-400 text-sm mb-6">Create a free profile, compare plan access, and decide which workflow fits your career stage.</p>
+              <a href="/register" class="btn-primary w-full block text-center py-3">Get Started</a>
+            </div>
+            <div class="p-8 rounded-3xl border border-dashed border-white/10">
+              <span class="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4 block">Next Steps</span>
+              <div class="space-y-4">
+                <a href="/what-is-digibiofi" class="block rounded-2xl bg-white/5 px-5 py-4 text-sm font-bold text-white hover:bg-white/10 transition-all">How DigiBioFi works</a>
+                <a href="/news" class="block rounded-2xl bg-white/5 px-5 py-4 text-sm font-bold text-white hover:bg-white/10 transition-all">Read platform news</a>
+                <a href="/contact" class="block rounded-2xl bg-white/5 px-5 py-4 text-sm font-bold text-white hover:bg-white/10 transition-all">Contact support</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-40 relative overflow-hidden">
+      <div class="absolute inset-0 z-0">
+         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-blue/20 rounded-full blur-[120px]"></div>
       </div>
       <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-        <h2 class="font-display text-4xl md:text-7xl font-semibold text-white mb-10 tracking-[-0.045em]">Ready to upgrade your professional identity?</h2>
-        <p class="text-xl text-slate-400 mb-14 font-medium max-w-2xl mx-auto">Build a shareable professional profile with a live QR identity and clear analytics.</p>
-        <a href="/register" class="inline-flex items-center bg-white text-brand-600 hover:bg-brand-50 text-xl font-black px-14 py-6 rounded-[2rem] transition-all shadow-2xl hover:-translate-y-1">
-          Create Your Free Profile
+        <h2 class="font-display text-5xl md:text-8xl font-bold text-white mb-10 tracking-tight">Ready for the<br/><span class="text-gradient-blue">upgrade?</span></h2>
+        <p class="text-xl text-slate-400 mb-14 font-medium max-w-2xl mx-auto">Create a profile that is easier to share, easier to trust, and easier to keep current.</p>
+        <a href="/register" class="btn-primary text-xl px-16 py-6 rounded-2xl shadow-glow">
+          Create My Profile
         </a>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white/80 backdrop-blur-sm border-t border-white/70 py-20 px-6">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-      <div class="flex flex-col items-center md:items-start gap-4">
-        <div class="flex items-center gap-2 font-black text-slate-900 text-2xl tracking-tight">
-          <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
-            <i data-lucide="layers" class="w-6 h-6 text-white"></i>
-          </div>
-          <span>DigiBioFi</span>
-        </div>
-        <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">The Elite Identity Platform</p>
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-8 text-sm font-black text-slate-500 uppercase tracking-widest">
-        <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
-        <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
-        <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
-        <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Tools</a>
-        <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
-        <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
-        <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
-      </div>
-      
-      <p class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">
-        "Let all things be done decently and in order." — 1 Corinthians 14:40
-      </p>
-      <p class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">
-        &copy; 2026 DigiBioFi. ALL RIGHTS RESERVED.
-      </p>
-    </div>
-  </footer>
+  {% include "partials/footer.html" %}
 </div>
 {% endblock %}

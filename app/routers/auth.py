@@ -276,6 +276,7 @@ def forgot_password_submit(
     db: Session = Depends(get_db),
 ):
     reset_url = None
+    dev_reset_url = None  # Only shown in dev mode without email configured
 
     try:
         data = ForgotPasswordRequest(email=email)
@@ -290,13 +291,13 @@ def forgot_password_submit(
                         username=user.username,
                         reset_url=reset_url,
                     )
-            elif request.app.state.environment != "production":
+            elif not settings.is_production:
                 logger.info("Password reset URL for %s: %s", data.email, reset_url)
+                dev_reset_url = reset_url
     except ValidationError:
         pass
     except email_service.EmailDeliveryError:
         logger.warning("Password reset email delivery failed for %s", email)
-        reset_url = None
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
@@ -305,7 +306,7 @@ def forgot_password_submit(
             "request": request,
             "csrf_token": token,
             "success": True,
-            "reset_url": reset_url,
+            "reset_url": dev_reset_url,
         },
     )
     set_csrf_cookie(response, token)

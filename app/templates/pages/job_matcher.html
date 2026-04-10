@@ -7,268 +7,212 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-slate-50">
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
 
-  <!-- Nav -->
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
-      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
-        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
-      </div>
-      DigiBioFi
-    </a>
-    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
-      <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
-      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
-    </nav>
-    <div class="flex items-center gap-4">
-      {% if user %}
-      <a href="/dashboard" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Dashboard</a>
-      {% else %}
-      <a href="/login" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Log in</a>
-      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Get Started Free</a>
-      {% endif %}
-    </div>
-  </header>
-
-  <main class="max-w-4xl mx-auto px-6 py-12">
-
+  <main class="flex-1 max-w-4xl mx-auto px-6 py-20">
     <!-- Header -->
-    <div class="text-center mb-12">
-      <div class="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 text-brand-700 text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-6">
-        <i data-lucide="target" class="w-3.5 h-3.5"></i>
-        Free Career Tool
+    <div class="text-center mb-20">
+      <div class="reveal inline-flex items-center gap-2 text-brand-gold text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+        <span class="w-8 h-[1px] bg-brand-gold"></span>
+        Professional Utility
       </div>
-      <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4">Job & Career Matcher</h1>
-      <p class="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
-        Enter your skills, traits, and interests. Get a real list of career paths and freelance opportunities
-        that align with your professional profile — no AI, no fluff, no account required.
+      <h1 class="reveal reveal-delay-1 font-display text-5xl md:text-7xl font-bold text-white tracking-tight mb-8">
+        Career <span class="text-gradient-blue">Matcher.</span>
+      </h1>
+      <p class="reveal reveal-delay-2 text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+        Use your skills, interests, and work style to find career directions and freelance paths that fit.
       </p>
     </div>
 
+    <section class="grid md:grid-cols-3 gap-6 mb-16">
+      {% for title, desc in [
+        ('Use real skills', 'Add tools, disciplines, and strengths you can genuinely speak about in an interview or client call.'),
+        ('Be specific', 'The more specific your interests and goals are, the more useful your results become.'),
+        ('Use it as a starting point', 'The matcher is best for narrowing options and spotting roles or freelance paths worth exploring.'),
+      ] %}
+      <div class="premium-card p-6">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-2">{{ title }}</h2>
+        <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </section>
+
     <!-- Form -->
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-10 mb-10">
-      <form method="post" action="/tools/job-matcher" class="space-y-8">
+    <div class="reveal reveal-delay-3 premium-panel p-8 md:p-12 mb-16">
+      <form method="post" action="/tools/job-matcher" class="space-y-10">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
 
         <!-- Skills -->
-        <div>
-          <label class="block font-black text-slate-900 mb-2">
-            Your Skills
-            <span class="text-brand-600">*</span>
+        <div class="space-y-4">
+          <label class="block text-sm font-bold text-white uppercase tracking-widest">
+            Skills
+            <span class="text-brand-blue ml-1">*</span>
           </label>
-          <p class="text-sm text-slate-500 font-medium mb-3">
-            List skills, tools, technologies, and disciplines you're proficient in. Separate with commas.
+          <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+            List skills, tools, or areas of expertise. Separate them with commas.
           </p>
           <textarea
             name="skills"
             rows="3"
-            placeholder="e.g. Python, data analysis, project management, writing, SQL, customer service..."
-            class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+            placeholder="e.g. Python, distributed systems, product design, quantitative analysis..."
+            class="w-full bg-white/5 border border-white/5 rounded-xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-blue transition-all"
           >{{ form.get('skills', '') }}</textarea>
         </div>
 
-        <!-- Interests -->
-        <div>
-          <label class="block font-black text-slate-900 mb-2">Interests & Passions</label>
-          <p class="text-sm text-slate-500 font-medium mb-3">
-            Topics, industries, or activities that genuinely interest you.
+        <div class="space-y-4">
+          <label class="block text-sm font-bold text-white uppercase tracking-widest">Interest Areas</label>
+          <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+            Add industries, roles, or work you want to move toward.
           </p>
           <textarea
             name="interests"
-            rows="2"
-            placeholder="e.g. renewable energy, teaching others, building products, fitness, international business..."
-            class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+            rows="3"
+            placeholder="e.g. developer advocacy, fintech, product strategy, remote consulting..."
+            class="w-full bg-white/5 border border-white/5 rounded-xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-blue transition-all"
           >{{ form.get('interests', '') }}</textarea>
         </div>
 
+        <div class="space-y-4">
+          <label class="block text-sm font-bold text-white uppercase tracking-widest">Location Focus</label>
+          <input
+            type="text"
+            name="location"
+            value="{{ form.get('location', '') }}"
+            placeholder="e.g. Remote, Los Angeles, New York, London..."
+            class="w-full bg-white/5 border border-white/5 rounded-xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-blue transition-all"
+          />
+        </div>
+
         <!-- Traits -->
-        <div>
-          <label class="block font-black text-slate-900 mb-3">Your Work Style Traits</label>
-          <p class="text-sm text-slate-500 font-medium mb-4">Select traits that describe how you naturally work best.</p>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="space-y-6">
+          <label class="block text-sm font-bold text-white uppercase tracking-widest">Work Style</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {% for trait in ['Creative', 'Analytical', 'Social', 'Independent', 'Organized', 'Technical', 'Leadership', 'Empathetic'] %}
-            <label class="flex items-center gap-3 cursor-pointer group">
+            <label class="relative group cursor-pointer">
               <input
                 type="checkbox"
                 name="traits"
                 value="{{ trait.lower() }}"
                 {% if trait.lower() in (form.get('traits') or []) %}checked{% endif %}
-                class="w-5 h-5 rounded-lg border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                class="peer sr-only"
               />
-              <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition-colors">{{ trait }}</span>
+              <div class="px-4 py-3 rounded-xl border border-white/5 bg-white/5 text-slate-500 text-xs font-bold text-center transition-all peer-checked:bg-brand-blue/10 peer-checked:border-brand-blue peer-checked:text-brand-blue group-hover:border-white/20">
+                {{ trait }}
+              </div>
             </label>
             {% endfor %}
           </div>
         </div>
 
-        <!-- Location (optional) -->
-        <div>
-          <label class="block font-black text-slate-900 mb-2">Location <span class="text-slate-400 font-medium text-sm">(optional)</span></label>
-          <input
-            type="text"
-            name="location"
-            value="{{ form.get('location', '') }}"
-            placeholder="e.g. Austin, TX — helps frame remote vs. local opportunities"
-            class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-          />
-        </div>
-
-        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all text-lg shadow-xl shadow-brand-500/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
-          <i data-lucide="zap" class="w-5 h-5"></i>
-          Match My Career Paths
+        <button type="submit" class="btn-primary w-full py-5 text-sm uppercase tracking-[0.2em] shadow-glow">
+          Find Matches
         </button>
       </form>
     </div>
 
     {% if results is not none %}
     <!-- Results -->
-    <div class="space-y-8" id="results">
+    <div class="space-y-12 reveal" id="results">
 
       {% if results.has_results %}
       <!-- Career Matches -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-10">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
-            <i data-lucide="briefcase" class="w-5 h-5 text-brand-600"></i>
-          </div>
-          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Career Matches</h2>
+      <section>
+        <div class="flex items-center gap-4 mb-8">
+           <div class="w-10 h-10 bg-brand-blue/10 rounded-xl flex items-center justify-center">
+             <i data-lucide="target" class="w-5 h-5 text-brand-blue"></i>
+           </div>
+           <h2 class="text-2xl font-bold text-white tracking-tight">Recommended Career Paths</h2>
         </div>
-        <p class="text-slate-500 font-medium mb-6 text-sm">
-          Based on your skills and traits, these roles are the strongest matches. Consider researching each
-          to understand typical responsibilities, required qualifications, and market demand in your area.
-        </p>
-        <div class="grid sm:grid-cols-2 gap-3">
+        {% if results.location %}
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-6">Location focus: {{ results.location }}</p>
+        {% endif %}
+        <div class="grid gap-4">
           {% for career in results.careers %}
-          <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div class="w-8 h-8 bg-brand-600 rounded-xl flex items-center justify-center shrink-0">
-              <i data-lucide="check" class="w-4 h-4 text-white"></i>
+          <div class="premium-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+                <i data-lucide="briefcase" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-white text-lg tracking-tight">{{ career }}</span>
             </div>
-            <span class="font-black text-slate-900 text-sm">{{ career }}</span>
+            <a href="https://www.indeed.com/jobs?q={{ career | urlencode }}" target="_blank" rel="noopener noreferrer"
+               class="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-brand-blue transition-all text-[10px] font-black uppercase tracking-widest">
+              Find on Indeed
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
           </div>
           {% endfor %}
         </div>
-      </div>
+      </section>
 
       {% if results.freelance %}
       <!-- Freelance Paths -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-10">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-            <i data-lucide="laptop" class="w-5 h-5 text-emerald-600"></i>
-          </div>
-          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Freelance Paths</h2>
+      <section>
+        <div class="flex items-center gap-4 mb-8">
+           <div class="w-10 h-10 bg-brand-green/10 rounded-xl flex items-center justify-center">
+             <i data-lucide="zap" class="w-5 h-5 text-brand-green"></i>
+           </div>
+           <h2 class="text-2xl font-bold text-white tracking-tight">Freelance Opportunities</h2>
         </div>
-        <p class="text-slate-500 font-medium mb-6 text-sm">
-          These are independent/freelance opportunities that fit your skill set. Platforms like Upwork,
-          Fiverr, Toptal, and LinkedIn ProFinder are good starting points for each.
-        </p>
-        <div class="grid sm:grid-cols-2 gap-3">
+        <div class="grid sm:grid-cols-2 gap-4">
           {% for path in results.freelance %}
-          <div class="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <div class="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
-              <i data-lucide="arrow-right" class="w-4 h-4 text-white"></i>
+          <div class="premium-card p-6 border-dashed flex items-center gap-4">
+            <div class="w-8 h-8 rounded-lg bg-brand-green/10 flex items-center justify-center text-brand-green">
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </div>
-            <span class="font-black text-slate-900 text-sm">{{ path }}</span>
+            <span class="font-bold text-slate-300 text-sm tracking-tight">{{ path }}</span>
           </div>
           {% endfor %}
         </div>
-      </div>
+      </section>
       {% endif %}
 
-      <!-- Next Steps -->
-      <div class="bg-slate-900 rounded-3xl p-8 md:p-10 text-white">
-        <h2 class="text-2xl font-black mb-4 tracking-tight">Next Steps</h2>
-        <div class="grid sm:grid-cols-2 gap-6">
+      <!-- Strategy -->
+      <section class="premium-panel p-10 bg-gradient-to-br from-ui-panel to-[#161b26]">
+        <h2 class="text-2xl font-bold text-white mb-10 tracking-tight">Next Steps</h2>
+        <div class="grid sm:grid-cols-2 gap-8">
           {% for icon, title, desc in [
-            ('user-check', 'Build your profile', 'A complete DigiBioFi profile showcases your skills and experience to anyone who finds you — recruiters, clients, and collaborators.'),
-            ('search', 'Research the roles', 'Use LinkedIn Jobs, Indeed, and Glassdoor to read real job descriptions for your top matches and identify skill gaps.'),
-            ('graduation-cap', 'Close skill gaps', 'Platforms like Coursera, LinkedIn Learning, and freeCodeCamp can help you build credentials for targeted roles quickly.'),
-            ('qr-code', 'Network with purpose', 'Generate your DigiBioFi QR code and bring it to your next event. Share it instead of a business card.'),
+            ('user-check', 'Build Your Profile', 'Create or update your DigiBioFi profile so your strengths are easier to review and share.'),
+            ('search', 'Review Open Roles', 'Compare these matches with live job listings to see how employers describe the work.'),
+            ('graduation-cap', 'Close Skill Gaps', 'Use the results to decide what to practice, study, or add to your portfolio next.'),
+            ('qr-code', 'Share Your Profile', 'Use your profile link or QR code when meeting recruiters, clients, or collaborators.')
           ] %}
-          <div class="flex items-start gap-4">
-            <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
-              <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-400"></i>
+          <div class="flex gap-5">
+            <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0">
+              <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-blue"></i>
             </div>
             <div>
-              <p class="font-black text-white mb-1">{{ title }}</p>
-              <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ desc }}</p>
+              <p class="font-bold text-white text-sm mb-2 uppercase tracking-wide">{{ title }}</p>
+              <p class="text-slate-500 text-xs font-medium leading-relaxed">{{ desc }}</p>
             </div>
           </div>
           {% endfor %}
         </div>
-
-        {% if not user %}
-        <div class="mt-8 pt-8 border-t border-white/10 text-center">
-          <p class="text-slate-300 font-medium mb-4">Ready to build a profile that showcases these skills?</p>
-          <a href="/register" class="inline-block bg-brand-600 hover:bg-brand-500 text-white font-black px-10 py-3 rounded-2xl transition-all">
-            Create Your Free Profile
-          </a>
-        </div>
-        {% endif %}
-      </div>
+      </section>
 
       {% else %}
       <!-- No matches -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
-        <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <i data-lucide="search-x" class="w-8 h-8 text-amber-500"></i>
+      <div class="premium-panel p-16 text-center border-dashed">
+        <div class="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-glow">
+          <i data-lucide="alert-circle" class="w-10 h-10 text-brand-gold"></i>
         </div>
-        <h3 class="text-xl font-black text-slate-900 mb-3">No specific matches found</h3>
-        <p class="text-slate-500 font-medium mb-6 max-w-md mx-auto">
-          Try adding more specific skills (e.g. "Python", "design", "sales", "writing") or selecting
-          some work style traits for better results.
-        </p>
-        <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="text-brand-600 font-black hover:underline">
-          Update your inputs
-        </a>
+        <h3 class="text-2xl font-bold text-white mb-4">No strong matches yet</h3>
+        <p class="text-slate-400 font-medium mb-10 max-w-md mx-auto leading-relaxed">Try broader skills, interests, or location details to surface more relevant directions.</p>
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="text-brand-blue font-bold uppercase tracking-widest text-xs hover:underline">
+          Update Inputs
+        </button>
       </div>
       {% endif %}
 
     </div>
     {% endif %}
-
-    <!-- How it works explainer -->
-    {% if results is none %}
-    <div class="bg-white rounded-3xl border border-slate-200 p-8">
-      <h3 class="font-black text-slate-900 text-lg mb-6">How This Tool Works</h3>
-      <div class="grid sm:grid-cols-3 gap-6">
-        {% for n, title, desc in [
-          (1, 'Enter your profile', 'Skills are the foundation. Add everything you know — tools, disciplines, languages, subject matter expertise.'),
-          (2, 'Traits refine results', 'Your natural work style narrows the field. Creative and independent people land in different roles than organized or analytical ones.'),
-          (3, 'Get real suggestions', 'The matcher uses a career knowledge base to surface relevant job titles and freelance paths — no AI, no guesswork.'),
-        ] %}
-        <div class="flex items-start gap-4">
-          <div class="w-8 h-8 bg-brand-600 rounded-xl flex items-center justify-center shrink-0 text-white font-black text-sm">{{ n }}</div>
-          <div>
-            <p class="font-black text-slate-900 mb-1">{{ title }}</p>
-            <p class="text-slate-500 text-sm font-medium leading-relaxed">{{ desc }}</p>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
   </main>
 
-  <footer class="bg-white border-t border-slate-200 py-8 px-6 text-center mt-12">
-    <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-3">
-      <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
-      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
-      <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
-      <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
-      <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
-      <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
-    </div>
-    <p class="text-xs text-slate-300 font-bold uppercase tracking-widest">&copy; 2026 DigiBioFi. All rights reserved.</p>
-  </footer>
+  {% include "partials/footer.html" %}
 </div>
 
 <script>
-  // Scroll to results on form submit
   {% if results is not none and results.has_results %}
   document.addEventListener('DOMContentLoaded', () => {
     const results = document.getElementById('results');

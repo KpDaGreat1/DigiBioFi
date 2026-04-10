@@ -4,11 +4,11 @@
 {% block page_title %}Profile Settings{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto space-y-8">
+<div class="max-w-4xl mx-auto space-y-8 surface-light">
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-black text-slate-900 tracking-tight">Edit Profile</h1>
-      <p class="text-slate-500 font-medium mt-1">Your public-facing identity. Keep it sharp and current.</p>
+      <p class="text-slate-500 font-medium mt-1">Keep your public profile accurate, polished, and easy to share.</p>
     </div>
     {% if profile and profile.slug %}
     <a href="/p/{{ profile.slug }}" target="_blank" class="flex items-center gap-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-5 py-2.5 rounded-2xl transition-all border border-brand-100/50">
@@ -101,7 +101,7 @@
             <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
               <i data-lucide="fingerprint" class="w-5 h-5"></i>
             </div>
-            <h2 class="text-xl font-black text-slate-900">Identity</h2>
+            <h2 class="text-xl font-black text-slate-900">Profile Basics</h2>
           </div>
 
           <div class="grid md:grid-cols-2 gap-6">
@@ -138,7 +138,7 @@
                         class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.bio %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900 resize-none" 
                         placeholder="Tell your professional story in a few sentences..." maxlength="1000">{{ profile.bio or '' }}</textarea>
               {% if errors and errors.bio %}<p class="error-message">{{ errors.bio }}</p>{% endif %}
-              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">Markdown supported</p>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">Basic formatting supported</p>
             </div>
           </div>
         </div>

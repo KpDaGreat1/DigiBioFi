@@ -4,41 +4,42 @@
 {% block page_title %}Skills & Expertise{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto space-y-10">
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-black text-slate-900 tracking-tight leading-tight">Expertise</h1>
-      <p class="text-slate-500 font-medium mt-1">List your technical stack and professional strengths.</p>
+<div class="max-w-5xl mx-auto space-y-12 reveal">
+  <div>
+    <div class="inline-flex items-center gap-2 text-brand-blue text-[10px] font-black uppercase tracking-[0.3em] mb-4">
+      <span class="w-8 h-[1px] bg-brand-blue"></span>
+      Skills
     </div>
+    <h1 class="text-4xl font-bold text-white tracking-tight">Skills.</h1>
+    <p class="text-slate-500 font-medium mt-2">Add the skills and categories you want visible on your profile.</p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-    <!-- Left Column: Guidelines & Suggestions -->
-    <div class="lg:col-span-1 space-y-6">
-      <div class="bg-brand-600 rounded-[2rem] p-6 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden">
-        <i data-lucide="sparkles" class="absolute -right-4 -bottom-4 w-24 h-24 opacity-10 rotate-12"></i>
-        <h3 class="text-base font-black mb-3 text-white">Pro Tip</h3>
-        <p class="text-xs text-brand-100 font-medium leading-relaxed">
-          Grouping skills by category (e.g., <span class="bg-white/20 px-1 rounded">Python|Backend</span>) makes your profile easier to read.
+  <div class="grid lg:grid-cols-12 gap-12">
+    <!-- Left Column: Reference -->
+    <div class="lg:col-span-4 space-y-8">
+      <div class="premium-panel p-8 bg-brand-blue/5 border-brand-blue/10">
+        <h3 class="text-sm font-bold text-brand-blue uppercase tracking-widest mb-4">Formatting Tip</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Use the <span class="text-white font-bold">Name|Category</span> format to keep your skill list organized. (e.g., Python|Backend)
         </p>
       </div>
 
-      <div class="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-elevated">
-        <h3 class="font-black text-slate-900 text-sm mb-4 flex items-center gap-2">
-          <i data-lucide="lightbulb" class="w-4 h-4 text-brand-600"></i>
-          Suggestions
+      <div class="premium-panel p-8">
+        <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4 text-brand-gold"></i>
+          Quick Add
         </h3>
-        <div class="space-y-4">
+        <div class="space-y-6">
           {% for cat, suggestions in [
-            ('Frontend', ['React', 'Vue', 'Tailwind CSS', 'TypeScript']),
-            ('Backend', ['Python', 'FastAPI', 'Node.js', 'PostgreSQL']),
-            ('Tools', ['Docker', 'AWS', 'Git', 'CI/CD'])
+            ('Frontend', ['React', 'Vue', 'Tailwind']),
+            ('Backend', ['Python', 'FastAPI', 'Node.js']),
+            ('DevOps', ['Docker', 'AWS', 'Kubernetes'])
           ] %}
           <div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{{ cat }}</p>
-            <div class="flex flex-wrap gap-1.5">
+            <p class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-3">{{ cat }}</p>
+            <div class="flex flex-wrap gap-2">
               {% for s in suggestions %}
-              <button type="button" onclick="addSkill('{{ s }}|{{ cat }}')" class="px-2 py-1 bg-slate-50 hover:bg-brand-50 hover:text-brand-600 text-slate-600 text-[10px] font-bold rounded-lg border border-slate-100 transition-all">
+              <button type="button" onclick="addSkill('{{ s }}|{{ cat }}')" class="px-3 py-1.5 bg-white/5 hover:bg-brand-blue/10 text-slate-400 hover:text-brand-blue text-[10px] font-bold rounded-lg border border-white/5 transition-all">
                 + {{ s }}
               </button>
               {% endfor %}
@@ -49,55 +50,38 @@
       </div>
     </div>
 
-    <!-- Right Column: Editor -->
-    <div class="lg:col-span-3 space-y-8">
-      <div class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-elevated relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
-        
-        <div class="relative z-10">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
-                <i data-lucide="cpu" class="w-5 h-5"></i>
-              </div>
-              <h2 class="text-xl font-black text-slate-900">Expertise Stack</h2>
-            </div>
-          </div>
+    <!-- Right Column: Interface -->
+    <div class="lg:col-span-8 space-y-8">
+      <div class="premium-panel p-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-brand-blue/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
 
-          <form action="/dashboard/skills" method="post" id="skills-form" class="space-y-8">
+        <div class="relative z-10">
+          <form action="/dashboard/skills" method="post" id="skills-form" class="space-y-10">
             <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-            
-            <!-- Skill Tags Container -->
+
             <div class="space-y-4">
-              <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Your Active Skills</label>
-              <div id="skills-container" class="flex flex-wrap gap-3 min-h-[100px] p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
-                <!-- Tags will be rendered here by JS -->
+              <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Current Skills</label>
+              <div id="skills-container" class="flex flex-wrap gap-3 min-h-[120px] p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
                 {% if not profile.skills %}
-                <p id="no-skills-msg" class="text-sm font-bold text-slate-400 italic py-2">No skills added yet. Start typing below...</p>
+                <p id="no-skills-msg" class="text-xs font-bold text-slate-600 uppercase tracking-widest italic py-4">No skills added yet</p>
                 {% endif %}
               </div>
             </div>
 
-            <!-- Input area -->
-            <div class="flex flex-col md:flex-row gap-4">
-              <div class="flex-1 relative">
-                <i data-lucide="plus" class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
-                <input type="text" id="skill-input" placeholder="Add skill (e.g. Python|Backend)" 
-                       class="w-full pl-14 pr-6 py-5 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-700"
-                       onkeypress="if(event.key === 'Enter') { event.preventDefault(); addSkillFromInput(); }">
-              </div>
-              <button type="button" onclick="addSkillFromInput()" class="bg-brand-600 hover:bg-brand-700 text-white font-black px-8 py-5 rounded-2xl transition-all shadow-lg shadow-brand-600/20 flex items-center justify-center gap-2 shrink-0">
-                Add to Stack
+            <div class="flex flex-col sm:flex-row gap-4">
+              <input type="text" id="skill-input" placeholder="Name|Category"
+                     class="flex-1 bg-white/5 border border-white/5 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-brand-blue transition-all text-sm font-bold"
+                     onkeypress="if(event.key === 'Enter') { event.preventDefault(); addSkillFromInput(); }">
+              <button type="button" onclick="addSkillFromInput()" class="btn-primary px-10 py-4 shadow-glow text-xs uppercase tracking-widest">
+                Add Skill
               </button>
             </div>
 
-            <!-- Hidden input for form submission -->
             <input type="hidden" name="skills_raw" id="skills_raw">
-            
-            <div class="pt-4 border-t border-slate-100">
-                <button type="submit" data-loading-text="SAVING STACK..." class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-1 flex items-center justify-center gap-2">
-                  <i data-lucide="save" class="w-5 h-5"></i>
-                  Save Changes
+
+            <div class="pt-8 border-t border-white/5">
+                <button type="submit" class="w-full py-5 bg-white/5 hover:bg-white/10 text-white font-black rounded-xl transition-all border border-white/10 uppercase tracking-[0.2em] text-xs">
+                  Save Skills
                 </button>
             </div>
           </form>
@@ -108,33 +92,33 @@
 </div>
 
 <!-- Edit Modal -->
-<div id="edit-skill-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-  <div class="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
-    <div class="p-8">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-black text-slate-900">Edit Skill</h3>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+<div id="edit-skill-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+  <div class="premium-panel w-full max-w-md overflow-hidden transform transition-all shadow-glow">
+    <div class="p-10">
+      <div class="flex items-center justify-between mb-8">
+        <h3 class="text-xl font-bold text-white tracking-tight">Edit Skill</h3>
+        <button onclick="closeEditModal()" class="text-slate-500 hover:text-white transition-colors">
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
       </div>
-      
-      <div class="space-y-6">
-        <div>
-          <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Skill Name</label>
-          <input type="text" id="edit-skill-name" class="w-full px-6 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-700">
+
+      <div class="space-y-8">
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Skill Name</label>
+          <input type="text" id="edit-skill-name" class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all font-bold">
         </div>
-        <div>
-          <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Category (Optional)</label>
-          <input type="text" id="edit-skill-category" class="w-full px-6 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-700">
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Category</label>
+          <input type="text" id="edit-skill-category" class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all font-bold">
         </div>
       </div>
     </div>
-    <div class="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
-        <button onclick="closeEditModal()" class="flex-1 bg-white hover:bg-slate-100 text-slate-600 font-black py-4 rounded-xl border border-slate-200 transition-all">
+    <div class="p-10 bg-white/[0.02] border-t border-white/5 flex gap-4">
+        <button onclick="closeEditModal()" class="flex-1 py-4 text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-white transition-colors">
             Cancel
         </button>
-        <button onclick="saveSkillEdit()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-brand-600/20">
-            Apply
+        <button onclick="saveSkillEdit()" class="flex-1 btn-primary py-4 text-xs uppercase tracking-widest shadow-glow">
+            Confirm
         </button>
     </div>
   </div>
@@ -158,15 +142,12 @@ function closeEditModal() {
 
 function saveSkillEdit() {
     if (editingIndex === -1) return;
-    
+
     const name = document.getElementById('edit-skill-name').value.trim();
     const category = document.getElementById('edit-skill-category').value.trim();
-    
-    if (!name) {
-        alert('Skill name is required');
-        return;
-    }
-    
+
+    if (!name) return;
+
     skills[editingIndex] = { name, category };
     renderSkills();
     closeEditModal();
@@ -180,45 +161,37 @@ let skills = [
 function renderSkills() {
     const container = document.getElementById('skills-container');
     const hiddenInput = document.getElementById('skills_raw');
-    const noSkillsMsg = document.getElementById('no-skills-msg');
-    
+
     container.innerHTML = '';
     let rawValue = '';
 
     if (skills.length === 0) {
-        if (noSkillsMsg) container.appendChild(noSkillsMsg);
-        else {
-             const msg = document.createElement('p');
-             msg.id = 'no-skills-msg';
-             msg.className = 'text-sm font-bold text-slate-400 italic py-2';
-             msg.innerText = 'No skills added yet. Start typing below...';
-             container.appendChild(msg);
-        }
+        container.innerHTML = '<p id="no-skills-msg" class="text-xs font-bold text-slate-600 uppercase tracking-widest italic py-4">No skills added yet</p>';
     } else {
         skills.forEach((skill, index) => {
             const tag = document.createElement('div');
-            tag.className = 'group flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-bold rounded-xl border border-slate-200 shadow-sm transition-all hover:border-brand-500 hover:shadow-brand-500/10';
-            
+            tag.className = 'group flex items-center gap-3 px-5 py-2.5 bg-white/5 text-slate-300 text-sm font-bold rounded-xl border border-white/5 transition-all hover:border-brand-blue/30';
+
             let html = `<span>${skill.name}</span>`;
             if (skill.category) {
-                html += `<span class="px-1.5 py-0.5 bg-brand-50 text-brand-600 text-[10px] rounded uppercase tracking-tighter">${skill.category}</span>`;
+                html += `<span class="px-2 py-0.5 bg-brand-blue/10 text-brand-blue text-[9px] font-black rounded uppercase tracking-widest">${skill.category}</span>`;
             }
-            html += `<div class="flex items-center gap-1.5 ml-2 border-l border-slate-100 pl-2">
-                        <button type="button" onclick="openEditSkill(${index})" class="text-slate-300 hover:text-brand-600 transition-colors">
+            html += `<div class="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
+                        <button type="button" onclick="openEditSkill(${index})" class="text-slate-600 hover:text-brand-blue transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                         </button>
-                        <button type="button" onclick="removeSkill(${index})" class="text-slate-300 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeSkill(${index})" class="text-slate-600 hover:text-red-500 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                      </div>`;
-            
+
             tag.innerHTML = html;
             container.appendChild(tag);
-            
+
             rawValue += skill.name + (skill.category ? '|' + skill.category : '') + '\n';
         });
     }
-    
+
     hiddenInput.value = rawValue;
 }
 
@@ -226,25 +199,17 @@ function addSkill(raw) {
     const parts = raw.split('|');
     const name = parts[0].trim();
     const category = parts[1] ? parts[1].trim() : '';
-    
     if (!name) return;
-    
-    // Prevent duplicates
     const exists = skills.some(s => s.name.toLowerCase() === name.toLowerCase());
-    if (exists) {
-        alert('Skill already added!');
-        return;
-    }
-    
+    if (exists) return;
     skills.push({ name, category });
     renderSkills();
 }
 
 function addSkillFromInput() {
     const input = document.getElementById('skill-input');
-    const value = input.value.trim();
-    if (value) {
-        addSkill(value);
+    if (input.value.trim()) {
+        addSkill(input.value.trim());
         input.value = '';
     }
 }
@@ -254,7 +219,6 @@ function removeSkill(index) {
     renderSkills();
 }
 
-// Initial render
 document.addEventListener('DOMContentLoaded', renderSkills);
 </script>
 {% endblock %}

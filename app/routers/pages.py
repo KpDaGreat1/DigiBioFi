@@ -3,18 +3,32 @@ Public content pages — educational, tool, explore, news, contact.
 All routes are publicly accessible (no auth required).
 """
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
 from app.core.dependencies import get_db, get_current_user_optional, require_csrf
 from app.core.templates import templates, flash
+from app.utils.validators import normalize_optional_external_url, sanitize_article_html
 
 router = APIRouter(tags=["pages"])
 logger = logging.getLogger(__name__)
+_EXAMPLE_PROFILE_EMAIL_DOMAIN = "@example.invalid"
+
+
+def _is_example_profile(profile) -> bool:
+    user = getattr(profile, "user", None)
+    email = (getattr(user, "email", "") or "").lower()
+    username = (getattr(user, "username", "") or "").lower()
+    headline = (getattr(profile, "headline", "") or "").lower()
+    return (
+        email.endswith(_EXAMPLE_PROFILE_EMAIL_DOMAIN)
+        or username.startswith("sample_")
+        or headline.startswith("example profile")
+        or headline.startswith("sample profile")
+    )
 
 
 # ── What is DigiBioFi ─────────────────────────────────────────────────────────
@@ -48,6 +62,7 @@ def explore_page(
 
     query = (
         db.query(Profile)
+        .options(selectinload(Profile.skills), selectinload(Profile.user))
         .join(User, User.id == Profile.user_id)
         .filter(
             Profile.is_public.is_(True),
@@ -71,6 +86,7 @@ def explore_page(
         .limit(per_page)
         .all()
     )
+    example_profile_slugs = {profile.slug for profile in profiles if _is_example_profile(profile)}
 
     total_pages = max(1, (total + per_page - 1) // per_page)
 
@@ -85,6 +101,8 @@ def explore_page(
             "total": total,
             "q": q,
             "base_url": settings.base_url,
+            "example_profile_slugs": example_profile_slugs,
+            "example_profile_count": len(example_profile_slugs),
         },
     )
 
@@ -383,26 +401,27 @@ def news_page(
 ):
     from app.models.article import Article
 
-    db_articles = (
+    article_query = (
         db.query(Article)
         .filter(Article.is_published.is_(True))
         .order_by(Article.created_at.desc())
-        .all()
     )
+    if category:
+        article_query = article_query.filter(Article.category == category)
+
+    db_articles = article_query.all()
 
     if db_articles:
+        for article in db_articles:
+            article.hero_image = normalize_optional_external_url(article.hero_image)
         # Show admin-created content
-        if category:
-            filtered = [a for a in db_articles if a.category == category]
-        else:
-            filtered = db_articles
         categories = sorted(set(a.category for a in db_articles if a.category))
         return templates.TemplateResponse(
             "pages/news.html",
             {
                 "request": request,
                 "user": user,
-                "articles": filtered,
+                "articles": db_articles,
                 "categories": categories,
                 "selected_category": category,
                 "source": "db",
@@ -445,6 +464,10 @@ def article_page(
     if not article:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article.content_html = sanitize_article_html(article.content_html)
+    article.hero_image = normalize_optional_external_url(article.hero_image)
+    article.video_url = normalize_optional_external_url(article.video_url)
 
     return templates.TemplateResponse(
         "pages/article.html",

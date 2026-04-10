@@ -16,13 +16,27 @@ from app.core.dependencies import get_db, get_current_user_optional
 from app.services import profile_service, qr_service, analytics_service
 from app.services.storage import storage
 from app.schemas.analytics import TrackEventRequest
-from app.utils.validators import hash_visitor
+from app.utils.validators import hash_visitor, sanitize_text
 
 router = APIRouter(tags=["public"])
 logger = logging.getLogger(__name__)
 _ANONYMOUS_DAILY_PROFILE_VIEW_LIMIT = 100
 _anonymous_profile_views: dict[str, tuple[date, int]] = {}
 _anonymous_profile_views_lock = Lock()
+_EXAMPLE_PROFILE_EMAIL_DOMAIN = "@example.invalid"
+
+
+def _is_example_profile(profile) -> bool:
+    user = getattr(profile, "user", None)
+    email = (getattr(user, "email", "") or "").lower()
+    username = (getattr(user, "username", "") or "").lower()
+    headline = (getattr(profile, "headline", "") or "").lower()
+    return (
+        email.endswith(_EXAMPLE_PROFILE_EMAIL_DOMAIN)
+        or username.startswith("sample_")
+        or headline.startswith("example profile")
+        or headline.startswith("sample profile")
+    )
 
 
 def _get_client_ip(request: Request) -> str:
@@ -157,7 +171,7 @@ def public_profile(
     ua = request.headers.get("user-agent", "")
 
     if user is None and not _allow_anonymous_profile_view(ip, now):
-        logger.warning("Anonymous public profile throttle exceeded slug=%s viewer_ip=%s", slug, ip)
+        logger.warning("Anonymous public profile throttle exceeded slug=%s", slug)
         return templates.TemplateResponse(
             "errors/429.html",
             {"request": request},
@@ -183,12 +197,14 @@ def public_profile(
     public_inline_ad_slot = settings.adsense_public_inline_slot.strip()
     public_sidebar_ad_slot = settings.adsense_public_sidebar_slot.strip()
     show_ads = should_show_ads(profile.user)
+    is_example_profile = _is_example_profile(profile)
 
     return templates.TemplateResponse(
         "public/profile.html",
         {
             "request": request,
             "profile": profile,
+            "safe_profile_bio": sanitize_text(profile.bio or ""),
             "base_url": settings.base_url,
             "user": user,
             "show_public_inline_ad": show_ads and bool(adsense_client_id and public_inline_ad_slot),
@@ -197,6 +213,7 @@ def public_profile(
             "adsense_client_id": adsense_client_id,
             "public_inline_ad_slot": public_inline_ad_slot,
             "public_sidebar_ad_slot": public_sidebar_ad_slot,
+            "is_example_profile": is_example_profile,
         },
     )
 
@@ -246,6 +263,20 @@ def download_qr(slug: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/api/qr/{slug}")
+def inline_qr(slug: str, db: Session = Depends(get_db)):
+    profile = profile_service.get_profile_by_slug(slug, db)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    qr_bytes = qr_service.get_qr_bytes(slug)
+    if not qr_bytes:
+        qr_service.generate_qr_for_profile(profile, db)
+        qr_bytes = qr_service.get_qr_bytes(slug)
+
+    return Response(content=qr_bytes, media_type="image/png")
+
+
 # ── Resume PDF download ───────────────────────────────────────────────────────
 
 @router.get("/resume/download/{slug}")
@@ -257,13 +288,12 @@ def download_resume(slug: str, request: Request, db: Session = Depends(get_db), 
     _ensure_profile_access(profile, user)
 
     if not profile.resume_pdf:
-        # Graceful fallback: redirect back to profile with a message
-        from fastapi.responses import RedirectResponse
+        flash(request, "Resume not available for this profile.", "info")
         return RedirectResponse(url=f"/p/{slug}?error=no_resume", status_code=status.HTTP_303_SEE_OTHER)
 
     pdf_path = storage.resolve_url(profile.resume_pdf)
     if not pdf_path or not pdf_path.exists():
-        from fastapi.responses import RedirectResponse
+        flash(request, "Resume not available for this profile.", "info")
         return RedirectResponse(url=f"/p/{slug}?error=no_resume", status_code=status.HTTP_303_SEE_OTHER)
 
     # Record analytics event

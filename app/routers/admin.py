@@ -15,9 +15,11 @@ from app.core.owner import apply_owner_access, is_owner_email
 from app.core.dependencies import get_db, require_admin, require_csrf
 from app.core.templates import flash, templates
 from app.models.analytics import AnalyticsEvent
+from app.models.message import ContactMessage
 from app.models.profile import Profile
 from app.models.user import User
 from app.services.user_service import delete_user_and_assets
+from app.utils.validators import normalize_external_url, sanitize_article_html
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +54,11 @@ def admin_home(
     total_qr_scans = (
         db.query(AnalyticsEvent)
         .filter(AnalyticsEvent.event_type == "qr_scan")
+        .count()
+    )
+    unread_messages = (
+        db.query(ContactMessage)
+        .filter(ContactMessage.status == "unread")
         .count()
     )
 
@@ -111,6 +118,7 @@ def admin_home(
                 "total_events": total_events,
                 "total_page_views": total_page_views,
                 "total_qr_scans": total_qr_scans,
+                "unread_messages": unread_messages,
                 "tier_counts": tier_counts,
                 "public_profiles": public_profiles,
                 "private_profiles": private_profiles,
@@ -297,7 +305,7 @@ async def delete_user(
 
     email = user.email
     delete_user_and_assets(user, db)
-    logger.info("Admin %s deleted user %s", admin.id, email)
+    logger.info("Admin %s deleted user_id=%s", admin.id, user_id)
     flash(request, f"{email} deleted.", "success")
     return _users_redirect()
 
@@ -504,7 +512,7 @@ def admin_article_new(
 @router.post("/articles/new", response_class=HTMLResponse)
 async def admin_article_create(
     request: Request,
-    title: str = Form(...),
+    title: str = Form(""),
     slug: str = Form(default=""),
     summary: str = Form(default=""),
     content_html: str = Form(default=""),
@@ -521,17 +529,27 @@ async def admin_article_create(
 
     title = title.strip()[:300]
     summary = summary.strip()[:500]
-    content_html = content_html.strip()
+    content_html = sanitize_article_html(content_html.strip())
     category = category.strip()[:100]
     tags = tags.strip()[:300]
-    hero_image = hero_image.strip()[:500] or None
-    video_url = video_url.strip()[:500] or None
+    hero_image = hero_image.strip()[:500]
+    video_url = video_url.strip()[:500]
 
     errors: dict[str, str] = {}
     if not title:
         errors["title"] = "Title is required."
     if not content_html:
         errors["content_html"] = "Content is required."
+    if hero_image:
+        try:
+            hero_image = normalize_external_url(hero_image)
+        except ValueError:
+            errors["hero_image"] = "Hero image URL must start with http:// or https://"
+    if video_url:
+        try:
+            video_url = normalize_external_url(video_url)
+        except ValueError:
+            errors["video_url"] = "Video URL must start with http:// or https://"
 
     if errors:
         return templates.TemplateResponse(
@@ -544,8 +562,8 @@ async def admin_article_create(
                 "form": {
                     "title": title, "slug": slug, "summary": summary,
                     "content_html": content_html, "category": category,
-                    "tags": tags, "hero_image": hero_image or "",
-                    "video_url": video_url or "",
+                    "tags": tags, "hero_image": hero_image,
+                    "video_url": video_url,
                     "is_published": is_published == "on",
                 },
             },
@@ -561,8 +579,8 @@ async def admin_article_create(
         content_html=content_html,
         category=category,
         tags=tags,
-        hero_image=hero_image,
-        video_url=video_url,
+        hero_image=hero_image or None,
+        video_url=video_url or None,
         is_published=(is_published == "on"),
         author_id=admin.id,
     )
@@ -597,7 +615,7 @@ def admin_article_edit(
 async def admin_article_update(
     request: Request,
     article_id: int,
-    title: str = Form(...),
+    title: str = Form(""),
     slug: str = Form(default=""),
     summary: str = Form(default=""),
     content_html: str = Form(default=""),
@@ -619,17 +637,27 @@ async def admin_article_update(
 
     title = title.strip()[:300]
     summary = summary.strip()[:500]
-    content_html = content_html.strip()
+    content_html = sanitize_article_html(content_html.strip())
     category = category.strip()[:100]
     tags = tags.strip()[:300]
-    hero_image = hero_image.strip()[:500] or None
-    video_url = video_url.strip()[:500] or None
+    hero_image = hero_image.strip()[:500]
+    video_url = video_url.strip()[:500]
 
     errors: dict[str, str] = {}
     if not title:
         errors["title"] = "Title is required."
     if not content_html:
         errors["content_html"] = "Content is required."
+    if hero_image:
+        try:
+            hero_image = normalize_external_url(hero_image)
+        except ValueError:
+            errors["hero_image"] = "Hero image URL must start with http:// or https://"
+    if video_url:
+        try:
+            video_url = normalize_external_url(video_url)
+        except ValueError:
+            errors["video_url"] = "Video URL must start with http:// or https://"
 
     if errors:
         return templates.TemplateResponse(
@@ -639,6 +667,17 @@ async def admin_article_update(
                 "admin": admin,
                 "article": article,
                 "errors": errors,
+                "form": {
+                    "title": title,
+                    "slug": slug,
+                    "summary": summary,
+                    "content_html": content_html,
+                    "category": category,
+                    "tags": tags,
+                    "hero_image": hero_image,
+                    "video_url": video_url,
+                    "is_published": is_published == "on",
+                },
             },
             status_code=422,
         )
@@ -653,8 +692,8 @@ async def admin_article_update(
     article.content_html = content_html
     article.category = category
     article.tags = tags
-    article.hero_image = hero_image
-    article.video_url = video_url
+    article.hero_image = hero_image or None
+    article.video_url = video_url or None
     article.is_published = (is_published == "on")
     db.commit()
     flash(request, "Article updated.", "success")

@@ -141,14 +141,19 @@ celerybeat.pid
 # DigiBioFi specific ignores (critical)
 .idea/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
+*.sqlite-shm
+*.sqlite-wal
 pycache/
 uploads/
 qr_codes/
 *.pyc
 .DS_Store
 .envrc
+.junie/
 .venv
 .venv/
 env/
@@ -159,6 +164,7 @@ venv.bak/
 tmp/
 *.tmp
 *.temp
+logs/
 
 # Spyder project settings
 .spyderproject

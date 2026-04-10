@@ -2,106 +2,102 @@
 {% block title %}Join DigiBioFi — Create Your Account{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex flex-col md:flex-row bg-white">
+<div class="min-h-screen flex flex-col md:flex-row bg-[#0E1117]">
   <!-- Left Side: Branding & Visual -->
-  <div class="hidden md:flex md:w-1/2 bg-slate-900 relative overflow-hidden items-center justify-center p-12">
-    <div class="absolute inset-0 opacity-20">
-      <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-brand-600 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
-      <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
+  <div class="hidden md:flex md:w-1/2 bg-ui-panel relative overflow-hidden items-center justify-center p-16 border-r border-white/5">
+    <div class="absolute inset-0">
+      <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.1)_0%,transparent_70%)]"></div>
+      <div class="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-brand-purple rounded-full blur-[160px] opacity-10 animate-pulse-slow"></div>
     </div>
-    
-    <div class="relative z-10 max-w-md text-center">
-      <div class="inline-flex items-center gap-2 font-black text-white text-3xl mb-12 tracking-tighter">
-        <div class="bg-brand-600 p-2 rounded-xl shadow-2xl shadow-brand-500/20">
+
+    <div class="relative z-10 max-w-sm">
+      <a href="/" class="inline-flex items-center gap-3 font-display text-3xl font-bold text-white mb-16 tracking-tight group">
+        <div class="bg-gradient-to-br from-brand-blue to-brand-purple p-2.5 rounded-2xl shadow-glow group-hover:scale-110 transition-transform">
           <i data-lucide="layers" class="w-8 h-8"></i>
         </div>
         <span>DigiBioFi</span>
-      </div>
-      <h2 class="text-4xl font-black text-white leading-tight mb-6 tracking-tight">Your professional identity starts here.</h2>
-      <p class="text-slate-400 text-lg font-medium leading-relaxed">Join thousands of high-impact professionals and claim your signature digital presence.</p>
-      
-      <!-- Product highlights -->
-      <div class="mt-16 grid grid-cols-2 gap-8 text-left border-t border-white/10 pt-12">
+      </a>
+      <h2 class="text-5xl font-bold text-white leading-[1.1] mb-8 tracking-tight">Create your <span class="text-brand-purple">profile.</span></h2>
+      <p class="text-slate-400 text-lg font-medium leading-relaxed mb-12">Build a polished public profile for your experience, projects, links, and career growth.</p>
+
+      <div class="grid grid-cols-2 gap-8 pt-12 border-t border-white/10">
         <div>
-          <p class="text-3xl font-black text-white">Live</p>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Profile URL</p>
+          <p class="text-3xl font-bold text-white">Public</p>
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Profile Link</p>
         </div>
         <div>
-          <p class="text-3xl font-black text-white">QR</p>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Identity Sharing</p>
+          <p class="text-3xl font-bold text-white">Career</p>
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Tools Included</p>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Right Side: Register Form -->
-  <div class="flex-1 flex items-center justify-center p-8 md:p-12 overflow-y-auto">
-    <div class="w-full max-w-md py-12">
-      <div class="md:hidden text-center mb-12">
-        <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tighter">
-          <i data-lucide="layers" class="w-6 h-6"></i>
+  <div class="flex-1 flex items-center justify-center p-8 md:p-20 overflow-y-auto relative">
+    <div class="w-full max-w-md reveal py-12">
+      <div class="md:hidden text-center mb-16">
+        <a href="/" class="inline-flex items-center gap-3 font-display text-2xl font-bold text-white tracking-tight">
+          <div class="bg-brand-purple p-1.5 rounded-xl">
+            <i data-lucide="layers" class="w-6 h-6"></i>
+          </div>
           DigiBioFi
         </a>
       </div>
 
-      <div class="mb-10">
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Create Account</h1>
-        <p class="text-slate-500 font-medium">Claim your professional handle, then verify your email to unlock your account.</p>
+      <div class="mb-12">
+        <h1 class="text-3xl font-bold text-white tracking-tight mb-3">Create Account</h1>
+        <p class="text-slate-500 font-medium text-sm uppercase tracking-widest">Get started</p>
       </div>
 
       {% if errors and errors.general %}
-      <div class="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
+      <div class="mb-8 p-5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
         <i data-lucide="alert-circle" class="w-5 h-5"></i>
         {{ errors.general }}
       </div>
       {% endif %}
 
-      <form action="/register" method="post" class="space-y-6">
+      <form action="/register" method="post" class="space-y-8">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="hidden" aria-hidden="true">
-          <label for="company">Company</label>
           <input id="company" type="text" name="company" tabindex="-1" autocomplete="off">
         </div>
 
-        <div class="space-y-2">
-          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Email Address</label>
+        <div class="space-y-3">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Email</label>
           <div class="relative flex items-center group">
-            <i data-lucide="mail" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <i data-lucide="mail" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-purple transition-colors"></i>
             <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
-                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-purple transition-all font-medium"
                    placeholder="alex@example.com" />
           </div>
-          {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
         </div>
 
-        <div class="space-y-2">
-          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Unique Username</label>
+        <div class="space-y-3">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Username</label>
           <div class="relative flex items-center group">
-            <span class="absolute left-5 text-slate-400 font-bold group-focus-within:text-brand-500 transition-colors">@</span>
+            <span class="absolute left-5 text-slate-600 font-bold group-focus-within:text-brand-purple transition-colors">@</span>
             <input type="text" name="username" value="{{ username or '' }}" required
-                   class="w-full pl-11 pr-5 py-4 rounded-2xl border {% if errors and errors.username %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   class="w-full pl-11 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-purple transition-all font-medium"
                    placeholder="johndoe" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_\-]+" />
           </div>
-          {% if errors and errors.username %}<p class="error-message">{{ errors.username }}</p>{% endif %}
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter ml-1">Only letters, numbers, _ and - allowed</p>
         </div>
 
-        <div class="space-y-2">
-          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Secure Password</label>
+        <div class="space-y-3">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Password</label>
           <div class="relative flex items-center group">
-            <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+            <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-purple transition-colors"></i>
             <input type="password" name="password" required autocomplete="new-password"
-                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.password %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
+                   class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-purple transition-all font-medium"
                    placeholder="••••••••" minlength="8" />
           </div>
-          {% if errors and errors.password %}<p class="error-message">{{ errors.password }}</p>{% endif %}
-          
-          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Requirements:</p>
-            <div class="grid grid-cols-2 gap-2">
-              {% for req in ['8+ Characters', 'Uppercase', 'Number', 'Special Icon'] %}
-              <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+
+          <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+            <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Password Requirements</p>
+            <div class="grid grid-cols-2 gap-3">
+              {% for req in ['8+ Chars', 'Complexity'] %}
+              <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                <div class="w-1.5 h-1.5 rounded-full bg-brand-purple/40"></div>
                 {{ req }}
               </div>
               {% endfor %}
@@ -109,28 +105,18 @@
           </div>
         </div>
 
-        <div class="space-y-2">
-          <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Confirm Password</label>
-          <div class="relative flex items-center group">
-            <i data-lucide="shield-check" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
-            <input type="password" name="confirm_password" required autocomplete="new-password"
-                   class="w-full pl-14 pr-5 py-4 rounded-2xl border {% if errors and errors.confirm_password %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-medium" 
-                   placeholder="••••••••" />
-          </div>
-          {% if errors and errors.confirm_password %}<p class="error-message">{{ errors.confirm_password }}</p>{% endif %}
-        </div>
-
-        <button type="submit" data-loading-text="CREATING ACCOUNT..." class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:-translate-y-1 text-lg uppercase tracking-widest mt-4">
+        <button type="submit" class="btn-primary w-full py-5 text-xs font-black uppercase tracking-[0.2em] shadow-glow bg-brand-purple hover:shadow-brand-purple/20">
           Create Account
         </button>
       </form>
 
-      <p class="mt-10 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">
-        Already have an account?
-        <a href="/login" class="text-brand-600 hover:text-brand-700 transition-colors ml-1">Sign In</a>
-      </p>
+      <div class="mt-12 pt-12 border-t border-white/5 text-center">
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-widest">
+          Already have an account?
+          <a href="/login" class="text-brand-purple hover:text-white transition-colors ml-2">Sign In</a>
+        </p>
+      </div>
     </div>
   </div>
 </div>
-
 {% endblock %}

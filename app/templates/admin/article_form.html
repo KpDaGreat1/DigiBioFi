@@ -26,22 +26,9 @@
   </div>
   {% endif %}
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="mb-4 px-4 py-3 rounded-xl text-sm font-medium
-          {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200
-          {% elif category == 'error' %}bg-red-50 text-red-700 border border-red-200
-          {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-          {{ message }}
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
   {% set action = "/admin/articles/" ~ article.id ~ "/edit" if article else "/admin/articles/new" %}
   <form method="post" action="{{ action }}" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
 
     <div>
       <label class="block text-sm font-semibold text-slate-700 mb-1">Title <span class="text-red-500">*</span></label>
@@ -96,6 +83,7 @@
              value="{{ form.hero_image if form is defined else (article.hero_image if article else '') }}"
              placeholder="https://..."
              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+      {% if errors.hero_image %}<p class="text-xs text-red-500 mt-1">{{ errors.hero_image }}</p>{% endif %}
     </div>
 
     <div>
@@ -104,6 +92,7 @@
              value="{{ form.video_url if form is defined else (article.video_url if article else '') }}"
              placeholder="https://www.youtube.com/embed/..."
              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+      {% if errors.video_url %}<p class="text-xs text-red-500 mt-1">{{ errors.video_url }}</p>{% endif %}
     </div>
 
     <div class="flex items-center gap-3">
@@ -113,22 +102,23 @@
       <label for="is_published" class="text-sm font-semibold text-slate-700">Publish immediately</label>
     </div>
 
-    <div class="flex items-center gap-3 pt-2">
+    <div class="pt-2">
       <button type="submit"
               class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors">
         {% if article %}Save Changes{% else %}Create Article{% endif %}
       </button>
-      {% if article %}
-      <form method="post" action="/admin/articles/{{ article.id }}/delete" class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit"
-                onclick="return confirm('Delete this article permanently?')"
-                class="text-red-500 hover:text-red-700 text-sm font-medium transition-colors">
-          Delete
-        </button>
-      </form>
-      {% endif %}
     </div>
   </form>
+
+  {% if article %}
+  <form method="post" action="/admin/articles/{{ article.id }}/delete" class="pt-3">
+    <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+    <button type="submit"
+            onclick="return confirm('Delete this article permanently?')"
+            class="text-red-500 hover:text-red-700 text-sm font-medium transition-colors">
+      Delete
+    </button>
+  </form>
+  {% endif %}
 </main>
 {% endblock %}

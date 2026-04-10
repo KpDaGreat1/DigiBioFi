@@ -7,122 +7,146 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-slate-50">
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
 
-  <!-- Nav -->
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
-      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
-        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
-      </div>
-      DigiBioFi
-    </a>
-    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
-      <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
-      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
-    </nav>
-    <div class="flex items-center gap-4">
-      {% if user %}
-      <a href="/dashboard" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Dashboard</a>
-      {% else %}
-      <a href="/login" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Log in</a>
-      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Get Started Free</a>
-      {% endif %}
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-6 py-12">
-
+  <main class="flex-1 max-w-7xl mx-auto px-6 py-20">
     <!-- Header -->
-    <div class="mb-10">
-      <p class="text-xs font-black uppercase tracking-[0.2em] text-brand-600 mb-3">Public Directory</p>
-      <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-3">Explore Profiles</h1>
-      <p class="text-slate-500 font-medium text-lg">Browse public professional profiles from the DigiBioFi community.</p>
+    <div class="mb-16">
+      <div class="reveal inline-flex items-center gap-2 text-brand-green text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+        <span class="w-8 h-[1px] bg-brand-green"></span>
+        Public Directory
+      </div>
+      <h1 class="reveal reveal-delay-1 font-display text-5xl md:text-7xl font-bold text-white tracking-tight mb-8">
+        Explore <span class="text-gradient-blue">Profiles.</span>
+      </h1>
+      <p class="reveal reveal-delay-2 text-slate-400 font-medium text-lg max-w-2xl leading-relaxed">
+        Connect with public professional profiles, practical portfolios, and clear ways to discover relevant talent.
+      </p>
     </div>
 
     <!-- Search -->
-    <form method="get" action="/explore" class="mb-10">
-      <div class="flex gap-3 max-w-xl">
-        <div class="relative flex-1">
-          <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+    <form method="get" action="/explore" class="reveal reveal-delay-3 mb-16">
+      <div class="flex flex-col sm:flex-row gap-4 max-w-2xl">
+        <div class="relative flex-1 group">
+          <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-brand-blue transition-colors"></i>
           <input
             type="text"
             name="q"
             value="{{ q }}"
-            placeholder="Search by name, headline, or location..."
-            class="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent shadow-sm"
+            placeholder="Search by name, title, skill, or location..."
+            class="w-full pl-12 pr-4 py-4 rounded-xl border border-white/5 bg-white/5 text-white font-medium text-sm focus:outline-none focus:border-brand-blue transition-all"
           />
         </div>
-        <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-black px-6 py-3.5 rounded-2xl transition-all text-sm shadow-sm">
+        <button type="submit" class="btn-primary py-4 px-10 shadow-glow">
           Search
         </button>
-        {% if q %}
-        <a href="/explore" class="flex items-center gap-1 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors px-2">
-          <i data-lucide="x" class="w-4 h-4"></i> Clear
-        </a>
-        {% endif %}
       </div>
     </form>
 
-    <!-- Results count -->
-    <p class="text-sm font-bold text-slate-400 mb-8 uppercase tracking-widest">
-      {% if q %}
-        {{ total }} result{{ 's' if total != 1 else '' }} for "{{ q }}"
-      {% else %}
-        {{ total }} public profile{{ 's' if total != 1 else '' }}
-      {% endif %}
-    </p>
+    <section class="grid md:grid-cols-3 gap-6 mb-16">
+      {% for title, desc in [
+        ('Search by role', 'Try titles like designer, developer, recruiter, consultant, or strategist.'),
+        ('Search by skill', 'Use skills such as Python, product design, analytics, marketing, or sales.'),
+        ('Search by location', 'Look for remote profiles or filter by city, state, or region.'),
+      ] %}
+      <div class="premium-card p-6">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-2">{{ title }}</h2>
+        <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- Results Status -->
+    <div class="flex items-center justify-between mb-12">
+      <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+        {% if q %}
+          {{ total }} profile{{ 's' if total != 1 else '' }} matching "{{ q }}"
+        {% else %}
+          {{ total }} public profile{{ 's' if total != 1 else '' }}
+        {% endif %}
+      </p>
+      <div class="flex gap-4">
+         <div class="flex items-center gap-2">
+           <span class="w-2 h-2 rounded-full bg-brand-blue"></span>
+           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Public</span>
+         </div>
+      </div>
+    </div>
+
+    {% if example_profile_count %}
+    <div class="mb-10 rounded-2xl border border-brand-blue/20 bg-brand-blue/5 px-6 py-4 text-sm font-medium text-slate-300">
+      Example profiles are labeled clearly in the directory so visitors can see how a complete DigiBioFi profile can look.
+    </div>
+    {% endif %}
 
     {% if profiles %}
     <!-- Profile Grid -->
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
       {% for profile in profiles %}
-      <a href="/p/{{ profile.slug }}" class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all">
-        <!-- Cover color -->
-        <div class="h-16 bg-gradient-to-br from-brand-900 via-slate-800 to-slate-900 relative overflow-hidden">
-          <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_70%_50%,rgba(79,70,229,0.4)_0%,transparent_70%)]"></div>
+      <a href="/p/{{ profile.slug }}" class="premium-card group block overflow-hidden">
+        <!-- Card Header / Cover -->
+        <div class="h-20 bg-gradient-to-br from-slate-800 to-slate-900 relative">
+          <div class="absolute top-4 right-4">
+             <span class="text-[8px] font-black text-white/50 uppercase tracking-widest bg-white/5 px-2 py-1 rounded border border-white/5">
+                {% if profile.slug in example_profile_slugs %}
+                Example Profile
+                {% else %}
+                Public Profile
+                {% endif %}
+             </span>
+          </div>
         </div>
 
-        <div class="px-5 pb-5 -mt-6 relative">
+        <div class="px-6 pb-8 -mt-8 relative">
           <!-- Avatar -->
-          {% if profile.profile_image %}
-          <img
-            src="{{ profile.profile_image }}"
-            alt="{{ profile.full_name or profile.slug }}"
-            class="w-14 h-14 rounded-xl border-2 border-white shadow-md object-cover mb-3"
-          />
-          {% else %}
-          <div class="w-14 h-14 rounded-xl border-2 border-white shadow-md bg-brand-600 flex items-center justify-center mb-3">
-            <span class="text-white font-black text-lg">
-              {{ (profile.full_name or profile.slug)[:1].upper() }}
-            </span>
+          <div class="relative inline-block mb-4">
+            {% if profile.profile_image %}
+            <img
+              src="{{ profile.profile_image }}"
+              alt="{{ profile.full_name or profile.slug }}"
+              class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium object-cover transition-transform group-hover:scale-105"
+            />
+            {% else %}
+            <div class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center transition-transform group-hover:scale-105">
+              <span class="text-white font-bold text-xl">
+                {{ (profile.full_name or profile.slug)[:1].upper() }}
+              </span>
+            </div>
+            {% endif %}
+            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
           </div>
-          {% endif %}
 
-          <h2 class="font-black text-slate-900 text-base leading-tight mb-1 group-hover:text-brand-600 transition-colors">
+          <h2 class="font-bold text-white text-lg leading-tight mb-2 group-hover:text-brand-blue transition-colors tracking-tight">
             {{ profile.full_name or profile.slug }}
           </h2>
+
           {% if profile.headline %}
-          <p class="text-slate-500 text-sm font-medium leading-snug mb-2 line-clamp-2">{{ profile.headline }}</p>
-          {% endif %}
-          {% if profile.location %}
-          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-            {{ profile.location }}
-          </div>
+          <p class="text-slate-400 text-xs font-medium leading-relaxed mb-4 line-clamp-2">{{ profile.headline }}</p>
           {% endif %}
 
-          {% if profile.skills %}
-          <div class="flex flex-wrap gap-1.5 mt-3">
-            {% for skill in profile.skills[:3] %}
-            <span class="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{{ skill.name }}</span>
-            {% endfor %}
-            {% if profile.skills|length > 3 %}
-            <span class="text-xs font-bold bg-slate-100 text-slate-400 px-2.5 py-1 rounded-full">+{{ profile.skills|length - 3 }}</span>
+          <div class="flex flex-wrap gap-2 mb-6">
+            {% if profile.skills %}
+              {% for skill in profile.skills[:2] %}
+              <span class="text-[9px] font-bold bg-white/5 text-slate-400 px-2 py-1 rounded-md border border-white/5">{{ skill.name }}</span>
+              {% endfor %}
+            {% endif %}
+            {% if profile.slug in example_profile_slugs %}
+            <span class="text-[9px] font-black text-brand-blue uppercase tracking-widest px-2 py-1 bg-brand-blue/10 rounded-md">Example Profile</span>
+            {% else %}
+            <span class="text-[9px] font-black text-brand-green uppercase tracking-widest px-2 py-1 bg-brand-green/10 rounded-md">Public Profile</span>
             {% endif %}
           </div>
-          {% endif %}
+
+          <div class="flex items-center justify-between pt-4 border-t border-white/5">
+             <div class="flex items-center gap-2 text-slate-500">
+               <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+               <span class="text-[10px] font-bold uppercase tracking-widest">{{ profile.location or 'Global' }}</span>
+             </div>
+             <div class="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-brand-blue transition-colors">
+               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-white"></i>
+             </div>
+          </div>
         </div>
       </a>
       {% endfor %}
@@ -130,18 +154,18 @@
 
     <!-- Pagination -->
     {% if total_pages > 1 %}
-    <div class="flex items-center justify-center gap-3">
+    <div class="flex items-center justify-center gap-6">
       {% if page > 1 %}
       <a href="/explore?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}"
-         class="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 hover:border-brand-300 hover:text-brand-600 transition-all">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Previous
+         class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all uppercase tracking-widest">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
       </a>
       {% endif %}
-      <span class="text-sm font-bold text-slate-400">Page {{ page }} of {{ total_pages }}</span>
+      <span class="text-xs font-bold text-slate-600 uppercase tracking-[0.2em]">Page {{ page }} / {{ total_pages }}</span>
       {% if page < total_pages %}
       <a href="/explore?page={{ page + 1 }}{% if q %}&q={{ q }}{% endif %}"
-         class="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 hover:border-brand-300 hover:text-brand-600 transition-all">
-        Next <i data-lucide="arrow-right" class="w-4 h-4"></i>
+         class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all uppercase tracking-widest">
+        Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
       </a>
       {% endif %}
     </div>
@@ -149,18 +173,21 @@
 
     {% else %}
     <!-- Empty state -->
-    <div class="text-center py-24">
-      <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-        <i data-lucide="users" class="w-8 h-8 text-slate-400"></i>
+    <div class="text-center py-32 premium-panel max-w-2xl mx-auto">
+      <div class="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-glow">
+        <i data-lucide="user-plus" class="w-10 h-10 text-brand-blue"></i>
       </div>
       {% if q %}
-      <h3 class="font-black text-slate-900 text-xl mb-2">No profiles match "{{ q }}"</h3>
-      <p class="text-slate-500 font-medium mb-6">Try a different name, headline, or location.</p>
-      <a href="/explore" class="text-brand-600 font-black hover:underline">Browse all profiles</a>
+      <h3 class="font-bold text-white text-2xl mb-4 tracking-tight">Zero matches for "{{ q }}"</h3>
+      <p class="text-slate-400 font-medium mb-10 leading-relaxed">No public profiles matched that search. Try a broader title, skill, or location.</p>
+      <a href="/explore" class="text-brand-blue font-bold hover:underline">Clear Search</a>
       {% else %}
-      <h3 class="font-black text-slate-900 text-xl mb-2">No public profiles yet</h3>
-      <p class="text-slate-500 font-medium mb-6">Be among the first to create a public DigiBioFi profile.</p>
-      <a href="/register" class="bg-brand-600 hover:bg-brand-700 text-white font-black px-8 py-3 rounded-2xl transition-all">Create Your Profile</a>
+      <h3 class="font-bold text-white text-2xl mb-4 tracking-tight">No public profiles yet</h3>
+      <p class="text-slate-400 font-medium mb-10 leading-relaxed">Create the first profile and start building a stronger public presence.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/register" class="btn-primary px-10">Create Your Profile</a>
+        <a href="/tools/job-matcher" class="px-10 py-3 border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all">Try Job Matcher</a>
+      </div>
       {% endif %}
     </div>
     {% endif %}
@@ -168,25 +195,14 @@
   </main>
 
   <!-- Bottom CTA -->
-  <section class="bg-white border-t border-slate-200 py-16 px-6 text-center">
-    <h2 class="text-2xl font-black text-slate-900 mb-3 tracking-tight">Add your profile to the directory</h2>
-    <p class="text-slate-500 font-medium mb-6 max-w-md mx-auto">Create a free DigiBioFi profile and appear in this public directory.</p>
-    <a href="/register" class="bg-brand-600 hover:bg-brand-700 text-white font-black px-10 py-4 rounded-2xl transition-all shadow-lg shadow-brand-500/20">
-      Get Started — It's Free
+  <section class="py-24 px-6 text-center border-t border-white/5">
+    <h2 class="text-3xl font-bold text-white mb-6 tracking-tight">Show your work with a profile people can actually use.</h2>
+    <p class="text-slate-400 font-medium mb-10 max-w-md mx-auto leading-relaxed">Create a professional profile with your experience, projects, and links in one place.</p>
+    <a href="/register" class="btn-primary px-12 py-4 shadow-glow">
+      Create Your Profile
     </a>
   </section>
 
-  <footer class="bg-slate-50 border-t border-slate-200 py-8 px-6 text-center">
-    <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-3">
-      <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
-      <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
-      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
-      <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
-      <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
-      <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
-    </div>
-    <p class="text-xs text-slate-300 font-bold uppercase tracking-widest">&copy; 2026 DigiBioFi. All rights reserved.</p>
-  </footer>
+  {% include "partials/footer.html" %}
 </div>
 {% endblock %}
