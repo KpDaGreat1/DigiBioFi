@@ -153,8 +153,8 @@
 
 ## Git status
 - Branch target: `main-v1`
-- Commit: pending
-- Push: pending
+- Commit: `4729f59` — `Finalize v1 hardening and tier cleanup`
+- Push: successful to `origin/main-v1`
 
 ## Final production status
 - NOT READY
@@ -162,6 +162,7 @@
 ### Exact blockers
 1. Production SMTP is not configured in local `.env`, so real verification email delivery cannot occur and production signup is safely blocked.
 2. The workspace contains unrelated in-progress changes outside this hardening pass; only the targeted hardening files should be committed/pushed from this state.
+
 
 
 
