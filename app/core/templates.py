@@ -1,6 +1,7 @@
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from app.core.security import generate_csrf_token
+from app.core.config import settings
 
 templates = Jinja2Templates(directory="app/templates")
 

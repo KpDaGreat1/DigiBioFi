@@ -25,10 +25,12 @@ services:
     image: postgres:17
     container_name: digibiofi_db
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: digibiofi_user
-      POSTGRES_PASSWORD: LifeIsLikeABoxOfChocolate!
-      POSTGRES_DB: digibiofi_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -43,5 +45,4 @@ services:
 
 volumes:
   postgres_data:
-
 

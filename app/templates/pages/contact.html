@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Contact — DigiBioFi{% endblock %}
+
+{% block head %}
+<meta name="description" content="Get in touch with the DigiBioFi team. Questions, feedback, support, or business inquiries — we'd love to hear from you." />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50">
+
+  <!-- Nav -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
+        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+      </div>
+      DigiBioFi
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
+      <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      {% if user %}
+      <a href="/dashboard" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Dashboard</a>
+      {% else %}
+      <a href="/login" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Log in</a>
+      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Get Started Free</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-16 md:py-24">
+
+    <div class="grid md:grid-cols-2 gap-16 items-start">
+
+      <!-- Left: Info -->
+      <div>
+        <p class="text-xs font-black uppercase tracking-[0.2em] text-brand-600 mb-4">Get in Touch</p>
+        <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-6 leading-tight">
+          We'd love to hear from you
+        </h1>
+        <p class="text-slate-600 font-medium leading-relaxed mb-10 text-lg">
+          Whether you have a question about your account, feedback on the platform,
+          a business inquiry, or just want to say hello — reach out and we'll respond
+          as quickly as we can.
+        </p>
+
+        <div class="space-y-6">
+          {% for icon, label, value in [
+            ('send', 'Primary Channel', 'Use the contact form on this page'),
+            ('globe', 'Platform', 'digibiofi.com'),
+            ('clock', 'Review Cadence', 'Messages are reviewed in the order received'),
+          ] %}
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center shrink-0">
+              <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-600"></i>
+            </div>
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.15em] text-slate-400 mb-1">{{ label }}</p>
+              <p class="font-bold text-slate-900">{{ value }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-12 p-6 bg-slate-100 rounded-2xl border border-slate-200">
+          <h3 class="font-black text-slate-900 mb-2">Quick Links</h3>
+          <ul class="space-y-2 text-sm font-bold text-slate-500">
+            <li><a href="/register" class="hover:text-brand-600 transition-colors flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Create a free account</a></li>
+            <li><a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> How DigiBioFi works</a></li>
+            <li><a href="/privacy" class="hover:text-brand-600 transition-colors flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i> Privacy Policy</a></li>
+            <li><a href="/terms" class="hover:text-brand-600 transition-colors flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div>
+        {% if submitted %}
+        <!-- Success State -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
+          <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-600"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-900 mb-3 tracking-tight">Message received!</h2>
+          <p class="text-slate-500 font-medium leading-relaxed mb-8">
+            Thank you for reaching out. We've received your message and will respond within 1–2 business days.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/" class="bg-slate-900 hover:bg-slate-800 text-white font-black px-8 py-3 rounded-2xl transition-all text-sm">Back to Home</a>
+            <a href="/contact" class="bg-white border border-slate-200 hover:border-brand-300 text-slate-600 font-black px-8 py-3 rounded-2xl transition-all text-sm">Send Another</a>
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Contact Form -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-10">
+          <h2 class="text-xl font-black text-slate-900 mb-6 tracking-tight">Send us a message</h2>
+          {% if errors %}
+          <div class="mb-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+            <p class="font-black mb-2">Please fix the highlighted fields.</p>
+            <ul class="space-y-1">
+              {% for message in errors.values() %}
+              <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          <form method="post" action="/contact" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+
+            <div class="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-sm font-black text-slate-700 mb-2">Full Name <span class="text-brand-600">*</span></label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  maxlength="200"
+                  value="{{ form.name if form else '' }}"
+                  placeholder="Your name"
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  autocomplete="name"
+                  spellcheck="false"
+                />
+                {% if errors and errors.name %}<p class="error-message">{{ errors.name }}</p>{% endif %}
+              </div>
+              <div>
+                <label class="block text-sm font-black text-slate-700 mb-2">Email Address <span class="text-brand-600">*</span></label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  maxlength="255"
+                  value="{{ form.email if form else '' }}"
+                  placeholder="your@email.com"
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  autocomplete="email"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+                {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-black text-slate-700 mb-2">Subject <span class="text-brand-600">*</span></label>
+              <select
+                name="subject"
+                required
+                class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
+              >
+                <option value="" disabled {% if not form or not form.subject %}selected{% endif %}>Select a topic</option>
+                <option value="Account Support" {% if form and form.subject == 'Account Support' %}selected{% endif %}>Account Support</option>
+                <option value="Billing Question" {% if form and form.subject == 'Billing Question' %}selected{% endif %}>Billing Question</option>
+                <option value="Technical Issue" {% if form and form.subject == 'Technical Issue' %}selected{% endif %}>Technical Issue</option>
+                <option value="Feature Request" {% if form and form.subject == 'Feature Request' %}selected{% endif %}>Feature Request</option>
+                <option value="Business Inquiry" {% if form and form.subject == 'Business Inquiry' %}selected{% endif %}>Business Inquiry</option>
+                <option value="Press or Media" {% if form and form.subject == 'Press or Media' %}selected{% endif %}>Press or Media</option>
+                <option value="General Feedback" {% if form and form.subject == 'General Feedback' %}selected{% endif %}>General Feedback</option>
+                <option value="Other" {% if form and form.subject == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+              {% if errors and errors.subject %}<p class="error-message">{{ errors.subject }}</p>{% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-black text-slate-700 mb-2">Message <span class="text-brand-600">*</span></label>
+              <textarea
+                name="message"
+                required
+                rows="5"
+                maxlength="5000"
+                placeholder="Tell us how we can help..."
+                class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                autocomplete="off"
+                spellcheck="true"
+              >{{ form.message if form else '' }}</textarea>
+              {% if errors and errors.message %}<p class="error-message">{{ errors.message }}</p>{% endif %}
+            </div>
+
+            <button
+              type="submit"
+              class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-brand-500/20 hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
+            >
+              <i data-lucide="send" class="w-4 h-4"></i>
+              Send Message
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-8 px-6 text-center mt-8">
+    <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-3">
+      <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
+      <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
+      <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
+    </div>
+    <p class="text-xs text-slate-300 font-bold uppercase tracking-widest">&copy; 2026 DigiBioFi. All rights reserved.</p>
+  </footer>
+</div>
+{% endblock %}

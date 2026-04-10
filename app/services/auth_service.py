@@ -1,6 +1,4 @@
-"""
-Authentication business logic — registration, login, token management.
-"""
+"""Authentication business logic — registration, login, and signed email flows."""
 import logging
 from datetime import datetime, timezone
 
@@ -8,7 +6,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password
 from app.core.config import settings
 from app.models.user import User
 from app.models.profile import Profile
@@ -17,6 +15,7 @@ from app.utils.slug import unique_slug
 
 logger = logging.getLogger(__name__)
 PASSWORD_RESET_SALT = "password-reset"
+EMAIL_VERIFICATION_SALT = "email-verification"
 
 
 class AuthError(Exception):
@@ -24,6 +23,10 @@ class AuthError(Exception):
 
 
 def _password_reset_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(settings.secret_key)
+
+
+def _email_verification_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(settings.secret_key)
 
 
@@ -77,7 +80,7 @@ def register_user(data: RegisterRequest, db: Session) -> User:
     return user
 
 
-def authenticate_user(data: LoginRequest, db: Session) -> str:
+def authenticate_user(data: LoginRequest, db: Session) -> User:
     user = db.query(User).filter(func.lower(User.email) == data.email.lower()).first()
 
     if not user or not verify_password(data.password, user.hashed_password):
@@ -86,7 +89,19 @@ def authenticate_user(data: LoginRequest, db: Session) -> str:
     if not user.is_active:
         raise AuthError("Account inactive.")
 
-    return create_access_token(subject=user.id, role=user.role)
+    return user
+
+
+def create_email_verification_token(user: User) -> str:
+    stamp = _utc_timestamp(user.updated_at)
+    return _email_verification_serializer().dumps(
+        {"uid": user.id, "email": user.email.lower(), "stamp": stamp},
+        salt=EMAIL_VERIFICATION_SALT,
+    )
+
+
+def build_email_verification_url(token: str, base_url: str) -> str:
+    return f"{base_url.rstrip('/')}/verify-email?token={token}"
 
 
 def create_password_reset_token(user: User) -> str:
@@ -95,6 +110,10 @@ def create_password_reset_token(user: User) -> str:
         {"uid": user.id, "stamp": stamp},
         salt=PASSWORD_RESET_SALT,
     )
+
+
+def build_password_reset_url(token: str, base_url: str) -> str:
+    return f"{base_url.rstrip('/')}/reset-password?token={token}"
 
 
 def issue_password_reset(email: str, db: Session) -> str | None:
@@ -132,3 +151,38 @@ def reset_password(data: ResetPasswordRequest, db: Session) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def verify_email_token(token: str, db: Session) -> User:
+    try:
+        payload = _email_verification_serializer().loads(
+            token,
+            salt=EMAIL_VERIFICATION_SALT,
+            max_age=settings.email_verification_expire_hours * 60 * 60,
+        )
+    except SignatureExpired as exc:
+        raise AuthError("Verification link expired.") from exc
+    except BadSignature as exc:
+        raise AuthError("Invalid verification link.") from exc
+
+    user = db.query(User).filter(User.id == int(payload["uid"])).first()
+    if not user or not user.is_active:
+        raise AuthError("Invalid verification link.")
+
+    if user.email.lower() != str(payload.get("email", "")).lower():
+        raise AuthError("Invalid verification link.")
+
+    if user.is_verified:
+        return user
+
+    current_stamp = _utc_timestamp(user.updated_at)
+    if current_stamp != payload.get("stamp"):
+        raise AuthError("Verification link expired.")
+
+    user.is_verified = True
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+
+    return user
+

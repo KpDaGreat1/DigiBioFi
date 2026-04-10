@@ -27,7 +27,7 @@
         <i data-lucide="briefcase" class="w-4 h-4"></i>
       </div>
       <!-- Content Card -->
-      <div class="w-[calc(100%_-_4rem)] md:w-[calc(50%_-_3rem)] bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-premium hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/5 transition-all group/card relative">
+      <div class="w-[calc(100%_-_4rem)] md:w-[calc(50%_-_3rem)] bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-elevated hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/5 transition-all group/card relative">
         {% if exp.is_current %}
         <div class="absolute -top-3 left-8 px-4 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/20 z-20">Current Role</div>
         {% endif %}
@@ -86,7 +86,7 @@
 
   <!-- Edit experience form (shown when edit_exp is set) -->
   {% if edit_exp %}
-  <div id="edit-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-premium relative overflow-hidden">
+  <div id="edit-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-elevated relative overflow-hidden">
     <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-8">
@@ -152,7 +152,7 @@
   {% endif %}
 
   <!-- Add new entry form -->
-  <div id="add-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-premium relative overflow-hidden">
+  <div id="add-exp-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-elevated relative overflow-hidden">
     <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
     
     <div class="relative z-10">

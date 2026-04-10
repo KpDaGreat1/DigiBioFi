@@ -7,7 +7,7 @@ All section tables (Experience, Education, etc.) belong to a Profile (1:N).
 from datetime import datetime, timezone
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID, desc
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base

@@ -22,7 +22,7 @@
     <!-- Left Column: Visuals & Assets -->
     <div class="space-y-8">
       <!-- Profile Image -->
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium text-center">
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated text-center">
         <div class="relative inline-block mb-6 group">
           <div class="absolute -inset-2 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
           {% if profile and profile.profile_image %}
@@ -57,7 +57,7 @@
       </div>
 
       <!-- Resume Asset -->
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium">
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
         <h3 class="font-black text-slate-900 mb-4 flex items-center gap-2">
           <i data-lucide="file-text" class="w-5 h-5 text-brand-600"></i>
           Resume
@@ -96,7 +96,7 @@
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
         
         <!-- Identity Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
               <i data-lucide="fingerprint" class="w-5 h-5"></i>
@@ -144,7 +144,7 @@
         </div>
 
         <!-- Reach Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <i data-lucide="zap" class="w-5 h-5"></i>
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Links Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
               <i data-lucide="share-2" class="w-5 h-5"></i>
@@ -208,7 +208,7 @@
         </div>
 
         <!-- Visibility Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
               <i data-lucide="eye" class="w-5 h-5"></i>
@@ -264,7 +264,7 @@
 
   <!-- Elite Customization (full-width, below the grid, shown to active elite users only) -->
   {% if user.role == 'admin' or (user.subscription_tier == 'elite' and user.subscription_status == 'active') %}
-  <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-brand-200 shadow-premium">
+  <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-brand-200 shadow-elevated">
     <div class="flex items-center gap-3 mb-8">
       <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
         <i data-lucide="sparkles" class="w-5 h-5"></i>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Join Elite — DigiBioFi Identity{% endblock %}
+{% block title %}Join DigiBioFi — Create Your Account{% endblock %}
 
 {% block body %}
 <div class="min-h-screen flex flex-col md:flex-row bg-white">
@@ -20,15 +20,15 @@
       <h2 class="text-4xl font-black text-white leading-tight mb-6 tracking-tight">Your professional identity starts here.</h2>
       <p class="text-slate-400 text-lg font-medium leading-relaxed">Join thousands of high-impact professionals and claim your signature digital presence.</p>
       
-      <!-- Stats or Social Proof -->
+      <!-- Product highlights -->
       <div class="mt-16 grid grid-cols-2 gap-8 text-left border-t border-white/10 pt-12">
         <div>
-          <p class="text-3xl font-black text-white">1,000+</p>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Verified Users</p>
+          <p class="text-3xl font-black text-white">Live</p>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Profile URL</p>
         </div>
         <div>
-          <p class="text-3xl font-black text-white">50k+</p>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Monthly Scans</p>
+          <p class="text-3xl font-black text-white">QR</p>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Identity Sharing</p>
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@
 
       <div class="mb-10">
         <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Create Account</h1>
-        <p class="text-slate-500 font-medium">Claim your professional handle and start building.</p>
+        <p class="text-slate-500 font-medium">Claim your professional handle, then verify your email to unlock your account.</p>
       </div>
 
       {% if errors and errors.general %}
@@ -58,7 +58,11 @@
 
       <form action="/register" method="post" class="space-y-6">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        
+        <div class="hidden" aria-hidden="true">
+          <label for="company">Company</label>
+          <input id="company" type="text" name="company" tabindex="-1" autocomplete="off">
+        </div>
+
         <div class="space-y-2">
           <label class="text-xs font-black text-slate-700 uppercase tracking-widest ml-1">Email Address</label>
           <div class="relative flex items-center group">

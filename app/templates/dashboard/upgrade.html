@@ -14,7 +14,7 @@
     <p class="text-slate-500 font-medium text-lg max-w-xl mx-auto">Unlock your full professional identity with a plan that fits your goals.</p>
   </div>
 
-  {% if user.subscription_status == 'active' and user.subscription_tier in ('basic', 'elite', 'premium') %}
+  {% if user.subscription_status == 'active' and user.subscription_tier in ('basic', 'elite') %}
   <!-- Already subscribed and active -->
   <div class="p-10 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 text-center shadow-sm">
     <i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-500 mx-auto mb-3"></i>
@@ -33,7 +33,7 @@
   <div class="grid md:grid-cols-2 gap-8">
 
     <!-- Basic Plan -->
-    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-premium overflow-hidden flex flex-col">
+    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-elevated overflow-hidden flex flex-col">
       <div class="bg-gradient-to-br from-slate-700 to-slate-900 p-8 text-white text-center relative overflow-hidden">
         <div class="absolute inset-0 opacity-10">
           <div class="absolute -top-16 -left-16 w-64 h-64 bg-white rounded-full blur-3xl"></div>
@@ -100,10 +100,10 @@
             'Everything in Basic',
             'Unrestricted profile view',
             'Advanced analytics dashboard',
-            'Physical BioFi Card (Coming soon)',
-            'Custom header & background',
+            'Custom header & background images',
             'Multiple profile photos',
-            'Priority support',
+            'Job Matcher tool access',
+            'Expanded profile presentation',
             'Early access to new features',
           ] %}
           <li class="flex items-center gap-3 text-slate-700 font-bold text-sm">

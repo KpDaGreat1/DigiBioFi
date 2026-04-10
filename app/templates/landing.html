@@ -14,7 +14,10 @@
     </div>
     <div class="hidden md:flex items-center gap-8 mr-auto ml-12">
       <a href="#features" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Features</a>
-      <a href="#preview" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Preview</a>
+      <a href="/what-is-digibiofi" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">How It Works</a>
+      <a href="/explore" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/news" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">News</a>
+      <a href="/tools/job-matcher" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Tools</a>
     </div>
     <div class="flex items-center gap-4">
       {% if not user %}
@@ -25,7 +28,7 @@
       {% elif user.subscription_tier == 'free' %}
       <a href="/dashboard" class="text-sm font-bold text-slate-600 hover:text-brand-600 transition-colors">Dashboard</a>
       <a href="/dashboard/upgrade" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-3 rounded-full transition-all shadow-xl shadow-brand-500/10 hover:-translate-y-0.5 uppercase tracking-widest">
-        Upgrade to Elite
+        View Plans
       </a>
       {% else %}
       <a href="/dashboard" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-8 py-3 rounded-full transition-all shadow-xl shadow-slate-900/10 hover:-translate-y-0.5 uppercase tracking-widest">
@@ -68,23 +71,10 @@
             Build Your Profile
             <i data-lucide="arrow-right" class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
           </a>
-          <div class="flex items-center gap-3">
-            <div class="flex -space-x-3">
-              <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-900 flex items-center justify-center text-[10px] font-black text-brand-400">
-                JD
-              </div>
-              <div class="w-10 h-10 rounded-full border-2 border-white bg-brand-500 flex items-center justify-center text-[10px] font-black text-white">
-                AR
-              </div>
-              <div class="w-10 h-10 rounded-full border-2 border-white bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white">
-                MS
-              </div>
-              <div class="w-10 h-10 rounded-full border-2 border-white bg-accent-300 flex items-center justify-center text-[10px] font-black text-slate-900">
-                TH
-              </div>
-            </div>
-            <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Join 1,000+ Pros</p>
-          </div>
+          <a href="/explore" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            Browse public profiles
+          </a>
         </div>
 
         <!-- Mockup/Preview Image -->
@@ -105,17 +95,14 @@
                 </div>
 
                 <div class="relative flex-1 overflow-hidden">
-                  <video class="absolute inset-0 z-10 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata" onerror="this.style.display='none'">
-                    <source src="/static/media/hero-demo.mp4" type="video/mp4" />
-                  </video>
-                  <div class="flex h-full p-8 flex-col items-center justify-center text-slate-200">
+                  <div class="flex h-full p-8 flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-brand-50/30">
                      <div class="w-20 h-20 bg-brand-500 rounded-3xl mb-6 shadow-xl animate-pulse"></div>
-                     <div class="h-4 bg-slate-100 rounded-full w-48 mb-4"></div>
-                     <div class="h-3 bg-slate-50 rounded-full w-64 mb-12"></div>
+                     <div class="h-4 bg-slate-200 rounded-full w-48 mb-4"></div>
+                     <div class="h-3 bg-slate-100 rounded-full w-64 mb-12"></div>
                      <div class="grid grid-cols-3 gap-6 w-full max-w-2xl">
-                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
-                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
-                       <div class="h-32 bg-slate-50 rounded-3xl"></div>
+                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
+                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
+                       <div class="h-32 bg-white rounded-3xl border border-slate-100 shadow-sm"></div>
                      </div>
                   </div>
                 </div>
@@ -144,12 +131,12 @@
 
         <div class="grid md:grid-cols-3 gap-10">
           {% for icon, title, desc in [
-            ('globe', 'Premium URLs', 'Custom professional links that look great on business cards and social bios.'),
+            ('globe', 'Custom URLs', 'Professional links that look great on business cards and social bios.'),
             ('qr-code', 'Persistent QR Identity', 'Signature QR codes that never expire and track real-time engagement.'),
             ('zap', 'Instant Updates', 'Edit your experience or projects and see changes live across the globe instantly.'),
             ('shield-check', 'Privacy First', 'You control who sees your data. Toggle public access with a single click.'),
             ('bar-chart-3', 'Smart Analytics', 'Track views, scans, and clicks to see how your professional brand is growing.'),
-            ('smartphone', 'Mobile Optimized', 'Your profile feels like a premium app on any smartphone or tablet.')
+            ('smartphone', 'Mobile Optimized', 'Your profile feels polished and app-like on any smartphone or tablet.')
           ] %}
           <div class="feature-card hover-lift reveal p-10 rounded-[2.5rem] border group" style="animation-delay: {{ loop.index0 * 80 }}ms;">
             <div class="w-16 h-16 bg-brand-50 text-brand-600 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white transition-all shadow-sm">
@@ -171,7 +158,7 @@
       </div>
       <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
         <h2 class="font-display text-4xl md:text-7xl font-semibold text-white mb-10 tracking-[-0.045em]">Ready to upgrade your professional identity?</h2>
-        <p class="text-xl text-slate-400 mb-14 font-medium max-w-2xl mx-auto">Join the new generation of high-impact professionals already using DigiBioFi.</p>
+        <p class="text-xl text-slate-400 mb-14 font-medium max-w-2xl mx-auto">Build a shareable professional profile with a live QR identity and clear analytics.</p>
         <a href="/register" class="inline-flex items-center bg-white text-brand-600 hover:bg-brand-50 text-xl font-black px-14 py-6 rounded-[2rem] transition-all shadow-2xl hover:-translate-y-1">
           Create Your Free Profile
         </a>
@@ -192,8 +179,12 @@
         <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">The Elite Identity Platform</p>
       </div>
       
-      <div class="flex items-center gap-10 text-sm font-black text-slate-500 uppercase tracking-widest">
-        <a href="#features" class="hover:text-brand-600 transition-colors">Features</a>
+      <div class="flex flex-wrap items-center gap-8 text-sm font-black text-slate-500 uppercase tracking-widest">
+        <a href="/what-is-digibiofi" class="hover:text-brand-600 transition-colors">How It Works</a>
+        <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+        <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+        <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Tools</a>
+        <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
         <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
         <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
       </div>

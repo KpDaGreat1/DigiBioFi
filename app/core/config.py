@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     debug: bool = True
     secret_key: str
     base_url: str = "http://localhost:8000"
-    redis_url: str
+    redis_url: str = ""
     # ── Security ─────────────────────────────────────────────────────────────
     # Session / CSRF / Rate limiting
     csrf_secret_key: str = "csrf-secret-key-change-me"
@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
     password_reset_expire_minutes: int = 30
+    email_verification_expire_hours: int = 24
 
     # ── File uploads ─────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
@@ -61,9 +62,8 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
 
-    # Multiple pricing tiers
+    # Billing tiers
     stripe_price_basic: str = ""
-    stripe_price_premium: str = ""
     stripe_price_elite: str = ""
 
     # ── Ads ──────────────────────────────────────────────────────────────────
@@ -73,10 +73,11 @@ class Settings(BaseSettings):
     adsense_dashboard_slot: str = ""
 
     def get_stripe_price(self, plan: str) -> str:
-        if plan == "basic":
+        normalized_plan = (plan or "").strip().lower()
+        if normalized_plan == "basic":
             return self.stripe_price_basic
-        if plan in {"premium", "elite"}:
-            return self.stripe_price_elite or self.stripe_price_premium
+        if normalized_plan == "elite":
+            return self.stripe_price_elite
         raise ValueError(f"Invalid plan: {plan}")
 
     # ── CORS ─────────────────────────────────────────────────────────────────
@@ -108,7 +109,7 @@ class Settings(BaseSettings):
             )
         return v
 
-    @field_validator("database_url", "redis_url", "admin_email")
+    @field_validator("database_url", "admin_email")
     @classmethod
     def validate_required_strings(cls, v: str, info) -> str:
         if not v or not v.strip():
@@ -146,6 +147,13 @@ class Settings(BaseSettings):
     def validate_free_daily_profile_view_limit(cls, v: int) -> int:
         if v < 1:
             raise ValueError("FREE_DAILY_PROFILE_VIEW_LIMIT must be at least 1.")
+        return v
+
+    @field_validator("email_verification_expire_hours")
+    @classmethod
+    def validate_email_verification_expire_hours(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("EMAIL_VERIFICATION_EXPIRE_HOURS must be at least 1.")
         return v
 
     # ── Derived helpers ───────────────────────────────────────────────────────

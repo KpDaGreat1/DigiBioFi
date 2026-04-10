@@ -4,9 +4,18 @@ from fastapi import Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 
 from app.core.owner import apply_owner_access, is_owner_email
-from app.core.permissions import can_access_elite_features, can_access_portfolio
 from app.core.security import AUTH_COOKIE_NAME, decode_access_token, validate_csrf
 from app.db.database import SessionLocal  # adjust if your path differs
+
+
+_UNVERIFIED_ALLOWED_PATH_PREFIXES = (
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+    "/logout",
+)
 
 
 # ───────────────────────────────
@@ -37,6 +46,11 @@ def get_db():
 # ───────────────────────────────
 def _get_token(request: Request) -> Optional[str]:
     return request.cookies.get(AUTH_COOKIE_NAME)
+
+
+def _is_unverified_allowed_path(path: str) -> bool:
+    normalized = (path or "").strip()
+    return any(normalized.startswith(prefix) for prefix in _UNVERIFIED_ALLOWED_PATH_PREFIXES)
 
 
 # ───────────────────────────────
@@ -73,6 +87,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=401, detail="User invalid")
 
+    if not user.is_verified and not _is_unverified_allowed_path(request.url.path):
+        raise HTTPException(status_code=403, detail="Email verification required")
+
     return user
 
 
@@ -95,23 +112,3 @@ def require_admin(current_user = Depends(get_current_user)):
     return current_user
 
 
-def require_premium(current_user = Depends(get_current_user)):
-    if current_user.role == "admin":
-        return current_user
-    if not can_access_portfolio(current_user):
-        raise HTTPException(
-            status_code=403,
-            detail="Premium subscription required for this feature"
-        )
-    return current_user
-
-
-def require_elite(current_user = Depends(get_current_user)):
-    if current_user.role == "admin":
-        return current_user
-    if not can_access_elite_features(current_user):
-        raise HTTPException(
-            status_code=403,
-            detail="Elite subscription required for this feature"
-        )
-    return current_user

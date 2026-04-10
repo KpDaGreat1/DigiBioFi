@@ -111,18 +111,6 @@ alembic downgrade -1
 
 ---
 
-## Running Tests
-
-```bash
-pytest
-# Verbose with coverage:
-pytest -v --tb=short
-```
-
-Tests use an in-memory SQLite DB — no external setup required.
-
----
-
 ## Production Deployment
 
 ### Prerequisites
@@ -213,7 +201,6 @@ digibiofi/
 │   └── utils/
 │       ├── slug.py              # Unique slug generation
 │       └── validators.py        # File validation, input sanitization
-├── tests/
 ├── alembic/
 ├── scripts/
 │   └── create_admin.py
@@ -221,7 +208,6 @@ digibiofi/
 ├── requirements.txt
 ├── .env.example
 ├── alembic.ini
-├── pytest.ini
 └── run.py
 ```
 
@@ -240,8 +226,6 @@ digibiofi/
 
 ## Roadmap
 
-- [ ] Email verification (SMTP integration)
-- [ ] Password reset (token email)
 - [ ] NFC smart card provisioning
 - [ ] Profile themes / color customization
 - [ ] Cloud file storage (S3/Cloudinary)

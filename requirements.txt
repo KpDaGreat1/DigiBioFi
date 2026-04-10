@@ -40,8 +40,6 @@ pydantic-settings==2.3.4
 pydantic_core==2.20.1
 Pygments==2.20.0
 pypng==0.20220715.0
-pytest==8.3.2
-pytest-asyncio==0.23.8
 python-dotenv==1.2.2
 python-jose==3.3.0
 python-multipart==0.0.9

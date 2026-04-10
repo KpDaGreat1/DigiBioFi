@@ -8,7 +8,7 @@
     border-radius: 2.5rem;
     background: rgba(255, 255, 255, 0.94);
     padding: 2rem;
-    box-shadow: var(--shadow-premium);
+    box-shadow: var(--shadow-elevated);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   .pill-link {
@@ -33,7 +33,7 @@
     border: 1px solid rgb(var(--border-subtle));
     border-radius: 1rem;
     background: rgba(255, 255, 255, 0.94);
-    box-shadow: var(--shadow-premium);
+    box-shadow: var(--shadow-elevated);
     color: rgb(var(--text-secondary));
     transition: all 0.2s ease;
   }
@@ -97,7 +97,7 @@
       </a>
       {% elif user.subscription_tier == 'free' %}
       <a href="/dashboard/upgrade" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-black px-5 py-2.5 rounded-full transition-all shadow-lg hover:-translate-y-0.5 uppercase tracking-widest">
-        Upgrade to Elite
+        View Plans
       </a>
       {% else %}
       <a href="/dashboard" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black px-6 py-2.5 rounded-full transition-all shadow-lg hover:-translate-y-0.5 uppercase tracking-widest">

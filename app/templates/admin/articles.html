@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Articles — Admin — DigiBioFi{% endblock %}
+{% block body %}
+<nav class="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <a href="/dashboard" class="font-bold text-brand-400 text-lg">DigiBioFi</a>
+    <span class="text-slate-600">/</span>
+    <a href="/admin" class="text-sm text-slate-300 font-medium hover:text-white transition-colors">Admin</a>
+    <span class="text-slate-600">/</span>
+    <span class="text-sm text-slate-300 font-medium">Articles</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="/admin" class="text-sm text-slate-300 hover:text-white transition-colors">Overview</a>
+    <a href="/admin/users" class="text-sm text-slate-300 hover:text-white transition-colors">Users</a>
+    <a href="/admin/messages" class="text-sm text-slate-300 hover:text-white transition-colors">Messages</a>
+    <a href="/logout" class="text-sm text-red-400 hover:text-red-300 transition-colors">Logout</a>
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 mb-1">Articles</h1>
+      <p class="text-sm text-slate-400">{{ total }} total</p>
+    </div>
+    <a href="/admin/articles/new" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors">+ New Article</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 px-4 py-3 rounded-xl text-sm font-medium
+          {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200
+          {% elif category == 'error' %}bg-red-50 text-red-700 border border-red-200
+          {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% if articles %}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-slate-100">
+        <tr>
+          <th class="text-left px-4 py-3 font-semibold text-slate-600">Title</th>
+          <th class="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Category</th>
+          <th class="text-left px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Status</th>
+          <th class="text-left px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">Created</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% for article in articles %}
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-800 truncate max-w-xs">{{ article.title }}</div>
+            <div class="text-xs text-slate-400 font-mono truncate">/news/{{ article.slug }}</div>
+          </td>
+          <td class="px-4 py-3 text-slate-500 hidden md:table-cell">{{ article.category or "—" }}</td>
+          <td class="px-4 py-3 hidden sm:table-cell">
+            {% if article.is_published %}
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">Published</span>
+            {% else %}
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Draft</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-slate-400 text-xs hidden lg:table-cell">{{ article.created_at.strftime('%b %d, %Y') }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="/admin/articles/{{ article.id }}/edit" class="text-brand-600 hover:text-brand-800 font-medium text-xs">Edit</a>
+            {% if article.is_published %}
+            <a href="/news/{{ article.slug }}" target="_blank" class="ml-3 text-slate-400 hover:text-slate-600 font-medium text-xs">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="flex justify-center gap-2 mt-6">
+    {% for p in range(1, total_pages + 1) %}
+    <a href="/admin/articles?page={{ p }}"
+       class="px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
+         {% if p == page %}bg-slate-900 text-white border-slate-900{% else %}bg-white text-slate-500 border-slate-200 hover:bg-slate-50{% endif %}">
+      {{ p }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
+    <p class="text-slate-400 text-sm mb-4">No articles yet.</p>
+    <a href="/admin/articles/new" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors">Create your first article</a>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

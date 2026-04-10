@@ -10,6 +10,8 @@
   </div>
   <div class="flex items-center gap-4">
     <a href="/admin/users" class="text-sm text-slate-300 hover:text-white transition-colors">Users</a>
+    <a href="/admin/messages" class="text-sm text-slate-300 hover:text-white transition-colors">Messages</a>
+    <a href="/admin/articles" class="text-sm text-slate-300 hover:text-white transition-colors">Articles</a>
     <a href="/dashboard" class="text-sm text-slate-400 hover:text-white transition-colors">My Dashboard</a>
     <a href="/logout" class="text-sm text-red-400 hover:text-red-300 transition-colors">Logout</a>
   </div>
@@ -114,10 +116,10 @@
                 </td>
                 <td class="py-3">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
-                    {% if u.subscription_tier in ('elite', 'premium') %}bg-brand-50 text-brand-700
+                    {% if u.subscription_tier == 'elite' %}bg-brand-50 text-brand-700
                     {% elif u.subscription_tier == 'basic' %}bg-sky-50 text-sky-700
                     {% else %}bg-slate-100 text-slate-600{% endif %}">
-                    {% if u.subscription_tier == 'premium' %}elite{% else %}{{ u.subscription_tier }}{% endif %}
+                    {{ u.subscription_tier }}
                   </span>
                 </td>
                 <td class="py-3 text-xs text-slate-400">{{ u.created_at.strftime('%b %d, %Y') }}</td>
@@ -141,6 +143,10 @@
         <div class="space-y-3">
           <a href="/admin/users" class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             User management
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+          <a href="/admin/messages" class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Contact messages
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </a>
         </div>

@@ -136,6 +136,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 # DigiBioFi specific ignores (critical)
 .idea/
 *.db
@@ -148,11 +150,15 @@ qr_codes/
 .DS_Store
 .envrc
 .venv
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+tmp/
+*.tmp
+*.temp
 
 # Spyder project settings
 .spyderproject

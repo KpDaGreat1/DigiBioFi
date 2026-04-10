@@ -17,7 +17,7 @@ from typing import Dict, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -27,7 +27,7 @@ from app.core.security import AUTH_COOKIE_NAME, clear_auth_cookie, clear_csrf_co
 from app.core.templates import templates
 from app.db.database import engine
 from app.db.schema import assert_schema_ready
-from app.routers import auth, dashboard, public, admin, billing, legal
+from app.routers import auth, dashboard, public, admin, billing, legal, pages
 from app.core.dependencies import get_current_user_optional, get_db
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ def _seed_admin_user():
                 subscription_tier="elite",
                 subscription_status="active",
                 is_active=True,
-                is_verified=False,
+                is_verified=True,
             )
             db.add(user)
             db.flush()
@@ -142,7 +142,6 @@ async def lifespan(app: FastAPI):
         settings.stripe_webhook_secret.strip()
         or settings.stripe_price_basic.strip()
         or settings.stripe_price_elite.strip()
-        or settings.stripe_price_premium.strip()
     )
     if stripe_enabled and not settings.stripe_secret_key.strip():
         raise RuntimeError("Stripe is enabled but STRIPE_SECRET_KEY is missing.")
@@ -165,7 +164,10 @@ async def lifespan(app: FastAPI):
             or not settings.smtp_user.strip()
             or not settings.smtp_password.strip()
         ):
-            logger.warning("Email is not fully configured; email delivery features remain disabled.")
+            logger.warning(
+                "Email is not fully configured; verification and password-reset delivery remain disabled. "
+                "Production signup is blocked until SMTP is configured."
+            )
 
     if app.state.environment != "testing":
         assert_schema_ready(engine)
@@ -278,7 +280,7 @@ def _apply_security_headers(response):
     connect_src = "'self'"
     frame_src = "'self'"
 
-    if settings.adsense_client_id:
+    if settings.adsense_client_id.strip():
         script_src += " https://pagead2.googlesyndication.com"
         img_src += (
             " https://pagead2.googlesyndication.com"
@@ -353,7 +355,6 @@ def _safe_error_response(request: Request, status_code: int = 500):
         content={"detail": "Internal server error"},
     )
 
-# ── Rate Limiting ─────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title=settings.app_name,
@@ -381,7 +382,13 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
 
         response = await call_next(request)
     except HTTPException as exc:
-        if exc.status_code == 401 and _request_expects_html(request):
+        if (
+            exc.status_code == 403
+            and exc.detail == "Email verification required"
+            and _request_expects_html(request)
+        ):
+            response = RedirectResponse("/verify-email/pending", status_code=303)
+        elif exc.status_code == 401 and _request_expects_html(request):
             response = _redirect_to_login()
         else:
             response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
@@ -443,11 +450,71 @@ app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
 
 # ── Robots.txt ───────────────────────────────────────
 
-from fastapi.responses import FileResponse
-
-@app.get("/robots.txt")
+@app.get("/robots.txt", include_in_schema=False)
 def robots():
-    return FileResponse("app/static/robots.txt")
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        f"Sitemap: {settings.base_url.rstrip('/')}/sitemap.xml\n"
+    )
+    return Response(content=content, media_type="text/plain")
+
+
+# ── Sitemap ───────────────────────────────────────────────
+
+@app.get("/sitemap.xml")
+def sitemap(request: Request, db=Depends(get_db)):
+    """Generate a valid XML sitemap of all public routes and public profiles."""
+    from app.models.profile import Profile
+    from app.models.user import User
+
+    base = settings.base_url.rstrip("/")
+
+    # Static public routes
+    static_routes = [
+        "/",
+        "/login",
+        "/register",
+        "/explore",
+        "/what-is-digibiofi",
+        "/news",
+        "/contact",
+        "/tools/job-matcher",
+        "/privacy",
+        "/terms",
+    ]
+
+    # Dynamic: all public profiles
+    slugs = (
+        db.query(Profile.slug)
+        .join(User, User.id == Profile.user_id)
+        .filter(Profile.is_public.is_(True), User.is_active.is_(True))
+        .all()
+    )
+
+    # Dynamic: published articles
+    from app.models.article import Article
+    article_slugs = (
+        db.query(Article.slug)
+        .filter(Article.is_published.is_(True))
+        .all()
+    )
+
+    urls = []
+    for route in static_routes:
+        urls.append(f"  <url><loc>{base}{route}</loc></url>")
+    for (slug,) in slugs:
+        urls.append(f"  <url><loc>{base}/p/{slug}</loc></url>")
+    for (slug,) in article_slugs:
+        urls.append(f"  <url><loc>{base}/news/{slug}</loc></url>")
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(urls)
+        + "\n</urlset>\n"
+    )
+    return Response(content=xml, media_type="application/xml")
 
 
 
@@ -459,6 +526,7 @@ app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(billing.router)
 app.include_router(legal.router)
+app.include_router(pages.router)
 
 # ── Stripe Webhook ───────────────────────────────────────────────────────────
 
@@ -474,6 +542,24 @@ def _get_user_by_stripe(db, customer_id: str | None, user_id_str: str | None):
             return db.query(User).filter(User.id == int(user_id_str)).first()
         except (ValueError, TypeError):
             pass
+    return None
+
+
+def _stripe_price_to_tier_map() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    if settings.stripe_price_basic.strip():
+        mapping[settings.stripe_price_basic.strip()] = "basic"
+    if settings.stripe_price_elite.strip():
+        mapping[settings.stripe_price_elite.strip()] = "elite"
+    return mapping
+
+
+def _tier_from_subscription_items(items) -> str | None:
+    configured_prices = _stripe_price_to_tier_map()
+    for item in (items or {}).get("data", []):
+        price_id = (((item or {}).get("price") or {}).get("id") or "").strip()
+        if price_id in configured_prices:
+            return configured_prices[price_id]
     return None
 
 
@@ -520,20 +606,30 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
             customer_id = obj.get("customer")
             subscription_id = obj.get("subscription")
             metadata = obj.get("metadata", {}) or {}
-            plan = metadata.get("plan", "elite")
-            tier = "elite" if plan != "basic" else "basic"
+            plan = (metadata.get("plan") or "").strip().lower()
             user = _get_user_by_stripe(db, customer_id, metadata.get("user_id"))
             if user:
                 if is_owner_email(user.email):
                     apply_owner_access(user)
                 else:
-                    user.subscription_tier = tier
-                    user.subscription_status = "active"
-                    if customer_id and not user.stripe_customer_id:
-                        user.stripe_customer_id = customer_id
-                    if subscription_id:
-                        user.stripe_subscription_id = subscription_id
-                logger.info(f"User {user.id} upgraded to {tier} via checkout.session.completed")
+                    if plan not in {"basic", "elite"}:
+                        logger.warning(
+                            "checkout.session.completed received invalid plan=%r for user_id=%s",
+                            plan,
+                            user.id,
+                        )
+                    else:
+                        user.subscription_tier = plan
+                        user.subscription_status = "active"
+                        if customer_id and not user.stripe_customer_id:
+                            user.stripe_customer_id = customer_id
+                        if subscription_id:
+                            user.stripe_subscription_id = subscription_id
+                        logger.info(
+                            "User %s upgraded to %s via checkout.session.completed",
+                            user.id,
+                            plan,
+                        )
             else:
                 logger.warning(f"checkout.session.completed: no user found for customer={customer_id}")
 
@@ -549,6 +645,9 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
                     if subscription_id:
                         user.stripe_subscription_id = subscription_id
                     if status == "active":
+                        tier = _tier_from_subscription_items(obj.get("items"))
+                        if tier:
+                            user.subscription_tier = tier
                         user.subscription_status = "active"
                     elif status in ("past_due", "unpaid"):
                         user.subscription_status = status
@@ -598,14 +697,7 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request, user=Depends(get_current_user_optional)):
-    """Landing page — redirect authenticated users to dashboard unless explicitly visiting."""
-    # We still redirect to dashboard by default if they are logged in, 
-    # but we pass user to the template just in case we ever want to show it.
-    # Actually, the requirement suggests showing different buttons on the landing page based on state.
-    # If we always redirect, they never see those buttons on the landing page.
-    # So maybe we only redirect if they are not just browsing the root?
-    # No, I'll stick to what the requirement says: show the correct button.
-    # To show the button, they must be on the page.
+    """Landing page."""
     return templates.TemplateResponse("landing.html", {"request": request, "user": user})
 
 

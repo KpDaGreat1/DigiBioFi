@@ -177,12 +177,7 @@ def public_profile(
     source = src if src in ("qr", "referral") else "direct"
 
     # Record server-side page view with deduplication (1 view per IP/device per 24h)
-    logger.info(
-        "Public profile view slug=%s viewer_ip=%s user_agent=%s",
-        slug,
-        ip,
-        ua,
-    )
+    logger.info("Public profile view logged slug=%s source=%s", slug, source)
     _record_view_protected(profile, source, ip, ua, db, user, qr_id)
     adsense_client_id = settings.adsense_client_id.strip()
     public_inline_ad_slot = settings.adsense_public_inline_slot.strip()

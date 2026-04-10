@@ -17,7 +17,7 @@ def _has_active_paid_access(user) -> bool:
         return False
     if getattr(user, "subscription_status", "") != "active":
         return False
-    return getattr(user, "subscription_tier", "") in {"basic", "premium", "elite"}
+    return getattr(user, "subscription_tier", "") in {"basic", "elite"}
 
 
 def can_access_analytics(user) -> bool:
@@ -48,7 +48,7 @@ def current_plan_label(user) -> str:
     tier = getattr(user, "subscription_tier", "")
     if tier == "elite":
         return "Elite"
-    if tier in {"basic", "premium"}:
+    if tier == "basic":
         return "Basic"
     return "Free"
 

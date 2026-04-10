@@ -21,7 +21,7 @@
   {% if profile.projects %}
   <div class="grid md:grid-cols-2 gap-8">
     {% for proj in profile.projects %}
-    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-premium hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500/5 transition-all group flex flex-col h-full overflow-hidden relative">
+    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-elevated hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500/5 transition-all group flex flex-col h-full overflow-hidden relative">
       <!-- Thumbnail -->
       {% if proj.thumbnail_url %}
       <div class="h-40 overflow-hidden bg-slate-100">
@@ -85,7 +85,7 @@
   {% endif %}
 
   <!-- Add new entry form -->
-  <div id="add-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-premium relative overflow-hidden">
+  <div id="add-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-elevated relative overflow-hidden">
     <div class="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
     
     <div class="relative z-10">
@@ -141,7 +141,7 @@
 
   <!-- Edit project form -->
   {% if edit_proj %}
-  <div id="edit-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-premium relative overflow-hidden">
+  <div id="edit-project-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-brand-200 shadow-elevated relative overflow-hidden">
     <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-8">

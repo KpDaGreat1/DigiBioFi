@@ -3,9 +3,10 @@ import logging
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.dependencies import get_current_user, require_csrf
+from app.core.dependencies import get_current_user, get_db, require_csrf
 from app.core.owner import is_owner_email
 from app.core.templates import flash
 from app.models.user import User
@@ -30,6 +31,7 @@ def create_checkout_session(
     csrf_token: str = Depends(require_csrf),
     plan: str = Form(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     plan = _normalize_plan(plan)
 
@@ -90,6 +92,11 @@ def create_checkout_session(
             current_user.email,
             current_user.stripe_customer_id or None,
         )
+        # Persist the customer ID immediately — don't wait for the webhook.
+        # Prevents duplicate Stripe customer creation on retried checkouts.
+        if customer_id and not current_user.stripe_customer_id:
+            current_user.stripe_customer_id = customer_id
+            db.commit()
         checkout_url = stripe_service.create_checkout_session(
             user_id=current_user.id,
             plan=plan,

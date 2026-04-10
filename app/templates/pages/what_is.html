@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}What Is DigiBioFi? — The Professional Identity Platform{% endblock %}
+
+{% block head %}
+<meta name="description" content="Learn how DigiBioFi replaces the static resume with a living digital identity — shareable via QR code, trackable with analytics, and built for high-impact professionals." />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-white">
+
+  <!-- Nav -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
+        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+      </div>
+      DigiBioFi
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore Profiles</a>
+      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      {% if user %}
+      <a href="/dashboard" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Dashboard</a>
+      {% else %}
+      <a href="/login" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Log in</a>
+      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Get Started Free</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="bg-gradient-to-br from-slate-50 to-brand-50/40 py-20 md:py-32 px-6 border-b border-slate-100">
+      <div class="max-w-4xl mx-auto text-center">
+        <p class="text-xs font-black uppercase tracking-[0.2em] text-brand-600 mb-6">The Platform Explained</p>
+        <h1 class="text-4xl md:text-6xl font-black text-slate-900 tracking-tight mb-8 leading-tight">
+          What Is DigiBioFi?
+        </h1>
+        <p class="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
+          DigiBioFi is a professional identity platform that replaces the static resume with a living,
+          shareable digital profile — complete with QR codes, real-time analytics, and a public URL
+          you can put anywhere.
+        </p>
+      </div>
+    </section>
+
+    <!-- Core Explanation -->
+    <section class="py-20 px-6 max-w-4xl mx-auto space-y-16">
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="w-12 h-12 bg-brand-100 rounded-2xl flex items-center justify-center mb-6">
+            <i data-lucide="user-circle" class="w-6 h-6 text-brand-600"></i>
+          </div>
+          <h2 class="text-3xl font-black text-slate-900 mb-4 tracking-tight">Your profile, always up to date</h2>
+          <p class="text-slate-600 leading-relaxed font-medium mb-4">
+            A traditional resume is a frozen snapshot. The moment you add a new role, project, or skill,
+            every printed or sent copy is out of date. DigiBioFi gives you one living URL — update once,
+            and everyone who has your link or QR code sees your latest information instantly.
+          </p>
+          <p class="text-slate-600 leading-relaxed font-medium">
+            Add experience, showcase projects, list certifications, and write a bio that actually represents
+            who you are today — not who you were three years ago.
+          </p>
+        </div>
+        <div class="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+          <div class="space-y-4">
+            {% for item in [
+              ('check-circle', 'brand', 'Full name, headline, bio'),
+              ('check-circle', 'brand', 'Work experience timeline'),
+              ('check-circle', 'brand', 'Education credentials'),
+              ('check-circle', 'brand', 'Skills and categories'),
+              ('check-circle', 'brand', 'Projects and portfolios'),
+              ('check-circle', 'brand', 'Certifications and awards'),
+              ('check-circle', 'brand', 'Custom sections for anything else'),
+            ] %}
+            <div class="flex items-center gap-3 text-slate-700 font-bold text-sm">
+              <i data-lucide="{{ item[0] }}" class="w-5 h-5 text-{{ item[1] }}-500 shrink-0"></i>
+              {{ item[2] }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <hr class="border-slate-100" />
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="order-2 md:order-1 bg-slate-900 rounded-3xl p-8 text-center">
+          <div class="w-32 h-32 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center border-4 border-slate-800">
+            <i data-lucide="qr-code" class="w-16 h-16 text-slate-900"></i>
+          </div>
+          <p class="text-brand-400 font-black uppercase tracking-widest text-xs mb-2">QR Code</p>
+          <p class="text-white font-bold">Scan → instant profile</p>
+          <p class="text-slate-500 text-sm font-medium mt-2">Links never expire. Works on any device.</p>
+        </div>
+        <div class="order-1 md:order-2">
+          <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center mb-6">
+            <i data-lucide="qr-code" class="w-6 h-6 text-white"></i>
+          </div>
+          <h2 class="text-3xl font-black text-slate-900 mb-4 tracking-tight">QR Code Identity</h2>
+          <p class="text-slate-600 leading-relaxed font-medium mb-4">
+            Every DigiBioFi profile comes with a permanent QR code — automatically generated and always
+            pointing to your current profile. Print it on a business card, add it to a presentation slide,
+            or display it at a conference booth.
+          </p>
+          <p class="text-slate-600 leading-relaxed font-medium">
+            When someone scans it, they land on your full profile with everything they need to know about
+            you — no app download required, no friction.
+          </p>
+        </div>
+      </div>
+
+      <hr class="border-slate-100" />
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-emerald-600"></i>
+          </div>
+          <h2 class="text-3xl font-black text-slate-900 mb-4 tracking-tight">Real analytics, not guesswork</h2>
+          <p class="text-slate-600 leading-relaxed font-medium mb-4">
+            With an Elite plan, you can see how your profile is performing with total views,
+            unique visitors, QR scans, resume downloads, and recent visit activity. That gives you
+            a practical signal for when your profile is getting traction after an application,
+            referral, or networking event.
+          </p>
+          <p class="text-slate-600 leading-relaxed font-medium">
+            Use that data to decide when to follow up, which materials are getting attention, and
+            where to focus your networking energy.
+          </p>
+        </div>
+        <div class="bg-emerald-50 rounded-3xl p-8 border border-emerald-100 space-y-5">
+          {% for stat, label in [
+            ('Views', 'Total profile page views tracked'),
+            ('Visitors', 'Distinct recent visitors by recorded activity'),
+            ('QR Scans', 'How many times your QR code was scanned'),
+            ('Downloads', 'Resume download activity from your public page'),
+          ] %}
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-emerald-100 shrink-0 mt-0.5">
+              <i data-lucide="trending-up" class="w-5 h-5 text-emerald-500"></i>
+            </div>
+            <div>
+              <p class="font-black text-slate-900 text-sm">{{ stat }}</p>
+              <p class="text-slate-500 text-sm font-medium">{{ label }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <hr class="border-slate-100" />
+
+      <!-- Who it's for -->
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-4">Who is it for?</h2>
+        <p class="text-slate-500 font-medium max-w-xl mx-auto">DigiBioFi works for any professional who wants more control over how they're presented online.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for icon, title, desc in [
+          ('briefcase', 'Job Seekers', 'Send a live profile instead of a PDF. Recruiters see your latest experience and can download your resume on demand.'),
+          ('laptop', 'Freelancers', 'One link for your portfolio, skills, services, and contact info. Share it anywhere clients might find you.'),
+          ('mic-2', 'Speakers & Consultants', 'Carry a QR code to events. Attendees scan and instantly see your full background and contact details.'),
+          ('graduation-cap', 'Students & New Grads', 'Stand out with a polished digital presence when you have limited experience to put on paper.'),
+          ('users', 'Networkers', 'Replace business cards with a QR code. Everyone who scans gets a persistent link to your profile.'),
+          ('star', 'Career Changers', 'Tell your story your way — with sections for projects, skills, and context that a resume format can\'t capture.'),
+        ] %}
+        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+          <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-slate-200 mb-4 shadow-sm">
+            <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-600"></i>
+          </div>
+          <h3 class="font-black text-slate-900 mb-2">{{ title }}</h3>
+          <p class="text-slate-500 text-sm font-medium leading-relaxed">{{ desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Plans Overview -->
+    <section class="bg-slate-900 py-20 px-6">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">Start free. Upgrade when you need more.</h2>
+        <p class="text-slate-400 font-medium mb-12 max-w-xl mx-auto">Free accounts include a full public profile, QR code, and a shareable link. Paid plans add analytics, portfolio access, custom branding, and more.</p>
+        <div class="grid sm:grid-cols-3 gap-6 text-left">
+          {% for tier, price, features in [
+            ('Free', '$0/mo', ['Public profile', 'QR code', 'Shareable link', 'Core sections']),
+            ('Basic', '$1/mo', ['Everything in Free', 'Project portfolio', 'No view limits', 'Ad-free experience']),
+            ('Elite', '$3/mo', ['Everything in Basic', 'Analytics dashboard', 'Custom branding', 'Multiple photos', 'Expanded profile presentation']),
+          ] %}
+          <div class="bg-white/10 rounded-2xl p-6 border border-white/10">
+            <p class="text-brand-400 font-black uppercase tracking-widest text-xs mb-2">{{ tier }}</p>
+            <p class="text-3xl font-black text-white mb-4">{{ price }}</p>
+            <ul class="space-y-2">
+              {% for f in features %}
+              <li class="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+                {{ f }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </div>
+        <a href="/register" class="inline-block mt-12 bg-brand-600 hover:bg-brand-500 text-white font-black px-12 py-5 rounded-2xl transition-all text-lg shadow-2xl shadow-brand-900/40">
+          Create Your Free Profile
+        </a>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="py-20 px-6 max-w-3xl mx-auto">
+      <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-12 text-center">Common Questions</h2>
+      <div class="space-y-6">
+        {% for q, a in [
+          ('Is DigiBioFi a replacement for LinkedIn?', 'Not exactly — DigiBioFi is a personal profile platform, not a social network. You control every detail of your profile, it lives at a clean personal URL, and it comes with a QR code for offline sharing. Think of it as the professional page you own outright.'),
+          ('Do I need to know how to code?', 'No. DigiBioFi is built for professionals, not developers. The dashboard is a visual editor — fill in fields, upload files, and publish. No code required.'),
+          ('What happens to my QR code if I change my profile?', 'Your QR code always points to your current profile. Nothing breaks. Update your bio, change your headline, add new experience — the code keeps working and everyone sees the latest version.'),
+          ('Can visitors download my resume?', 'Yes. You can upload a PDF resume to your profile and visitors can download it with one click from your public profile page.'),
+          ('Is my profile indexed by Google?', 'Public profiles are accessible to search engines. If your profile has substantive content — name, headline, bio, experience — it can appear in search results over time.'),
+          ('How do I control who sees my profile?', 'You can toggle your profile between public and private from the dashboard at any time. Private profiles are only visible to you when logged in.'),
+        ] %}
+        <div class="border border-slate-200 rounded-2xl p-6">
+          <h3 class="font-black text-slate-900 mb-3">{{ q }}</h3>
+          <p class="text-slate-500 font-medium leading-relaxed text-sm">{{ a }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-brand-600 py-20 px-6 text-center">
+      <h2 class="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">Ready to build your profile?</h2>
+      <p class="text-brand-100 font-medium mb-8 max-w-xl mx-auto">It takes under five minutes to set up. Free to start, no credit card required.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/register" class="bg-white text-brand-600 font-black px-10 py-4 rounded-2xl hover:bg-brand-50 transition-all shadow-xl">Create Free Profile</a>
+        <a href="/explore" class="border border-brand-400 text-white font-black px-10 py-4 rounded-2xl hover:bg-brand-500 transition-all">Browse Public Profiles</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-slate-50 border-t border-slate-200 py-10 px-6 text-center">
+    <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-4">
+      <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
+      <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
+      <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
+      <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
+    </div>
+    <p class="text-xs text-slate-300 font-bold uppercase tracking-widest">&copy; 2026 DigiBioFi. All rights reserved.</p>
+  </footer>
+</div>
+{% endblock %}

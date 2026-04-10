@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Verify Email — DigiBioFi{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-6 py-16 bg-white">
+  <div class="w-full max-w-2xl bg-white rounded-[2rem] border border-slate-200 shadow-elevated p-8 md:p-10">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+        <i data-lucide="mail-check" class="w-8 h-8"></i>
+      </div>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-3">Verify your email</h1>
+      <p class="text-slate-500 font-medium max-w-xl mx-auto">
+        We’ve created your account and signed you in, but you’ll need to verify
+        <strong>{{ user.email }}</strong> before you can use the dashboard, billing, or profile editing tools.
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      {% if email_delivery_configured %}
+      <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        Check your inbox for the DigiBioFi verification email, then open the link to continue.
+      </div>
+      {% else %}
+      <div class="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
+        Email delivery is not configured in this environment. The verification flow is still active, and a development-only verification link will appear below when available.
+      </div>
+      {% endif %}
+
+      <form action="/verify-email/resend" method="post" class="pt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-brand-500/20">
+          Resend verification email
+        </button>
+      </form>
+
+      {% if verification_url %}
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Development verification link</p>
+        <a href="{{ verification_url }}" class="break-all text-sm font-bold text-brand-600 hover:text-brand-700">
+          {{ verification_url }}
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:justify-between text-sm font-bold">
+      <a href="/logout" class="text-slate-400 hover:text-slate-700 transition-colors">Sign out</a>
+      <a href="/" class="text-brand-600 hover:text-brand-700 transition-colors">Back to home</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

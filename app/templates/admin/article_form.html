@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{% if article %}Edit Article{% else %}New Article{% endif %} — Admin — DigiBioFi{% endblock %}
+{% block body %}
+<nav class="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <a href="/dashboard" class="font-bold text-brand-400 text-lg">DigiBioFi</a>
+    <span class="text-slate-600">/</span>
+    <a href="/admin" class="text-sm text-slate-300 font-medium hover:text-white transition-colors">Admin</a>
+    <span class="text-slate-600">/</span>
+    <a href="/admin/articles" class="text-sm text-slate-300 font-medium hover:text-white transition-colors">Articles</a>
+    <span class="text-slate-600">/</span>
+    <span class="text-sm text-slate-300 font-medium">{% if article %}Edit{% else %}New{% endif %}</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="/admin/articles" class="text-sm text-slate-400 hover:text-white transition-colors">Back</a>
+    <a href="/logout" class="text-sm text-red-400 hover:text-red-300 transition-colors">Logout</a>
+  </div>
+</nav>
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-slate-800 mb-6">{% if article %}Edit Article{% else %}New Article{% endif %}</h1>
+
+  {% if errors %}
+  <div class="mb-6 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+    {% for field, msg in errors.items() %}<p>{{ msg }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 px-4 py-3 rounded-xl text-sm font-medium
+          {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200
+          {% elif category == 'error' %}bg-red-50 text-red-700 border border-red-200
+          {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% set action = "/admin/articles/" ~ article.id ~ "/edit" if article else "/admin/articles/new" %}
+  <form method="post" action="{{ action }}" class="space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Title <span class="text-red-500">*</span></label>
+      <input type="text" name="title" maxlength="300" required
+             value="{{ form.title if form is defined else (article.title if article else '') }}"
+             class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+      {% if errors.title %}<p class="text-xs text-red-500 mt-1">{{ errors.title }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Slug <span class="text-xs font-normal text-slate-400">(auto-generated from title if blank)</span></label>
+      <input type="text" name="slug" maxlength="300"
+             value="{{ form.slug if form is defined else (article.slug if article else '') }}"
+             placeholder="my-article-url"
+             class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-400">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Summary <span class="text-xs font-normal text-slate-400">(shown on news listing)</span></label>
+      <textarea name="summary" maxlength="500" rows="2"
+                class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">{{ form.summary if form is defined else (article.summary if article else '') }}</textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Content (HTML) <span class="text-red-500">*</span></label>
+      <textarea name="content_html" rows="16"
+                class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-400">{{ form.content_html if form is defined else (article.content_html if article else '') }}</textarea>
+      <p class="text-xs text-slate-400 mt-1">Standard HTML is supported. Avoid inline scripts.</p>
+      {% if errors.content_html %}<p class="text-xs text-red-500 mt-1">{{ errors.content_html }}</p>{% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+        <input type="text" name="category" maxlength="100"
+               value="{{ form.category if form is defined else (article.category if article else '') }}"
+               placeholder="e.g. Career Strategy"
+               class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Tags <span class="text-xs font-normal text-slate-400">(comma-separated)</span></label>
+        <input type="text" name="tags" maxlength="300"
+               value="{{ form.tags if form is defined else (article.tags if article else '') }}"
+               placeholder="resume, career, tips"
+               class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Hero Image URL <span class="text-xs font-normal text-slate-400">(optional)</span></label>
+      <input type="url" name="hero_image" maxlength="500"
+             value="{{ form.hero_image if form is defined else (article.hero_image if article else '') }}"
+             placeholder="https://..."
+             class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Video URL <span class="text-xs font-normal text-slate-400">(optional — YouTube or Vimeo embed)</span></label>
+      <input type="url" name="video_url" maxlength="500"
+             value="{{ form.video_url if form is defined else (article.video_url if article else '') }}"
+             placeholder="https://www.youtube.com/embed/..."
+             class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+    </div>
+
+    <div class="flex items-center gap-3">
+      <input type="checkbox" name="is_published" id="is_published" value="on"
+             {% if (form is defined and form.is_published) or (article and article.is_published) %}checked{% endif %}
+             class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400">
+      <label for="is_published" class="text-sm font-semibold text-slate-700">Publish immediately</label>
+    </div>
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit"
+              class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors">
+        {% if article %}Save Changes{% else %}Create Article{% endif %}
+      </button>
+      {% if article %}
+      <form method="post" action="/admin/articles/{{ article.id }}/delete" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                onclick="return confirm('Delete this article permanently?')"
+                class="text-red-500 hover:text-red-700 text-sm font-medium transition-colors">
+          Delete
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </form>
+</main>
+{% endblock %}
