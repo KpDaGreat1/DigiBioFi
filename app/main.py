@@ -362,6 +362,35 @@ def _safe_error_response(request: Request, status_code: int = 500):
     )
 
 
+def _safe_http_exception_response(request: Request, exc: HTTPException):
+    if not _request_expects_html(request):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    if exc.status_code == 401:
+        return _redirect_to_login()
+
+    if exc.status_code == 403:
+        message = "This action is not available right now."
+        if exc.detail in {"Session expired", "Invalid CSRF token"}:
+            message = "Your session expired or this form is no longer valid. Refresh the page and try again."
+        elif isinstance(exc.detail, str) and exc.detail:
+            message = exc.detail
+        return templates.TemplateResponse(
+            "errors/403.html",
+            {"request": request, "message": message},
+            status_code=403,
+        )
+
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            "errors/404.html",
+            {"request": request},
+            status_code=404,
+        )
+
+    return _safe_error_response(request, status_code=max(400, exc.status_code))
+
+
 def _format_request_validation_errors(exc: RequestValidationError) -> dict:
     errors: dict[str, str] = {}
     for error in exc.errors():
@@ -448,10 +477,8 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
             and _request_expects_html(request)
         ):
             response = RedirectResponse("/verify-email/pending", status_code=303)
-        elif exc.status_code == 401 and _request_expects_html(request):
-            response = _redirect_to_login()
         else:
-            response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            response = _safe_http_exception_response(request, exc)
     except Exception:
         logger.exception("Unhandled request error")
         response = _safe_error_response(request, status_code=500)
@@ -780,6 +807,19 @@ def not_found(request: Request, exc):
     return templates.TemplateResponse(
         "errors/404.html", {"request": request}, status_code=404
     )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if (
+        exc.status_code == 403
+        and exc.detail == "Email verification required"
+        and _request_expects_html(request)
+    ):
+        response = RedirectResponse("/verify-email/pending", status_code=303)
+        return _apply_security_headers(response)
+    response = _safe_http_exception_response(request, exc)
+    return _apply_security_headers(response)
 
 
 @app.exception_handler(500)

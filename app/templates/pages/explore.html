@@ -75,13 +75,13 @@
       </div>
     </div>
 
-    {% if example_profile_count %}
+    {% if example_profile_count or demo_profiles %}
     <div class="mb-10 rounded-2xl border border-brand-blue/20 bg-brand-blue/5 px-6 py-4 text-sm font-medium text-slate-300">
-      Example profiles are labeled clearly in the directory so visitors can see how a complete DigiBioFi profile can look.
+      Sample profiles are labeled clearly in the directory so visitors can see how a complete DigiBioFi profile can look without confusing them with real member accounts.
     </div>
     {% endif %}
 
-    {% if profiles %}
+    {% if profiles or demo_profiles %}
     <!-- Profile Grid -->
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
       {% for profile in profiles %}
@@ -150,6 +150,53 @@
           </div>
         </div>
       </a>
+      {% endfor %}
+
+      {% for demo in demo_profiles %}
+      <article class="premium-card group block overflow-hidden">
+        <div class="h-20 bg-gradient-to-br from-slate-800 to-slate-900 relative">
+          <div class="absolute top-4 right-4">
+             <span class="text-[8px] font-black text-white/50 uppercase tracking-widest bg-white/5 px-2 py-1 rounded border border-white/5">
+                {{ demo.label }}
+             </span>
+          </div>
+        </div>
+
+        <div class="px-6 pb-8 -mt-8 relative">
+          <div class="relative inline-block mb-4">
+            <div class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center">
+              <span class="text-white font-bold text-xl">
+                {{ demo.name[:1].upper() }}
+              </span>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
+          </div>
+
+          <h2 class="font-bold text-white text-lg leading-tight mb-2 tracking-tight">
+            {{ demo.name }}
+          </h2>
+
+          <p class="text-slate-400 text-xs font-medium leading-relaxed mb-3 line-clamp-2">{{ demo.headline }}</p>
+          <p class="text-slate-500 text-sm font-medium leading-relaxed mb-4">{{ demo.summary }}</p>
+
+          <div class="flex flex-wrap gap-2 mb-6">
+            {% for skill in demo.skills %}
+            <span class="text-[9px] font-bold bg-white/5 text-slate-400 px-2 py-1 rounded-md border border-white/5">{{ skill }}</span>
+            {% endfor %}
+            <span class="text-[9px] font-black text-brand-blue uppercase tracking-widest px-2 py-1 bg-brand-blue/10 rounded-md">{{ demo.label }}</span>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-white/5">
+             <div class="flex items-center gap-2 text-slate-500">
+               <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+               <span class="text-[10px] font-bold uppercase tracking-widest">{{ demo.location }}</span>
+             </div>
+             <a href="/register" class="text-[10px] font-black uppercase tracking-widest text-brand-blue hover:text-white transition-colors">
+               Create Yours
+             </a>
+          </div>
+        </div>
+      </article>
       {% endfor %}
     </div>
 

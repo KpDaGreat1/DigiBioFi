@@ -265,6 +265,43 @@ select option {
   box-shadow: 0 0 0 4px rgba(var(--brand-blue), 0.1);
 }
 
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  color: rgb(var(--text-muted));
+  pointer-events: none;
+  transition: color 0.2s var(--curve-out);
+}
+
+.auth-input-wrap:focus-within .auth-input-icon {
+  color: rgb(var(--brand-blue));
+}
+
+.auth-input-wrap.auth-input-wrap-purple:focus-within .auth-input-icon {
+  color: rgb(var(--brand-purple));
+}
+
+.auth-input {
+  width: 100%;
+  min-height: 3.625rem;
+  padding-left: 3.5rem !important;
+  padding-right: 1.25rem !important;
+  line-height: 1.25rem;
+}
+
+.auth-input.auth-input-username {
+  padding-left: 2.75rem !important;
+}
+
 .surface-light input::placeholder,
 .surface-light textarea::placeholder {
   color: #94a3b8 !important;

@@ -20,6 +20,33 @@ from app.utils.validators import (
 router = APIRouter(tags=["pages"])
 logger = logging.getLogger(__name__)
 _EXAMPLE_PROFILE_EMAIL_DOMAIN = "@example.invalid"
+_DEMO_PROFILE_TARGET_COUNT = 3
+_DEMO_PROFILES = [
+    {
+        "name": "Northstar Product Studio",
+        "headline": "Sample Profile · Product Designer / Portfolio Creator",
+        "location": "Remote",
+        "skills": ["Product Design", "Case Studies", "Design Systems"],
+        "summary": "Demo profile showing how a designer can present proof of work, polished case studies, and a clear professional narrative.",
+        "label": "Sample Profile",
+    },
+    {
+        "name": "Harbor Stack Labs",
+        "headline": "Sample Profile · Software Developer / Project Builder",
+        "location": "Remote",
+        "skills": ["Python", "FastAPI", "Project Delivery"],
+        "summary": "Demo profile focused on shipped projects, technical depth, and a cleaner alternative to a static resume or one-page link list.",
+        "label": "Sample Profile",
+    },
+    {
+        "name": "Clearpath Advisory",
+        "headline": "Sample Profile · Freelance Consultant / Career Specialist",
+        "location": "Austin, TX",
+        "skills": ["Client Strategy", "Consulting", "Career Positioning"],
+        "summary": "Demo profile for independent professionals who need clear offers, service highlights, and strong public positioning.",
+        "label": "Sample Profile",
+    },
+]
 
 
 def _is_example_profile(profile) -> bool:
@@ -91,6 +118,10 @@ def explore_page(
         .all()
     )
     example_profile_slugs = {profile.slug for profile in profiles if _is_example_profile(profile)}
+    real_profiles = [profile for profile in profiles if profile.slug not in example_profile_slugs]
+    demo_profiles = []
+    if not q.strip() and len(real_profiles) < _DEMO_PROFILE_TARGET_COUNT:
+        demo_profiles = list(_DEMO_PROFILES)
 
     total_pages = max(1, (total + per_page - 1) // per_page)
 
@@ -107,6 +138,8 @@ def explore_page(
             "base_url": settings.base_url,
             "example_profile_slugs": example_profile_slugs,
             "example_profile_count": len(example_profile_slugs),
+            "demo_profiles": demo_profiles,
+            "real_profile_count": len(real_profiles),
         },
     )
 

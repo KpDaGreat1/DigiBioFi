@@ -167,12 +167,20 @@ def register_submit(
 # ─────────────────────────────────────────────
 
 @router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request, registered: str = "", current_user=Depends(get_current_user_optional)):
+def login_page(
+    request: Request,
+    registered: str = "",
+    verified: str = "",
+    current_user=Depends(get_current_user_optional),
+):
     if current_user:
         return RedirectResponse(
             "/dashboard" if current_user.is_verified else "/verify-email/pending",
             status_code=302,
         )
+
+    if verified == "1":
+        flash(request, "Email verified. You can sign in now.", "success")
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
@@ -468,11 +476,11 @@ def verify_email(
         return RedirectResponse("/login", status_code=303)
 
     try:
-        user = verify_email_token(token, db)
-        auth_token = create_access_token(subject=user.id, role=user.role)
-        response = RedirectResponse("/dashboard", status_code=303)
-        set_auth_cookie(response, auth_token)
-        flash(request, "Email verified. Welcome to DigiBioFi.", "success")
+        verify_email_token(token, db)
+        response = RedirectResponse("/login?verified=1", status_code=303)
+        clear_auth_cookie(response)
+        clear_csrf_cookie(response)
+        response.delete_cookie("digibiofi_session", path="/")
         return response
     except AuthError as exc:
         flash(request, str(exc), "error")

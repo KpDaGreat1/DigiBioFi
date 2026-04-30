@@ -87,32 +87,3 @@
     {% endif %}
   </div>
 </div>
-
-<script>
-(function() {
-  var btn = document.getElementById('mobile-menu-btn');
-  var menu = document.getElementById('mobile-menu');
-  var close = document.getElementById('mobile-menu-close');
-  if (!btn || !menu || !close) return;
-
-  function openMenu() {
-    menu.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    btn.setAttribute('aria-expanded', 'true');
-  }
-  function closeMenu() {
-    menu.classList.add('hidden');
-    document.body.style.overflow = '';
-    btn.setAttribute('aria-expanded', 'false');
-  }
-
-  btn.addEventListener('click', openMenu);
-  close.addEventListener('click', closeMenu);
-  menu.addEventListener('click', function(e) {
-    if (e.target === menu) closeMenu();
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeMenu();
-  });
-})();
-</script>

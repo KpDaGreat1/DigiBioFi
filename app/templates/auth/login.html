@@ -51,10 +51,10 @@
 
         <div class="space-y-3">
           <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Email</label>
-          <div class="relative flex items-center group">
-            <i data-lucide="mail" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-blue transition-colors"></i>
+          <div class="auth-input-wrap">
+            <i data-lucide="mail" class="auth-input-icon w-5 h-5"></i>
             <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
-                   class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-blue transition-all font-medium"
+                   class="auth-input w-full rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-blue transition-all font-medium"
                    placeholder="alex@example.com" />
           </div>
         </div>
@@ -64,10 +64,10 @@
             <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Password</label>
             <a href="/forgot-password" class="text-[10px] font-black text-brand-blue uppercase tracking-widest hover:text-white transition-colors">Forgot password?</a>
           </div>
-          <div class="relative flex items-center group">
-            <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-blue transition-colors"></i>
+          <div class="auth-input-wrap">
+            <i data-lucide="lock" class="auth-input-icon w-5 h-5"></i>
             <input type="password" name="password" required autocomplete="current-password"
-                   class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-blue transition-all font-medium"
+                   class="auth-input w-full rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-blue transition-all font-medium"
                    placeholder="••••••••" />
           </div>
         </div>
