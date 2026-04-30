@@ -153,7 +153,7 @@ def register_submit(
             "auth/register.html",
             {
                 "request": request,
-                "error": "Something went wrong. Try again.",
+                "errors": {"general": "Something went wrong. Try again."},
                 "email": email,
                 "username": username,
                 "csrf_token": generate_csrf_token(request),
@@ -477,4 +477,3 @@ def verify_email(
     except AuthError as exc:
         flash(request, str(exc), "error")
         return RedirectResponse("/login", status_code=303)
-

@@ -76,9 +76,9 @@
 
       <div class="flex items-center gap-6">
         {% if profile and profile.slug %}
-        <a href="/p/{{ profile.slug }}" target="_blank" class="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white bg-brand-blue/20 hover:bg-brand-blue/30 px-5 py-2.5 rounded-lg border border-brand-blue/30 transition-all shadow-glow">
+        <a href="/p/{{ profile.slug }}" target="_blank" rel="noopener noreferrer" class="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white bg-brand-blue/20 hover:bg-brand-blue/30 px-5 py-2.5 rounded-lg border border-brand-blue/30 transition-all shadow-glow">
           <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-          Live Identity
+          View Public Profile
         </a>
         {% endif %}
         <div class="flex items-center gap-3 pl-6 border-l border-white/10">

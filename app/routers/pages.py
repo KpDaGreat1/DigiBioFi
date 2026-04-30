@@ -11,7 +11,11 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.config import settings
 from app.core.dependencies import get_db, get_current_user_optional, require_csrf
 from app.core.templates import templates, flash
-from app.utils.validators import normalize_optional_external_url, sanitize_article_html
+from app.utils.validators import (
+    normalize_optional_external_url,
+    sanitize_article_html,
+    sanitize_plain_text,
+)
 
 router = APIRouter(tags=["pages"])
 logger = logging.getLogger(__name__)
@@ -499,10 +503,10 @@ def contact_submit(
     user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
-    name = name.strip()[:200]
-    email = email.strip()[:255]
-    subject = subject.strip()[:300]
-    message = message.strip()[:5000]
+    name = sanitize_plain_text(name)[:200]
+    email = sanitize_plain_text(email)[:255]
+    subject = sanitize_plain_text(subject)[:300]
+    message = sanitize_plain_text(message)[:5000]
 
     # Basic validation
     errors: dict[str, str] = {}

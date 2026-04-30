@@ -20,7 +20,7 @@
        </a>
        <a href="/dashboard/qr" class="btn-primary px-8 py-4 shadow-glow flex items-center gap-2 text-sm">
          <i data-lucide="qr-code" class="w-4 h-4"></i>
-         Open QR Page
+         Manage QR Page
        </a>
     </div>
   </section>
@@ -79,7 +79,7 @@
   <!-- Stats Matrix -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 reveal reveal-delay-2">
     {% set stat_items = [
-      ('Identity Views', stats.total_views if stats else 0, 'eye', 'text-brand-blue'),
+      ('Profile Views', stats.total_views if stats else 0, 'eye', 'text-brand-blue'),
       ('Unique Visitors', stats.unique_visitors if stats else 0, 'cpu', 'text-brand-purple'),
       ('QR Scans', stats.qr_scans if stats else 0, 'zap', 'text-brand-green'),
       ('Resume Downloads', stats.pdf_downloads if stats else 0, 'file-text', 'text-brand-gold')
@@ -120,8 +120,10 @@
              <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i>
           </div>
           <div>
-            <p class="text-sm font-bold text-white">{{ visit.viewer_ip or "Unknown Origin" }}</p>
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{{ visit.user_agent[:40] }}...</p>
+            <p class="text-sm font-bold text-white">Visitor (Hashed)</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+              {{ (visit.user_agent or "Profile View")[:40] }}{% if visit.user_agent and visit.user_agent|length > 40 %}...{% endif %}
+            </p>
           </div>
         </div>
         <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest">{{ visit.timestamp.strftime("%H:%M") }}</p>
@@ -174,7 +176,7 @@
       <div class="premium-panel p-10 text-center relative overflow-hidden group">
         <div class="absolute inset-0 bg-brand-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-        <h3 class="text-lg font-bold text-white mb-8 tracking-tight">Live Profile</h3>
+        <h3 class="text-lg font-bold text-white mb-8 tracking-tight">Public Profile</h3>
         <div class="relative inline-block mb-10">
           <div class="absolute -inset-8 bg-gradient-to-tr from-brand-blue to-brand-purple rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
           <div class="relative bg-white p-6 rounded-3xl shadow-glow">
@@ -191,7 +193,7 @@
 
         <div class="space-y-4">
            <a href="/dashboard/qr" class="btn-primary w-full block py-4 text-xs">
-              Open QR Page
+              Manage QR Page
            </a>
            <button onclick="copyProfileLink(event)" class="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all text-[10px] uppercase tracking-widest">
               Copy Profile Link

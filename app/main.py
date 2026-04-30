@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +30,7 @@ from app.db.database import engine
 from app.db.schema import assert_schema_ready
 from app.routers import auth, dashboard, public, admin, billing, legal, pages
 from app.core.dependencies import get_current_user_optional, get_db
+from app.utils.validators import hash_daily_client_token
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -243,6 +245,10 @@ def is_rate_limited(ip: str) -> bool:
     return False
 
 
+def _hash_daily_ip(ip: str) -> str:
+    return hash_daily_client_token(ip, settings.secret_key)
+
+
 async def rate_limiter(request: Request) -> JSONResponse | None:
     """Best-effort in-memory rate limiter that never breaks the request chain."""
     if request.app.state.environment == "testing":
@@ -356,6 +362,58 @@ def _safe_error_response(request: Request, status_code: int = 500):
     )
 
 
+def _format_request_validation_errors(exc: RequestValidationError) -> dict:
+    errors: dict[str, str] = {}
+    for error in exc.errors():
+        location = error.get("loc") or ()
+        field = str(location[-1]) if location else "general"
+        message = error.get("msg", "Invalid request.")
+        if message.startswith("Value error, "):
+            message = message[len("Value error, "):]
+        errors[field] = message[:1].upper() + message[1:] if message else "Invalid request."
+    return errors
+
+
+async def _render_auth_validation_error(request: Request, exc: RequestValidationError):
+    from app.core.security import generate_csrf_token, set_csrf_cookie
+
+    form_data = {}
+    try:
+        form_data = dict(await request.form())
+    except Exception:
+        form_data = {}
+
+    template_name = None
+    context = {"request": request, "errors": _format_request_validation_errors(exc)}
+
+    if request.url.path == "/register":
+        template_name = "auth/register.html"
+        context.update(
+            {
+                "email": str(form_data.get("email", "")),
+                "username": str(form_data.get("username", "")),
+            }
+        )
+    elif request.url.path == "/login":
+        template_name = "auth/login.html"
+        context.update({"email": str(form_data.get("email", ""))})
+    elif request.url.path == "/forgot-password":
+        template_name = "auth/forgot_password.html"
+        context.update({"email": str(form_data.get("email", ""))})
+    elif request.url.path == "/reset-password":
+        template_name = "auth/reset_password.html"
+        context.update({"token": str(form_data.get("token", ""))})
+
+    if not template_name:
+        return None
+
+    csrf_token = generate_csrf_token(request)
+    context["csrf_token"] = csrf_token
+    response = templates.TemplateResponse(template_name, context, status_code=422)
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
 app = FastAPI(
     title=settings.app_name,
     description="Digital resume & identity platform",
@@ -373,6 +431,8 @@ app.state.environment = settings.app_env
 @app.middleware("http")
 async def security_and_rate_limit_middleware(request: Request, call_next):
     auth_cookie_present = bool(request.cookies.get(AUTH_COOKIE_NAME))
+    request.state.client_ip = get_client_ip(request)
+    request.state.daily_ip_hash = _hash_daily_ip(request.state.client_ip)
 
     try:
         if not request.url.path.startswith("/admin"):
@@ -474,14 +534,13 @@ def sitemap(request: Request, db=Depends(get_db)):
     """Generate a valid XML sitemap of all public routes and public profiles."""
     from app.models.profile import Profile
     from app.models.user import User
+    from sqlalchemy import func
 
     base = settings.base_url.rstrip("/")
 
     # Static public routes
     static_routes = [
         "/",
-        "/login",
-        "/register",
         "/explore",
         "/what-is-digibiofi",
         "/news",
@@ -495,7 +554,11 @@ def sitemap(request: Request, db=Depends(get_db)):
     slugs = (
         db.query(Profile.slug)
         .join(User, User.id == Profile.user_id)
-        .filter(Profile.is_public.is_(True), User.is_active.is_(True))
+        .filter(
+            Profile.is_public.is_(True),
+            User.is_active.is_(True),
+            ~func.lower(User.email).like("%@example.invalid"),
+        )
         .all()
     )
 
@@ -723,6 +786,15 @@ def not_found(request: Request, exc):
 async def internal_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled 500 error", exc_info=exc)
     return _safe_error_response(request, status_code=500)
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(request: Request, exc: RequestValidationError):
+    if _request_expects_html(request):
+        response = await _render_auth_validation_error(request, exc)
+        if response is not None:
+            return _apply_security_headers(response)
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 @app.exception_handler(Exception)

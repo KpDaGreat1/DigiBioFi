@@ -95,7 +95,7 @@
             <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-purple transition-colors"></i>
             <input type="password" name="password" required autocomplete="new-password"
                    class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-purple transition-all font-medium{% if errors and errors.password %} border-red-500/50{% endif %}"
-                   placeholder="••••••••" minlength="8" />
+                   placeholder="••••••••••••" minlength="12" />
           </div>
           {% if errors and errors.password %}
           <p class="text-red-400 text-xs font-bold mt-1 ml-1">{{ errors.password }}</p>
@@ -104,7 +104,7 @@
           <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
             <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Password Requirements</p>
             <div class="grid grid-cols-2 gap-3">
-              {% for req in ['8+ Characters', 'Uppercase Letter', 'Number', 'Special Character'] %}
+              {% for req in ['12+ Characters', 'Uppercase Letter', 'Number', 'Special Character'] %}
               <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
                 <div class="w-1.5 h-1.5 rounded-full bg-brand-purple/40"></div>
                 {{ req }}
@@ -120,7 +120,7 @@
             <i data-lucide="lock" class="absolute left-5 w-5 h-5 text-slate-600 group-focus-within:text-brand-purple transition-colors"></i>
             <input type="password" name="confirm_password" required autocomplete="new-password"
                    class="w-full pl-14 pr-5 py-4.5 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-brand-purple transition-all font-medium{% if errors and errors.confirm_password %} border-red-500/50{% endif %}"
-                   placeholder="••••••••" minlength="8" />
+                   placeholder="••••••••••••" minlength="12" />
           </div>
           {% if errors and errors.confirm_password %}
           <p class="text-red-400 text-xs font-bold mt-1 ml-1">{{ errors.confirm_password }}</p>

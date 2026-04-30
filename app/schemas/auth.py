@@ -3,12 +3,12 @@ Pydantic schemas for authentication request/response payloads.
 """
 import re
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 
 def validate_password_strength(value: str) -> str:
-    if len(value) < 8:
-        raise ValueError("Password must be at least 8 characters")
+    if len(value) < 12:
+        raise ValueError("Password must be at least 12 characters")
     if not re.search(r"[A-Z]", value):
         raise ValueError("Password must contain an uppercase letter")
     if not re.search(r"[0-9]", value):
@@ -39,12 +39,11 @@ class RegisterRequest(BaseModel):
     def password_strength(cls, v: str) -> str:
         return validate_password_strength(v)
 
-    @field_validator("confirm_password")
-    @classmethod
-    def passwords_match(cls, v: str, info) -> str:
-        if "password" in info.data and v != info.data["password"]:
+    @model_validator(mode="after")
+    def passwords_match(self):
+        if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")
-        return v
+        return self
 
 
 class LoginRequest(BaseModel):
@@ -71,9 +70,8 @@ class ResetPasswordRequest(BaseModel):
     def password_strength(cls, v: str) -> str:
         return validate_password_strength(v)
 
-    @field_validator("confirm_password")
-    @classmethod
-    def passwords_match(cls, v: str, info) -> str:
-        if "new_password" in info.data and v != info.data["new_password"]:
+    @model_validator(mode="after")
+    def passwords_match(self):
+        if self.new_password != self.confirm_password:
             raise ValueError("Passwords do not match")
-        return v
+        return self

@@ -16,7 +16,7 @@ from app.core.dependencies import get_db, get_current_user_optional
 from app.services import profile_service, qr_service, analytics_service
 from app.services.storage import storage
 from app.schemas.analytics import TrackEventRequest
-from app.utils.validators import hash_visitor, sanitize_text
+from app.utils.validators import hash_daily_client_token, hash_visitor, sanitize_text
 
 router = APIRouter(tags=["public"])
 logger = logging.getLogger(__name__)
@@ -40,6 +40,10 @@ def _is_example_profile(profile) -> bool:
 
 
 def _get_client_ip(request: Request) -> str:
+    state_ip = getattr(request.state, "client_ip", None)
+    if state_ip:
+        return state_ip
+
     """
     Extract the real client IP, honoring trusted proxy headers.
     Essential for VPS deployments behind nginx or Cloudflare.
@@ -55,7 +59,14 @@ def _get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-def _record_view_protected(profile, source, ip, ua, db, user, qr_id=None):
+def _get_daily_ip_hash(request: Request, ip: str) -> str:
+    token = getattr(request.state, "daily_ip_hash", None)
+    if token:
+        return token
+    return hash_daily_client_token(ip, settings.secret_key)
+
+
+def _record_view_protected(profile, source, ip, ip_token, ua, db, user, qr_id=None):
     """Record a page view only if this visitor hasn't viewed in the last 24h."""
     if user and user.id == profile.user_id:
         return  # Don't count owner's own views
@@ -67,10 +78,10 @@ def _record_view_protected(profile, source, ip, ua, db, user, qr_id=None):
     rapid_cutoff = now - timedelta(seconds=60)
 
     try:
-        if ip:
+        if ip_token:
             recent_same_ip = db.query(ProfileView).filter(
                 ProfileView.profile_id == profile.id,
-                ProfileView.viewer_ip == ip,
+                ProfileView.viewer_ip == ip_token,
                 ProfileView.created_at >= rapid_cutoff,
             ).first()
             if recent_same_ip:
@@ -86,7 +97,7 @@ def _record_view_protected(profile, source, ip, ua, db, user, qr_id=None):
 
         pv = ProfileView(
             profile_id=profile.id,
-            viewer_ip=(ip or "")[:64],
+            viewer_ip=(ip_token or "")[:64],
             user_agent=(ua or "")[:500],
             visitor_hash=visitor_hash,
         )
@@ -135,8 +146,8 @@ def _consume_daily_profile_view(user, db: Session, now: datetime) -> bool:
     return True
 
 
-def _allow_anonymous_profile_view(ip: str, now: datetime) -> bool:
-    key = (ip or "unknown")[:64]
+def _allow_anonymous_profile_view(ip_token: str, now: datetime) -> bool:
+    key = (ip_token or "unknown")[:64]
     today = now.date()
 
     with _anonymous_profile_views_lock:
@@ -168,9 +179,10 @@ def public_profile(
     _ensure_profile_access(profile, user)
     now = datetime.now(timezone.utc)
     ip = _get_client_ip(request)
+    ip_token = _get_daily_ip_hash(request, ip)
     ua = request.headers.get("user-agent", "")
 
-    if user is None and not _allow_anonymous_profile_view(ip, now):
+    if user is None and not _allow_anonymous_profile_view(ip_token, now):
         logger.warning("Anonymous public profile throttle exceeded slug=%s", slug)
         return templates.TemplateResponse(
             "errors/429.html",
@@ -192,7 +204,7 @@ def public_profile(
 
     # Record server-side page view with deduplication (1 view per IP/device per 24h)
     logger.info("Public profile view logged slug=%s source=%s", slug, source)
-    _record_view_protected(profile, source, ip, ua, db, user, qr_id)
+    _record_view_protected(profile, source, ip, ip_token, ua, db, user, qr_id)
     adsense_client_id = settings.adsense_client_id.strip()
     public_inline_ad_slot = settings.adsense_public_inline_slot.strip()
     public_sidebar_ad_slot = settings.adsense_public_sidebar_slot.strip()

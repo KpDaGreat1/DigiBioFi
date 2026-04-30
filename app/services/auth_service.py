@@ -45,10 +45,10 @@ def register_user(data: RegisterRequest, db: Session) -> User:
     email = data.email.lower()
 
     if db.query(User).filter(func.lower(User.email) == email).first():
-        raise AuthError("Email already registered.")
+        raise AuthError("We couldn't create your account with those details.")
 
     if db.query(User).filter(User.username == data.username).first():
-        raise AuthError("Username already taken.")
+        raise AuthError("We couldn't create your account with those details.")
 
     user = User(
         email=email,
@@ -87,7 +87,7 @@ def authenticate_user(data: LoginRequest, db: Session) -> User:
         raise AuthError("Invalid email or password.")
 
     if not user.is_active:
-        raise AuthError("Account inactive.")
+        raise AuthError("Invalid email or password.")
 
     return user
 
@@ -185,4 +185,3 @@ def verify_email_token(token: str, db: Session) -> User:
     db.refresh(user)
 
     return user
-

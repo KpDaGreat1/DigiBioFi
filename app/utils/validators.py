@@ -2,6 +2,7 @@
 File upload and input validation helpers.
 """
 import hashlib
+from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -78,6 +79,16 @@ def hash_visitor(ip: str, user_agent: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
+def hash_daily_client_token(ip: str, secret_key: str, current_day: date | None = None) -> str:
+    """
+    Create a daily-rotating anonymized token for a client IP.
+    The same IP hashes consistently for one UTC day, then rotates automatically.
+    """
+    day = current_day or datetime.now(timezone.utc).date()
+    raw = f"{secret_key}|{day.isoformat()}|{ip or 'unknown'}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
 def sanitize_text(value: str) -> str:
     """
     Strip disallowed HTML tags from user-supplied text fields.
@@ -89,6 +100,15 @@ def sanitize_text(value: str) -> str:
     allowed_attrs = {"a": ["href", "rel", "target"]}
     cleaned = bleach.clean(value, tags=allowed_tags, attributes=allowed_attrs, strip=True)
     return cleaned
+
+
+def sanitize_plain_text(value: str) -> str:
+    """
+    Strip all HTML from plain-text inputs such as contact subjects and messages.
+    """
+    import bleach
+
+    return bleach.clean(value or "", tags=[], attributes={}, strip=True).strip()
 
 
 def sanitize_article_html(value: str) -> str:
@@ -156,8 +176,11 @@ def format_pydantic_errors(e: ValidationError) -> dict:
     """Format Pydantic errors into a {field: message} dictionary."""
     errors = {}
     for error in e.errors():
-        # Get the field name from the location tuple
-        field = str(error["loc"][-1])
+        location = error.get("loc") or ()
+        if location:
+            field = str(location[-1])
+        else:
+            field = "confirm_password" if "match" in error["msg"].lower() else "general"
         msg = error["msg"]
         # Clean up common Pydantic message prefixes
         if msg.startswith("Value error, "):

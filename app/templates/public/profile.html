@@ -1,6 +1,7 @@
 {% extends "layouts/public_profile.html" %}
 
 {% block title %}{{ profile.full_name or profile.slug }} | DigiBioFi Profile{% endblock %}
+{% block canonical_url %}{{ base_url }}/p/{{ profile.slug }}{% endblock %}
 
 {% block profile_head %}
 <!-- SEO / Open Graph -->
@@ -15,6 +16,40 @@
 {% if is_example_profile %}
 <meta name="robots" content="noindex,follow" />
 {% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "url": {{ (base_url ~ "/p/" ~ profile.slug)|tojson }},
+      "name": {{ ((profile.full_name or profile.slug) ~ " | DigiBioFi Profile")|tojson }},
+      "description": {{ (profile.headline or "Professional profile on DigiBioFi")|tojson }},
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "DigiBioFi",
+        "url": {{ base_url|tojson }}
+      },
+      "mainEntity": {
+        "@id": {{ (base_url ~ "/p/" ~ profile.slug ~ "#person")|tojson }}
+      }
+    },
+    {
+      "@type": "Person",
+      "@id": {{ (base_url ~ "/p/" ~ profile.slug ~ "#person")|tojson }},
+      "name": {{ (profile.full_name or profile.slug)|tojson }},
+      "description": {{ (profile.headline or "Professional profile on DigiBioFi")|tojson }},
+      "url": {{ (base_url ~ "/p/" ~ profile.slug)|tojson }}{% if profile.location %},
+      "homeLocation": {
+        "@type": "Place",
+        "name": {{ profile.location|tojson }}
+      }{% endif %}{% if profile.website or profile.github or profile.twitter or profile.telegram %},
+      "sameAs": [{% set comma = joiner(", ") %}{% if profile.website %}{{ comma() }}{{ profile.website|tojson }}{% endif %}{% if profile.github %}{{ comma() }}{{ profile.github|tojson }}{% endif %}{% if profile.twitter %}{{ comma() }}{{ profile.twitter|tojson }}{% endif %}{% if profile.telegram %}{{ comma() }}{{ profile.telegram|tojson }}{% endif %}]
+      {% endif %}
+    }
+  ]
+}
+</script>
 {% if show_public_inline_ad or show_public_sidebar_ad %}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
 {% endif %}
@@ -87,17 +122,20 @@
               Email
             </a>
             {% endif %}
-            <div class="flex gap-4">
+          <div class="flex gap-4">
               {% for name, icon in [('github', 'github'), ('twitter', 'twitter'), ('website', 'globe')] %}
                 {% set url = profile | attr(name) %}
                 {% if url %}
-                <a href="{{ url }}" target="_blank" class="flex-1 py-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="flex-1 py-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors">
                   <i data-lucide="{{ icon }}" class="w-5 h-5"></i>
                 </a>
                 {% endif %}
               {% endfor %}
-            </div>
           </div>
+          <a href="/contact?subject=report-profile&profile={{ profile.slug }}" class="block text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors">
+            Report Violation
+          </a>
+        </div>
         </div>
 
         {% if show_public_sidebar_ad %}
