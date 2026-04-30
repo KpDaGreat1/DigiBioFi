@@ -31,3 +31,8 @@ def get_flashed_messages(request: Request):
 
 templates.env.globals["get_csrf_token"] = get_csrf_token
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
+templates.env.globals["adsense_client_id"] = settings.adsense_client_id
+templates.env.globals["adsense_public_inline_slot"] = settings.adsense_public_inline_slot
+templates.env.globals["adsense_public_sidebar_slot"] = settings.adsense_public_sidebar_slot
+templates.env.globals["adsense_dashboard_slot"] = settings.adsense_dashboard_slot
+templates.env.globals["base_url"] = settings.base_url

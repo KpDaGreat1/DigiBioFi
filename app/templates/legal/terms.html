@@ -1,52 +1,102 @@
 {% extends "base.html" %}
 
 {% block title %}Terms of Service — DigiBioFi{% endblock %}
+{% block meta_description %}Read DigiBioFi's Terms of Service to understand your rights and responsibilities when using our professional profile platform.{% endblock %}
+{% block canonical_url %}{{ base_url }}/terms{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-slate-50/60">
+<div class="min-h-screen bg-[#0E1117]">
   <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
     <div class="mb-10">
-      <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <a href="/" class="inline-flex items-center gap-2 font-display text-xl font-bold text-white tracking-tight hover:text-brand-blue transition-colors">
         <i data-lucide="layers" class="w-5 h-5"></i>
         DigiBioFi
       </a>
     </div>
 
-    <article class="bg-white rounded-[2.5rem] border border-slate-200 shadow-elevated p-8 md:p-12 space-y-8">
-      <header class="space-y-3">
-        <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Legal</p>
-        <h1 class="text-4xl font-black text-slate-900 tracking-tight">Terms of Service</h1>
-        <p class="text-slate-500 font-medium">Effective April 4, 2026</p>
+    <article class="bg-[#1F2633] rounded-[2.5rem] border border-white/5 shadow-2xl p-8 md:p-12 space-y-10">
+      <header class="space-y-3 pb-8 border-b border-white/5">
+        <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Legal</p>
+        <h1 class="text-4xl font-black text-white tracking-tight">Terms of Service</h1>
+        <p class="text-slate-400 font-medium">Effective April 4, 2026 &middot; Last updated April 28, 2026</p>
       </header>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Use of the service</h2>
-        <p>DigiBioFi provides profile publishing, QR identity sharing, dashboard editing, analytics, and subscription features for professional identity pages. You are responsible for the accuracy and legality of the content you publish.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">1. Acceptance of terms</h2>
+        <p>By creating an account or using DigiBioFi ("the Service"), you agree to be bound by these Terms of Service and our <a href="/privacy" class="text-brand-blue hover:text-white transition-colors">Privacy Policy</a>. If you do not agree, do not use the Service.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Accounts and access</h2>
-        <p>You must keep account credentials secure and may not use DigiBioFi to upload malicious, unlawful, or infringing content. Admin and owner access controls are reserved to DigiBioFi operators.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">2. Eligibility</h2>
+        <p>You must be at least 16 years old to create an account. By registering, you represent that you meet this requirement and that the information you provide is accurate and current.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Billing and subscriptions</h2>
-        <p>Paid subscriptions are processed through Stripe. Subscription status, plan changes, renewals, payment failures, and cancellations are governed by Stripe checkout and webhook events received by DigiBioFi.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">3. Your account</h2>
+        <p>You are responsible for maintaining the security of your account credentials. Do not share your password. DigiBioFi is not liable for any loss or damage arising from unauthorized access to your account due to your failure to secure your credentials.</p>
+        <p>You may not create accounts for other individuals without their consent, operate automated account creation tools, or impersonate any person or organization.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Availability</h2>
-        <p>DigiBioFi may change, suspend, or remove features to maintain platform stability, security, or compliance. Some features may differ by plan tier.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">4. Acceptable use</h2>
+        <p>You may use DigiBioFi only for lawful purposes and in accordance with these Terms. You agree not to:</p>
+        <ul class="list-disc ml-6 space-y-2">
+          <li>Upload or publish content that is unlawful, defamatory, harassing, abusive, obscene, or infringes the intellectual property rights of any third party</li>
+          <li>Use the Service to distribute spam, malware, phishing content, or unsolicited commercial communications</li>
+          <li>Attempt to gain unauthorized access to any part of the Service, its servers, or connected systems</li>
+          <li>Use automated tools to scrape, crawl, or excessively access the Service without prior written consent</li>
+          <li>Circumvent rate limits, security controls, or access restrictions</li>
+          <li>Misrepresent your identity or professional credentials on your profile</li>
+        </ul>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Contact and policies</h2>
-        <p>Your use of DigiBioFi is also governed by the Privacy Policy. If you do not agree to these terms, do not use the service.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">5. Content ownership</h2>
+        <p>You retain ownership of all content you post to DigiBioFi. By posting content, you grant DigiBioFi a non-exclusive, royalty-free, worldwide license to display and distribute your content for the purpose of operating and promoting the Service.</p>
+        <p>You represent that you have the right to post any content you submit and that doing so does not violate any third-party rights.</p>
       </section>
 
-      <div class="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-sm font-bold">
-        <a href="/privacy" class="text-brand-600 hover:text-brand-700 transition-colors">Privacy Policy</a>
-        <a href="/" class="text-slate-500 hover:text-brand-600 transition-colors">Back to DigiBioFi</a>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">6. Public profiles</h2>
+        <p>When your profile is set to public, it is visible to anyone on the internet, including search engines. You are solely responsible for the accuracy, legality, and appropriateness of your public profile content. DigiBioFi does not verify professional credentials.</p>
+        <p>You can set your profile to private at any time through your dashboard settings.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">7. Billing and subscriptions</h2>
+        <p>Paid plans are billed through Stripe. By subscribing, you authorize Stripe to charge your payment method on the applicable recurring billing cycle. Subscription renewals, plan changes, payment failures, and cancellations are governed by Stripe's terms and the webhook events received by DigiBioFi.</p>
+        <p>Subscription fees are non-refundable except where required by law. Cancellation stops future billing; your access continues until the end of the current billing period.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">8. Service availability</h2>
+        <p>DigiBioFi provides the Service on an "as available" basis. We may modify, suspend, or discontinue any feature or the Service itself at any time with reasonable notice when possible. We are not liable for downtime, data loss, or service interruptions beyond our reasonable control.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">9. Termination</h2>
+        <p>We may suspend or terminate your account if you violate these Terms, engage in fraudulent activity, or if we are required to do so by law. You may delete your account at any time by contacting us. Upon termination, your public profile will be removed and your data will be deleted per our Privacy Policy.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">10. Limitation of liability</h2>
+        <p>To the fullest extent permitted by applicable law, DigiBioFi shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service, even if advised of the possibility of such damages. Our total liability for any claim shall not exceed the amount you paid us in the 12 months preceding the claim.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">11. Governing law</h2>
+        <p>These Terms are governed by and construed in accordance with applicable law. Any disputes arising under these Terms shall be resolved through binding arbitration or in a court of competent jurisdiction, as applicable.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">12. Contact</h2>
+        <p>Questions about these Terms? Contact us at <a href="mailto:legal@digibiofi.com" class="text-brand-blue hover:text-white transition-colors">legal@digibiofi.com</a> or through the <a href="/contact" class="text-brand-blue hover:text-white transition-colors">contact page</a>.</p>
+      </section>
+
+      <div class="pt-6 border-t border-white/5 flex flex-wrap gap-4 text-sm font-bold">
+        <a href="/privacy" class="text-brand-blue hover:text-white transition-colors">Privacy Policy</a>
+        <a href="/contact" class="text-slate-500 hover:text-brand-blue transition-colors">Contact Us</a>
+        <a href="/" class="text-slate-500 hover:text-white transition-colors">Back to DigiBioFi</a>
       </div>
     </article>
   </div>

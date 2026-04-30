@@ -13,7 +13,7 @@ services:
       - redis
     command: >
       sh -c "
-      until pg_isready -h db -p 5432; do
+      until PGPASSWORD=${POSTGRES_PASSWORD} pg_isready -h db -p 5432 -U ${POSTGRES_USER}; do
         echo 'Waiting for database...';
         sleep 2;
       done;
@@ -34,14 +34,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   redis:
     image: redis:7
     container_name: digibiofi_redis
     restart: always
-    ports:
-      - "6379:6379"
 
 volumes:
   postgres_data:

@@ -4,11 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0E1117" />
-  <meta name="description" content="DigiBioFi helps professionals build public profiles, share their work, and track engagement in one place." />
+  <meta name="description" content="{% block meta_description %}DigiBioFi helps professionals build public profiles, share their work, and track engagement in one place.{% endblock %}" />
+  <link rel="canonical" href="{% block canonical_url %}{{ base_url | default('https://digibiofi.com') }}{% endblock %}" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DigiBioFi" />
+  <meta property="og:title" content="{% block og_title %}DigiBioFi — Professional Profiles{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}DigiBioFi helps professionals build public profiles, share their work, and track engagement in one place.{% endblock %}" />
+  <meta property="og:url" content="{% block og_url %}{{ base_url | default('https://digibiofi.com') }}{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}https://digibiofi.com/static/og-default.png{% endblock %}" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{% block twitter_title %}DigiBioFi — Professional Profiles{% endblock %}" />
+  <meta name="twitter:description" content="{% block twitter_description %}Build your professional profile, share your QR card, and track engagement with DigiBioFi.{% endblock %}" />
+  <meta name="twitter:image" content="{% block twitter_image %}https://digibiofi.com/static/og-default.png{% endblock %}" />
+
+  {% block structured_data %}{% endblock %}
 
   <!-- Favicon (SVG for better scaling) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%232F6BFF%22/><path d=%22M30 35h40M30 50h30M30 65h20%22 stroke=%22white%22 stroke-width=%2210%22 stroke-linecap=%22round%22/><circle cx=%2270%22 cy=%2265%22 r=%2210%22 fill=%22%237C3AED%22/></svg>">
-  
+
   <title>{% block title %}DigiBioFi — Professional Profiles{% endblock %}</title>
 
   <!-- Tailwind CSS -->
@@ -87,6 +104,10 @@
     }
     [v-cloak] { display: none; }
   </style>
+
+  {% if adsense_client_id %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
+  {% endif %}
 
   {% block head %}{% endblock %}
 </head>

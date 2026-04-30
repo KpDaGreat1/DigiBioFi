@@ -448,6 +448,13 @@ for subdir in ("profile_images", "project_thumbnails", "certificates"):
 app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
 
 
+# ── Health Check ─────────────────────────────────────
+
+@app.get("/health", include_in_schema=False)
+def health_check():
+    return JSONResponse({"status": "ok"}, status_code=200)
+
+
 # ── Robots.txt ───────────────────────────────────────
 
 @app.get("/robots.txt", include_in_schema=False)

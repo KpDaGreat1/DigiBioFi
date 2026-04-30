@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     stripe_price_basic: str = ""
     stripe_price_elite: str = ""
 
+    # ── Signal messaging ─────────────────────────────────────────────────────
+    signal_sender_number: str = ""
+
     # ── Ads ──────────────────────────────────────────────────────────────────
     adsense_client_id: str = ""
     adsense_public_inline_slot: str = ""
