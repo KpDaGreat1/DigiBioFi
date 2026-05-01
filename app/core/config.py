@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     emails_from_email: str = "noreply@example.com"
     emails_from_name: str = "DigiBioFi"
+    smtp_tls: bool = True
+    smtp_ssl: bool = False
 
     # ── Stripe ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""
@@ -78,6 +80,10 @@ class Settings(BaseSettings):
     adsense_public_inline_slot: str = ""
     adsense_public_sidebar_slot: str = ""
     adsense_dashboard_slot: str = ""
+
+    # ── AI resume extraction ─────────────────────────────────────────────────
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
     def get_stripe_price(self, plan: str) -> str:
         normalized_plan = (plan or "").strip().lower()
@@ -161,6 +167,22 @@ class Settings(BaseSettings):
     def validate_email_verification_expire_hours(cls, v: int) -> int:
         if v < 1:
             raise ValueError("EMAIL_VERIFICATION_EXPIRE_HOURS must be at least 1.")
+        return v
+
+    @field_validator("smtp_ssl")
+    @classmethod
+    def validate_smtp_transport(cls, v: bool, info) -> bool:
+        smtp_tls = bool(info.data.get("smtp_tls"))
+        if v and smtp_tls:
+            raise ValueError("SMTP_SSL and SMTP_TLS cannot both be enabled.")
+        return v
+
+    @field_validator("smtp_tls")
+    @classmethod
+    def validate_smtp_tls_transport(cls, v: bool, info) -> bool:
+        smtp_ssl = bool(info.data.get("smtp_ssl"))
+        if v and smtp_ssl:
+            raise ValueError("SMTP_SSL and SMTP_TLS cannot both be enabled.")
         return v
 
     # ── Derived helpers ───────────────────────────────────────────────────────

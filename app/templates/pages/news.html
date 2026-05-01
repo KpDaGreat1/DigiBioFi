@@ -175,23 +175,24 @@
         <p class="text-slate-400 font-medium">Established platforms and guides that can support job search, learning, and client work.</p>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {% for icon, name, desc in [
-          ('briefcase', 'LinkedIn Jobs', 'Professional networking and job discovery'),
-          ('graduation-cap', 'Coursera', 'Structured online learning'),
-          ('search', 'Indeed', 'Job search and listings'),
-          ('trending-up', 'Glassdoor', 'Transparency & valuation'),
-          ('code', 'freeCodeCamp', 'Technical literacy'),
-          ('users', 'Meetup', 'Local professional meetups'),
-          ('file-text', 'Upwork', 'Freelance project marketplace'),
-          ('star', 'Toptal', 'Curated freelance network')
+        {% for icon, name, desc, href in [
+          ('briefcase', 'LinkedIn Jobs', 'Professional networking and job discovery', 'https://www.linkedin.com/jobs'),
+          ('graduation-cap', 'Coursera', 'Structured online learning', 'https://www.coursera.org'),
+          ('search', 'Indeed', 'Job search and listings', 'https://www.indeed.com'),
+          ('trending-up', 'Glassdoor', 'Salary insights and company reviews', 'https://www.glassdoor.com'),
+          ('code', 'freeCodeCamp', 'Technical literacy and portfolio-ready projects', 'https://www.freecodecamp.org'),
+          ('users', 'Meetup', 'Local professional meetups and events', 'https://www.meetup.com'),
+          ('file-text', 'Upwork', 'Freelance project marketplace', 'https://www.upwork.com'),
+          ('star', 'Toptal', 'Curated freelance network', 'https://www.toptal.com')
         ] %}
-        <div class="p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors">
+        <a href="{{ href }}" target="_blank" rel="noopener noreferrer" aria-label="{{ name }} (opens in a new tab)"
+           class="block p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors">
           <div class="w-10 h-10 bg-brand-blue/10 rounded-xl flex items-center justify-center mb-4">
             <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-blue"></i>
           </div>
           <p class="font-bold text-white text-sm mb-1">{{ name }}</p>
           <p class="text-slate-500 text-xs font-medium leading-relaxed">{{ desc }}</p>
-        </div>
+        </a>
         {% endfor %}
       </div>
     </section>

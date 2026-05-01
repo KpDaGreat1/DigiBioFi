@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.config import settings
 from app.core.dependencies import get_db, get_current_user_optional, require_csrf
 from app.core.templates import templates, flash
+from app.utils.urls import external_base_url
 from app.utils.validators import (
     normalize_optional_external_url,
     sanitize_article_html,
@@ -71,7 +72,7 @@ def what_is_page(
 ):
     return templates.TemplateResponse(
         "pages/what_is.html",
-        {"request": request, "user": user},
+        {"request": request, "user": user, "base_url": external_base_url(request)},
     )
 
 
@@ -135,7 +136,7 @@ def explore_page(
             "total_pages": total_pages,
             "total": total,
             "q": q,
-            "base_url": settings.base_url,
+            "base_url": external_base_url(request),
             "example_profile_slugs": example_profile_slugs,
             "example_profile_count": len(example_profile_slugs),
             "demo_profiles": demo_profiles,
@@ -307,7 +308,13 @@ def job_matcher_page(
 ):
     return templates.TemplateResponse(
         "pages/job_matcher.html",
-        {"request": request, "user": user, "results": None, "form": {}},
+        {
+            "request": request,
+            "user": user,
+            "results": None,
+            "form": {},
+            "base_url": external_base_url(request),
+        },
     )
 
 
@@ -337,7 +344,13 @@ def job_matcher_submit(
 
     return templates.TemplateResponse(
         "pages/job_matcher.html",
-        {"request": request, "user": user, "results": results, "form": form},
+        {
+            "request": request,
+            "user": user,
+            "results": results,
+            "form": form,
+            "base_url": external_base_url(request),
+        },
     )
 
 
@@ -462,6 +475,7 @@ def news_page(
                 "categories": categories,
                 "selected_category": category,
                 "source": "db",
+                "base_url": external_base_url(request),
             },
         )
 
@@ -480,6 +494,7 @@ def news_page(
             "categories": categories,
             "selected_category": category,
             "source": "curated",
+            "base_url": external_base_url(request),
         },
     )
 
@@ -508,7 +523,12 @@ def article_page(
 
     return templates.TemplateResponse(
         "pages/article.html",
-        {"request": request, "user": user, "article": article},
+        {
+            "request": request,
+            "user": user,
+            "article": article,
+            "base_url": external_base_url(request),
+        },
     )
 
 
@@ -521,7 +541,7 @@ def contact_page(
 ):
     return templates.TemplateResponse(
         "pages/contact.html",
-        {"request": request, "user": user, "submitted": False},
+        {"request": request, "user": user, "submitted": False, "base_url": external_base_url(request)},
     )
 
 
@@ -561,6 +581,7 @@ def contact_submit(
                 "submitted": False,
                 "errors": errors,
                 "form": {"name": name, "email": email, "subject": subject, "message": message},
+                "base_url": external_base_url(request),
             },
             status_code=422,
         )
@@ -586,11 +607,16 @@ def contact_submit(
         flash(request, "An error occurred. Please try again later.", "error")
         return templates.TemplateResponse(
             "pages/contact.html",
-            {"request": request, "user": user, "submitted": False},
+            {
+                "request": request,
+                "user": user,
+                "submitted": False,
+                "base_url": external_base_url(request),
+            },
             status_code=500,
         )
 
     return templates.TemplateResponse(
         "pages/contact.html",
-        {"request": request, "user": user, "submitted": True},
+        {"request": request, "user": user, "submitted": True, "base_url": external_base_url(request)},
     )

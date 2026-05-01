@@ -17,3 +17,9 @@ def external_base_url(request: Request) -> str:
         return f"{scheme}://{forwarded_host}".rstrip("/")
 
     return str(request.base_url).rstrip("/")
+
+
+def absolute_url(request: Request, path: str = "") -> str:
+    base = external_base_url(request)
+    normalized_path = "/" + path.lstrip("/") if path else ""
+    return f"{base}{normalized_path}"

@@ -2,6 +2,7 @@
 Dashboard routes — authenticated user home, account, profile edit, QR, card preview.
 """
 import logging
+from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -108,6 +109,64 @@ def _require_portfolio_access(request: Request, current_user: User):
     return RedirectResponse("/dashboard/upgrade", status_code=303)
 
 
+def _profile_form_values(profile, resume_prefill: dict | None = None) -> dict:
+    resume_prefill = resume_prefill or {}
+    return {
+        "full_name": resume_prefill.get("full_name") or (profile.full_name if profile else ""),
+        "slug": profile.slug if profile else "",
+        "headline": resume_prefill.get("headline") or (profile.headline if profile else ""),
+        "bio": resume_prefill.get("bio") or (profile.bio if profile else ""),
+        "email": resume_prefill.get("email") or (profile.email if profile else ""),
+        "phone": resume_prefill.get("phone") or (profile.phone if profile else ""),
+        "location": resume_prefill.get("location") or (profile.location if profile else ""),
+        "website": resume_prefill.get("website") or (profile.website if profile else ""),
+        "github": resume_prefill.get("github") or (profile.github if profile else ""),
+        "twitter": resume_prefill.get("twitter") or (profile.twitter if profile else ""),
+        "telegram": resume_prefill.get("telegram") or (profile.telegram if profile else ""),
+    }
+
+
+def _map_resume_links(links: list[str]) -> dict[str, str]:
+    mapped = {"website": "", "github": "", "twitter": "", "telegram": ""}
+    for raw_link in links or []:
+        try:
+            hostname = (urlparse(raw_link).hostname or "").lower()
+        except Exception:
+            hostname = ""
+        if "github.com" in hostname and not mapped["github"]:
+            mapped["github"] = raw_link
+        elif ("twitter.com" in hostname or "x.com" in hostname) and not mapped["twitter"]:
+            mapped["twitter"] = raw_link
+        elif "t.me" in hostname and not mapped["telegram"]:
+            mapped["telegram"] = raw_link
+        elif not mapped["website"]:
+            mapped["website"] = raw_link
+    return mapped
+
+
+def _resume_prefill_payload(prefill: dict | None) -> dict | None:
+    if not prefill:
+        return None
+    mapped_links = _map_resume_links(prefill.get("links") or [])
+    return {
+        **prefill,
+        **mapped_links,
+        "skills": prefill.get("skills") or [],
+        "experience": prefill.get("experience") or [],
+        "education": prefill.get("education") or [],
+        "projects": prefill.get("projects") or [],
+    }
+
+
+def _resume_ai_enabled() -> bool:
+    try:
+        from app.services.resume_ai_service import is_resume_ai_available
+
+        return is_resume_ai_available()
+    except Exception:
+        return False
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard_home(
     request: Request,
@@ -177,6 +236,7 @@ def dashboard_home(
             "show_upgrade_callout": plan_label == "Free" and current_user.role != "admin",
             "show_manage_subscription": can_manage_subscription(current_user),
             "show_dashboard_ad": show_dashboard_ad,
+            "adsense_client_id": dashboard_ad_client_id if show_dashboard_ad else "",
             "dashboard_ad_client_id": dashboard_ad_client_id,
             "dashboard_ad_slot": dashboard_ad_slot,
         },
@@ -192,9 +252,18 @@ def profile_edit_page(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
+    resume_prefill = _resume_prefill_payload(request.session.get("resume_prefill"))
+    ai_resume_enabled = _resume_ai_enabled()
     return templates.TemplateResponse(
         "dashboard/profile_edit.html",
-        {"request": request, "user": current_user, "profile": profile},
+        {
+            "request": request,
+            "user": current_user,
+            "profile": profile,
+            "form_values": _profile_form_values(profile, resume_prefill),
+            "resume_prefill": resume_prefill,
+            "ai_resume_enabled": ai_resume_enabled,
+        },
     )
 
 
@@ -242,7 +311,27 @@ async def profile_edit_submit(
             profile.freelance_availability = (freelance_availability == "on")
         return templates.TemplateResponse(
             "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile, "errors": errors},
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "errors": errors,
+                "form_values": {
+                    "full_name": full_name,
+                    "slug": slug or (profile.slug if profile else ""),
+                    "headline": headline,
+                    "bio": bio,
+                    "email": email,
+                    "phone": phone,
+                    "location": location,
+                    "website": website,
+                    "twitter": twitter,
+                    "github": github,
+                    "telegram": telegram,
+                },
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+            },
             status_code=status_code,
         )
 
@@ -264,6 +353,7 @@ async def profile_edit_submit(
             freelance_availability=(freelance_availability == "on"),
         )
         profile_service.update_profile(profile, data, db)
+        request.session.pop("resume_prefill", None)
         flash(request, "Profile updated successfully!", "success")
         return RedirectResponse("/dashboard/profile", status_code=303)
 
@@ -301,7 +391,14 @@ async def upload_profile_image(
         flash(request, "Failed to upload image.", "error")
         return templates.TemplateResponse(
             "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile},
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "form_values": _profile_form_values(profile, _resume_prefill_payload(request.session.get("resume_prefill"))),
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+            },
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile", status_code=303)
@@ -331,10 +428,122 @@ async def upload_resume(
         flash(request, "Failed to upload resume.", "error")
         return templates.TemplateResponse(
             "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile},
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "form_values": _profile_form_values(profile, _resume_prefill_payload(request.session.get("resume_prefill"))),
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+            },
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/resume/ai-fill", response_class=HTMLResponse)
+async def ai_fill_with_resume(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _get_profile(current_user, db)
+    try:
+        from app.services.resume_ai_service import (
+            ResumeAIExtractionError,
+            ResumeAIUnavailable,
+            extract_resume_info,
+        )
+
+        resume_info = extract_resume_info(file)
+        request.session["resume_prefill"] = resume_info.model_dump()
+        flash(
+            request,
+            "Resume analyzed. Review the suggested profile data before saving any changes.",
+            "success",
+        )
+    except ResumeAIUnavailable as exc:
+        flash(request, str(exc), "info")
+    except (ResumeAIExtractionError, HTTPException) as exc:
+        detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+        flash(request, detail or "Resume analysis failed.", "error")
+    except Exception:
+        logger.exception("Unexpected AI resume fill failure")
+        flash(request, "Resume analysis failed. Please try again later.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/resume/ai-clear", response_class=HTMLResponse)
+def clear_ai_resume_prefill(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+):
+    request.session.pop("resume_prefill", None)
+    flash(request, "Resume suggestions cleared.", "info")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.get("/messages", response_class=HTMLResponse)
+def messages_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+
+    messages = (
+        db.query(ContactMessage)
+        .filter(ContactMessage.user_id == current_user.id)
+        .order_by(ContactMessage.created_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        "dashboard/messages.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": _get_profile(current_user, db),
+            "messages": messages,
+        },
+    )
+
+
+@router.post("/messages/send", response_class=HTMLResponse)
+def send_support_message(
+    request: Request,
+    body: str = Form(default=""),
+    subject: str = Form(default="Support Request"),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+    from app.utils.validators import sanitize_plain_text
+
+    clean_subject = sanitize_plain_text(subject)[:300] or "Support Request"
+    clean_body = sanitize_plain_text(body)[:5000]
+    if not clean_body:
+        flash(request, "Message cannot be empty.", "error")
+        return RedirectResponse("/dashboard/messages", status_code=303)
+
+    profile = _get_profile(current_user, db)
+    sender_name = (profile.full_name if profile and profile.full_name else current_user.username)[:200]
+    message = ContactMessage(
+        sender_name=sender_name,
+        sender_email=current_user.email[:255],
+        user_id=current_user.id,
+        source="internal",
+        subject=clean_subject,
+        body=clean_body,
+        status="unread",
+    )
+    db.add(message)
+    db.commit()
+    flash(request, "Message sent to the DigiBioFi team.", "success")
+    return RedirectResponse("/dashboard/messages", status_code=303)
 
 
 # ── Experience ────────────────────────────────────────────────────────────────

@@ -30,6 +30,7 @@ from app.db.database import engine
 from app.db.schema import assert_schema_ready
 from app.routers import auth, dashboard, public, admin, billing, legal, pages
 from app.core.dependencies import get_current_user_optional, get_db
+from app.utils.urls import external_base_url
 from app.utils.validators import hash_daily_client_token
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -367,6 +368,17 @@ def _safe_error_response(request: Request, status_code: int = 500):
     )
 
 
+def _should_redirect_html_401(request: Request, auth_cookie_present: bool) -> bool:
+    if not _request_expects_html(request):
+        return False
+    if request.url.path == "/login":
+        return False
+    if auth_cookie_present:
+        return True
+    protected_prefixes = ("/dashboard", "/admin", "/billing")
+    return request.url.path.startswith(protected_prefixes)
+
+
 def _safe_http_exception_response(request: Request, exc: HTTPException):
     if not _request_expects_html(request):
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
@@ -488,7 +500,7 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
         logger.exception("Unhandled request error")
         response = _safe_error_response(request, status_code=500)
 
-    if response.status_code == 401 and _request_expects_html(request):
+    if response.status_code == 401 and _should_redirect_html_401(request, auth_cookie_present):
         response = _redirect_to_login()
 
     if auth_cookie_present and (_response_is_html(response) or _request_expects_html(request)):
@@ -552,11 +564,12 @@ def health_check():
 # ── Robots.txt ───────────────────────────────────────
 
 @app.get("/robots.txt", include_in_schema=False)
-def robots():
+def robots(request: Request):
+    base_url = external_base_url(request)
     content = (
         "User-agent: *\n"
         "Allow: /\n"
-        f"Sitemap: {settings.base_url.rstrip('/')}/sitemap.xml\n"
+        f"Sitemap: {base_url.rstrip('/')}/sitemap.xml\n"
     )
     return Response(content=content, media_type="text/plain")
 
@@ -570,7 +583,7 @@ def sitemap(request: Request, db=Depends(get_db)):
     from app.models.user import User
     from sqlalchemy import func
 
-    base = settings.base_url.rstrip("/")
+    base = external_base_url(request).rstrip("/")
 
     # Static public routes
     static_routes = [
@@ -805,7 +818,10 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request, user=Depends(get_current_user_optional)):
     """Landing page."""
-    return templates.TemplateResponse("landing.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "landing.html",
+        {"request": request, "user": user, "base_url": external_base_url(request)},
+    )
 
 
 # ── Error handlers ────────────────────────────────────────────────────────────

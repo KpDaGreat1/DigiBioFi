@@ -3,6 +3,7 @@
 from email.message import EmailMessage
 import logging
 import smtplib
+import time
 
 from app.core.config import settings
 
@@ -46,22 +47,37 @@ def send_email(*, subject: str, recipient: str, text_body: str, html_body: str) 
         html_body=html_body,
     )
 
-    try:
-        if settings.smtp_port == 465:
-            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=15) as server:
+    last_error = None
+    for attempt in range(1, 3):
+        try:
+            if settings.smtp_ssl:
+                with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=15) as server:
+                    server.login(settings.smtp_user, settings.smtp_password)
+                    server.send_message(message)
+                return
+
+            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
+                server.ehlo()
+                if settings.smtp_tls:
+                    server.starttls()
+                    server.ehlo()
                 server.login(settings.smtp_user, settings.smtp_password)
                 server.send_message(message)
             return
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "Email delivery attempt %s failed for recipient=%s via host=%s port=%s",
+                attempt,
+                recipient,
+                settings.smtp_host,
+                settings.smtp_port,
+            )
+            if attempt < 2:
+                time.sleep(0.5)
 
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(settings.smtp_user, settings.smtp_password)
-            server.send_message(message)
-    except Exception as exc:
-        logger.exception("Email delivery failed")
-        raise EmailDeliveryError("Email delivery failed.") from exc
+    logger.error("Email delivery failed after retries: %s", last_error)
+    raise EmailDeliveryError("Email delivery failed.") from last_error
 
 
 def send_verification_email(*, recipient: str, username: str, verification_url: str) -> None:

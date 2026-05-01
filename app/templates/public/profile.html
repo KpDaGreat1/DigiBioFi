@@ -50,9 +50,6 @@
   ]
 }
 </script>
-{% if show_public_inline_ad or show_public_sidebar_ad %}
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
-{% endif %}
 {% endblock %}
 
 {% block profile_content %}
@@ -205,7 +202,7 @@
                   <i data-lucide="file-code" class="w-6 h-6 text-brand-green"></i>
                 </div>
                 {% if proj.url %}
-                <a href="{{ proj.url }}" target="_blank" class="text-slate-600 hover:text-white transition-colors">
+                <a href="{{ proj.url }}" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-white transition-colors">
                   <i data-lucide="external-link" class="w-5 h-5"></i>
                 </a>
                 {% endif %}

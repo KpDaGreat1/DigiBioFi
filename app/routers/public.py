@@ -16,6 +16,7 @@ from app.core.dependencies import get_db, get_current_user_optional
 from app.services import profile_service, qr_service, analytics_service
 from app.services.storage import storage
 from app.schemas.analytics import TrackEventRequest
+from app.utils.urls import external_base_url
 from app.utils.validators import hash_daily_client_token, hash_visitor, sanitize_text
 
 router = APIRouter(tags=["public"])
@@ -222,7 +223,7 @@ def public_profile(
             "request": request,
             "profile": profile,
             "safe_profile_bio": sanitize_text(profile.bio or ""),
-            "base_url": settings.base_url,
+            "base_url": external_base_url(request),
             "user": user,
             "show_public_inline_ad": show_ads and bool(adsense_client_id and public_inline_ad_slot),
             "show_public_sidebar_ad": show_ads and bool(adsense_client_id and public_sidebar_ad_slot),

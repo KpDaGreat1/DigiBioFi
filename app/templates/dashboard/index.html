@@ -120,10 +120,8 @@
              <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i>
           </div>
           <div>
-            <p class="text-sm font-bold text-white">Visitor (Hashed)</p>
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-              {{ (visit.user_agent or "Profile View")[:40] }}{% if visit.user_agent and visit.user_agent|length > 40 %}...{% endif %}
-            </p>
+            <p class="text-sm font-bold text-white">Unique Profile View</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Privacy-safe visitor record</p>
           </div>
         </div>
         <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest">{{ visit.timestamp.strftime("%H:%M") }}</p>
@@ -152,6 +150,7 @@
        <div class="p-8 grid sm:grid-cols-2 gap-6">
           {% for url, label, desc, icon, color in [
             ('/dashboard/profile', 'Basic Info', 'Update your public profile details', 'user', 'text-brand-blue'),
+            ('/dashboard/messages', 'Messages', 'Contact the DigiBioFi team for support', 'message-square', 'text-brand-green'),
             ('/dashboard/experience', 'Experience', 'Show your professional history', 'briefcase', 'text-brand-purple'),
             ('/dashboard/education', 'Education', 'Add education and credentials', 'graduation-cap', 'text-brand-green'),
             ('/dashboard/skills', 'Skills', 'Highlight your strengths and specialties', 'cpu', 'text-brand-blue'),
