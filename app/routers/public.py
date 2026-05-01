@@ -44,6 +44,11 @@ def _get_client_ip(request: Request) -> str:
     if state_ip:
         return state_ip
 
+    if not settings.use_proxy_headers:
+        if request.client:
+            return request.client.host
+        return "unknown"
+
     """
     Extract the real client IP, honoring trusted proxy headers.
     Essential for VPS deployments behind nginx or Cloudflare.

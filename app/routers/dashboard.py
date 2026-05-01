@@ -26,6 +26,7 @@ from app.schemas.profile import (
 )
 from app.services import profile_service, qr_service, file_service, analytics_service
 from app.services.storage import storage
+from app.utils.urls import external_base_url
 from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -170,7 +171,7 @@ def dashboard_home(
             "analytics_overview": analytics_overview,
             "show_dashboard_analytics": show_dashboard_analytics,
             "completion_score": completion_score,
-            "base_url": str(request.base_url).rstrip("/"),
+            "base_url": external_base_url(request),
             "csrf_token": csrf_token,
             "current_plan_label": plan_label,
             "show_upgrade_callout": plan_label == "Free" and current_user.role != "admin",
@@ -1012,7 +1013,7 @@ def qr_view(
             "profile": profile,
             "show_qr_analytics": show_qr_analytics,
             "qr_scans": stats.qr_scans if stats else 0,
-            "base_url": str(request.base_url).rstrip("/"),
+            "base_url": external_base_url(request),
         },
     )
 
@@ -1068,6 +1069,7 @@ def upgrade_page(
             "profile": profile,
             "basic_checkout_enabled": basic_checkout_enabled,
             "elite_checkout_enabled": elite_checkout_enabled,
+            "stripe_publishable_key": settings.stripe_publishable_key.strip(),
         },
     )
 

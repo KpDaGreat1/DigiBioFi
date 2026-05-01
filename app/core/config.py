@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     debug: bool = True
     secret_key: str
     base_url: str = "http://localhost:8000"
+    trust_proxy_headers: bool | None = None
+    secure_cookies: bool | None = None
     redis_url: str = ""
     # ── Security ─────────────────────────────────────────────────────────────
     # Session / CSRF / Rate limiting
@@ -60,7 +62,9 @@ class Settings(BaseSettings):
 
     # ── Stripe ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
+    stripe_api_version: str = "2026-02-25.clover"
 
     # Billing tiers
     stripe_price_basic: str = ""
@@ -175,6 +179,18 @@ class Settings(BaseSettings):
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
+
+    @property
+    def use_proxy_headers(self) -> bool:
+        if self.trust_proxy_headers is not None:
+            return self.trust_proxy_headers
+        return self.is_production
+
+    @property
+    def use_secure_cookies(self) -> bool:
+        if self.secure_cookies is not None:
+            return self.secure_cookies
+        return self.is_production
 
 
 @lru_cache

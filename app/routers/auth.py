@@ -31,6 +31,7 @@ from app.services.auth_service import (
     AuthError,
 )
 from app.services import email_service
+from app.utils.urls import external_base_url
 from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(tags=["auth"])
@@ -39,7 +40,7 @@ _VERIFICATION_RESEND_COOLDOWN_SECONDS = 60
 
 
 def _base_url(request: Request) -> str:
-    return str(request.base_url).rstrip("/")
+    return external_base_url(request)
 
 
 def _dev_verification_url(request: Request, user) -> str | None:

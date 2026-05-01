@@ -12,6 +12,7 @@ from app.core.permissions import can_manage_subscription
 from app.core.templates import flash
 from app.models.user import User
 from app.services import stripe_service
+from app.utils.urls import external_base_url
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 logger = logging.getLogger(__name__)
@@ -81,8 +82,11 @@ def create_checkout_session(
             "This plan is not available right now.",
         )
 
-    base_url = str(request.base_url).rstrip("/")
-    success_url = f"{base_url}/dashboard?success=true&plan={plan}"
+    base_url = external_base_url(request)
+    success_url = (
+        f"{base_url}/dashboard?success=true&plan={plan}"
+        "&session_id={CHECKOUT_SESSION_ID}"
+    )
     cancel_url = f"{base_url}/dashboard?canceled=true&plan={plan}"
 
     try:
@@ -169,7 +173,7 @@ def billing_portal(
     try:
         portal_url = stripe_service.create_billing_portal_session(
             current_user.stripe_customer_id,
-            str(request.base_url).rstrip("/") + "/dashboard",
+            external_base_url(request) + "/dashboard",
         )
         return RedirectResponse(portal_url, status_code=303)
     except Exception:

@@ -199,6 +199,11 @@ def get_client_ip(request: Request) -> str:
     Extract client IP from request, checking trusted proxy headers first.
     In production, this helps get the real client IP when behind a load balancer.
     """
+    if not settings.use_proxy_headers:
+        if request.client:
+            return request.client.host
+        return "unknown"
+
     # Check X-Forwarded-For (most common with proxies)
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
@@ -277,7 +282,7 @@ def _apply_security_headers(response):
 
     script_src = (
         "'self' 'unsafe-inline' https://cdn.tailwindcss.com "
-        "https://unpkg.com https://cdnjs.cloudflare.com"
+        "https://unpkg.com https://cdnjs.cloudflare.com https://js.stripe.com"
     )
     img_src = (
         "'self' data: blob: https://images.unsplash.com "
@@ -503,6 +508,8 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
     session_cookie="digibiofi_session",
+    same_site="lax",
+    https_only=settings.use_secure_cookies,
     max_age=3600 * 24 * 30, # 30 days
 )
 
@@ -676,9 +683,12 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
     try:
         import stripe
         stripe.api_key = settings.stripe_secret_key
+        stripe.api_version = settings.stripe_api_version
         payload = await request.body()
         sig = request.headers.get("stripe-signature", "")
         event = stripe.Webhook.construct_event(payload, sig, settings.stripe_webhook_secret)
+        if hasattr(event, "to_dict"):
+            event = event.to_dict()
     except ImportError:
         return JSONResponse({"error": "stripe not installed"}, status_code=500)
     except Exception as e:

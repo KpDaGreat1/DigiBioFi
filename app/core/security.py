@@ -4,6 +4,7 @@ and cookie helpers.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import hashlib
 import hmac
 import secrets
 
@@ -22,11 +23,22 @@ CSRF_COOKIE_NAME = "csrf_token"
 # ── Passwords ─────────────────────────────────────────────
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    return pwd_context.hash(_bcrypt_safe_password(plain))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    normalized = _bcrypt_safe_password(plain)
+    if normalized != plain:
+        return pwd_context.verify(normalized, hashed)
     return pwd_context.verify(plain, hashed)
+
+
+def _bcrypt_safe_password(plain: str) -> str:
+    raw = plain.encode("utf-8")
+    if len(raw) <= 72:
+        return plain
+    digest = hashlib.sha256(raw).hexdigest()
+    return f"sha256:{digest}"
 
 
 # ── JWT ───────────────────────────────────────────────────
@@ -68,7 +80,7 @@ def set_auth_cookie(response: Response, token: str):
         key=AUTH_COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=settings.app_env == "production",
+        secure=settings.use_secure_cookies,
         samesite="lax",
         max_age=settings.access_token_expire_minutes * 60,
         path="/",
@@ -102,7 +114,7 @@ def set_csrf_cookie(response: Response, token: str):
         key=CSRF_COOKIE_NAME,
         value=token,
         httponly=False,  # IMPORTANT
-        secure=settings.app_env == "production",
+        secure=settings.use_secure_cookies,
         samesite="lax",
         max_age=60 * 60 * 8,
         path="/",

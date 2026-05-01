@@ -3,6 +3,13 @@
 {% block title %}Upgrade — DigiBioFi{% endblock %}
 {% block page_title %}Upgrade{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  {% if basic_checkout_enabled or elite_checkout_enabled %}
+  <script async src="https://js.stripe.com/clover/stripe.js"></script>
+  {% endif %}
+{% endblock %}
+
 {% block dashboard_content %}
 <div class="max-w-4xl mx-auto">
   <div class="text-center mb-12">
