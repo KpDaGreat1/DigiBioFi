@@ -75,6 +75,16 @@
             <i data-lucide="external-link" class="w-4 h-4"></i>
           </a>
         </div>
+        {% if resume_preview_url %}
+        <div class="mb-4">
+          <a href="{{ resume_preview_url }}" target="_blank" rel="noopener noreferrer" class="block group" aria-label="Open resume preview in a new tab">
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <img src="{{ resume_preview_url }}" alt="Resume preview" class="w-full h-auto object-cover transition-transform duration-200 group-hover:scale-[1.01]">
+            </div>
+            <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Preview of the first resume page</p>
+          </a>
+        </div>
+        {% endif %}
         {% endif %}
 
         <form action="/dashboard/profile/resume" method="post" enctype="multipart/form-data">

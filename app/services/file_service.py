@@ -7,6 +7,7 @@ Upload directory layout (all under settings.upload_dir):
   qr_codes/{slug}.png   ← managed by qr_service
 """
 from pathlib import Path
+from io import BytesIO
 import secrets
 
 from fastapi import UploadFile, HTTPException, status
@@ -126,6 +127,45 @@ async def save_resume_pdf(upload: UploadFile, user_id: int) -> str:
     _enforce_saved_size(saved_path)
 
     return storage.get_url(saved_path)
+
+
+def get_resume_preview_url(user_id: int) -> str:
+    relative_path = f"resume_previews/resume_preview_{user_id}.png"
+    if storage.exists(relative_path):
+        return storage.get_url(relative_path)
+    return ""
+
+
+def refresh_resume_pdf_preview(resume_url: str, user_id: int) -> str:
+    pdf_path = storage.resolve_url(resume_url)
+    if not pdf_path or not pdf_path.exists():
+        return ""
+
+    try:
+        import fitz
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="PDF preview dependencies are unavailable.",
+        ) from exc
+
+    relative_path = f"resume_previews/resume_preview_{user_id}.png"
+
+    try:
+        with fitz.open(pdf_path) as document:
+            if document.page_count < 1:
+                return ""
+            page = document.load_page(0)
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False)
+            image_bytes = pixmap.tobytes("png")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not generate a preview for this PDF.",
+        ) from exc
+
+    storage.save(BytesIO(image_bytes), relative_path)
+    return storage.get_url(relative_path)
 
 
 async def save_project_thumbnail(upload: UploadFile, user_id: int) -> str:

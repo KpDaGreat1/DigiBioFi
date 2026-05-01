@@ -135,7 +135,7 @@ async def lifespan(app: FastAPI):
     # Import models so relationship access in startup paths is registered.
     import app.models as app_models  # noqa: F401
 
-    for sub in ("profile_images", "qr_codes", "resumes", "certificates", "project_thumbnails"):
+    for sub in ("profile_images", "qr_codes", "resumes", "resume_previews", "certificates", "project_thumbnails"):
         (settings.upload_path / sub).mkdir(parents=True, exist_ok=True)
 
     if settings.free_daily_profile_view_limit < 1:
@@ -543,7 +543,7 @@ _uploads_path = Path(settings.upload_dir)
 _uploads_path.mkdir(exist_ok=True)
 qr_path = settings.upload_path / "qr_codes"
 qr_path.mkdir(parents=True, exist_ok=True)
-for subdir in ("profile_images", "project_thumbnails", "certificates"):
+for subdir in ("profile_images", "project_thumbnails", "certificates", "resume_previews"):
     public_dir = settings.upload_path / subdir
     public_dir.mkdir(parents=True, exist_ok=True)
     app.mount(

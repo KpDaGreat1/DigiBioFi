@@ -225,6 +225,15 @@ def _resume_ai_enabled() -> bool:
         return False
 
 
+def _resume_preview_url(current_user: User, profile: Profile | None) -> str:
+    if not profile or not profile.resume_pdf:
+        return ""
+    try:
+        return file_service.get_resume_preview_url(current_user.id)
+    except Exception:
+        return ""
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard_home(
     request: Request,
@@ -479,6 +488,7 @@ def profile_edit_page(
             "form_values": _profile_form_values(profile, resume_prefill),
             "resume_prefill": resume_prefill,
             "ai_resume_enabled": ai_resume_enabled,
+            "resume_preview_url": _resume_preview_url(current_user, profile),
         },
     )
 
@@ -538,6 +548,7 @@ async def profile_edit_submit(
                 },
                 "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
                 "ai_resume_enabled": _resume_ai_enabled(),
+                "resume_preview_url": _resume_preview_url(current_user, profile),
             },
             status_code=status_code,
         )
@@ -624,6 +635,7 @@ async def upload_resume(
         path = await file_service.save_resume_pdf(file, current_user.id)
         data = ProfileUpdate(resume_pdf=path)
         profile_service.update_profile(profile, data, db)
+        file_service.refresh_resume_pdf_preview(path, current_user.id)
         if old_resume and old_resume != path:
             _delete_upload_url(old_resume)
         flash(request, "Resume uploaded successfully!", "success")
@@ -639,6 +651,7 @@ async def upload_resume(
                 "form_values": _profile_form_values(profile, _resume_prefill_payload(request.session.get("resume_prefill"))),
                 "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
                 "ai_resume_enabled": _resume_ai_enabled(),
+                "resume_preview_url": _resume_preview_url(current_user, profile),
             },
             status_code=400,
         )
