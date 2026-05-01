@@ -20,7 +20,7 @@ from app.utils.validators import (
 router = APIRouter(tags=["pages"])
 logger = logging.getLogger(__name__)
 _EXAMPLE_PROFILE_EMAIL_DOMAIN = "@example.invalid"
-_DEMO_PROFILE_TARGET_COUNT = 3
+_DEMO_PROFILE_TARGET_COUNT = 2
 _DEMO_PROFILES = [
     {
         "name": "Northstar Product Studio",
@@ -36,14 +36,6 @@ _DEMO_PROFILES = [
         "location": "Remote",
         "skills": ["Python", "FastAPI", "Project Delivery"],
         "summary": "Demo profile focused on shipped projects, technical depth, and a cleaner alternative to a static resume or one-page link list.",
-        "label": "Sample Profile",
-    },
-    {
-        "name": "Clearpath Advisory",
-        "headline": "Sample Profile · Freelance Consultant / Career Specialist",
-        "location": "Austin, TX",
-        "skills": ["Client Strategy", "Consulting", "Career Positioning"],
-        "summary": "Demo profile for independent professionals who need clear offers, service highlights, and strong public positioning.",
         "label": "Sample Profile",
     },
 ]
@@ -120,8 +112,9 @@ def explore_page(
     example_profile_slugs = {profile.slug for profile in profiles if _is_example_profile(profile)}
     real_profiles = [profile for profile in profiles if profile.slug not in example_profile_slugs]
     demo_profiles = []
-    if not q.strip() and len(real_profiles) < _DEMO_PROFILE_TARGET_COUNT:
-        demo_profiles = list(_DEMO_PROFILES)
+    if not q.strip() and len(example_profile_slugs) < _DEMO_PROFILE_TARGET_COUNT:
+        missing_examples = max(0, _DEMO_PROFILE_TARGET_COUNT - len(example_profile_slugs))
+        demo_profiles = list(_DEMO_PROFILES[:missing_examples])
 
     total_pages = max(1, (total + per_page - 1) // per_page)
 

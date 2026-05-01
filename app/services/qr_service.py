@@ -1,8 +1,8 @@
 """
 QR code generation service.
 
-Generates a PNG QR code for a profile's public URL and persists it to storage.
-The QR code record in the database tracks the image path and the URL it encodes.
+Supports the legacy persisted PNG flow for downloads and a fresh streamed SVG flow
+for public/profile rendering.
 """
 import io
 import uuid
@@ -21,6 +21,22 @@ from app.services.storage import LocalStorage
 # QR codes are stored under uploads/qr_codes/ and served at /qr_codes/<slug>.png
 # The static mount in main.py maps /qr_codes/ → uploads/qr_codes/
 qr_storage = LocalStorage(url_prefix="/uploads")
+
+
+def build_public_qr_target(slug: str, qr_id: str | uuid.UUID | None = None, base_url: str | None = None) -> str:
+    root = (base_url or settings.base_url).rstrip("/")
+    suffix = f"?src=qr&qr_id={qr_id}" if qr_id else "?src=qr"
+    return f"{root}/p/{slug}{suffix}"
+
+
+def generate_qr_svg(slug: str, qr_id: str | uuid.UUID | None = None, base_url: str | None = None) -> bytes:
+    import segno
+
+    qr_target = build_public_qr_target(slug=slug, qr_id=qr_id, base_url=base_url)
+    out = io.BytesIO()
+    qr = segno.make(qr_target, error="h")
+    qr.save(out, kind="svg", scale=8, border=2, dark="#111827", light="#ffffff")
+    return out.getvalue()
 
 
 def generate_qr_for_profile(profile: Profile, db: Session, force: bool = False) -> QRCode:
@@ -53,7 +69,7 @@ def generate_qr_for_profile(profile: Profile, db: Session, force: bool = False) 
         db.flush()
 
     # 2. Build the signature URL (must be stable)
-    qr_url = f"{settings.base_url}/p/{profile.slug}?src=qr&qr_id={qr_record.qr_id}"
+    qr_url = build_public_qr_target(profile.slug, qr_record.qr_id)
     
     # 3. Generate QR image if it doesn't exist or forced
     qr = qrcode.QRCode(

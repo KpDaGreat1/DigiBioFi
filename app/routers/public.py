@@ -282,17 +282,22 @@ def download_qr(slug: str, db: Session = Depends(get_db)):
 
 
 @router.get("/api/qr/{slug}")
-def inline_qr(slug: str, db: Session = Depends(get_db)):
+def inline_qr(slug: str, request: Request, db: Session = Depends(get_db)):
     profile = profile_service.get_profile_by_slug(slug, db)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    qr_bytes = qr_service.get_qr_bytes(slug)
-    if not qr_bytes:
-        qr_service.generate_qr_for_profile(profile, db)
-        qr_bytes = qr_service.get_qr_bytes(slug)
-
-    return Response(content=qr_bytes, media_type="image/png")
+    qr_id = getattr(getattr(profile, "qr_code", None), "qr_id", None)
+    qr_bytes = qr_service.generate_qr_svg(
+        slug=slug,
+        qr_id=qr_id,
+        base_url=external_base_url(request),
+    )
+    return Response(
+        content=qr_bytes,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
 
 
 # ── Resume PDF download ───────────────────────────────────────────────────────

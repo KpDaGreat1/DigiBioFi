@@ -95,41 +95,6 @@ _EXAMPLE_PROFILES = [
             },
         ],
     },
-    {
-        "email": f"sample-freelancer@{_EXAMPLE_EMAIL_DOMAIN}",
-        "username": "sample_freelancer",
-        "full_name": "Morgan Ellis",
-        "headline": "Example Profile · Freelancer",
-        "bio": (
-            "Example Profile\n"
-            "Consulting-focused profile example for independent professionals who need clear offers, "
-            "testimonial highlights, and proof links in one place."
-        ),
-        "location": "Austin, TX",
-        "website": "https://example.com/proof/freelancer",
-        "skills": [("Client Strategy", "Consulting"), ("Workshops", "Consulting"), ("Content Systems", "Consulting")],
-        "experience": {
-            "company": "Brightline Media",
-            "title": "Independent Consultant",
-            "location": "Austin, TX",
-            "start_date": "2021",
-            "end_date": "Present",
-            "is_current": True,
-            "description": "Delivers consulting sprints, documentation, and repeatable engagement frameworks for growing teams.",
-        },
-        "projects": [
-            {
-                "name": "Proof Link · Client Testimonial Highlights",
-                "description": "Sample proof link that groups short testimonial excerpts with project outcomes and engagement scope.",
-                "url": "https://example.com/proof/client-testimonial-highlights",
-            },
-            {
-                "name": "Proof Link · Consultation Package",
-                "description": "Sample proof link showing service structure, workshop deliverables, and a concise call-to-action for new clients.",
-                "url": "https://example.com/proof/consultation-package",
-            },
-        ],
-    },
 ]
 
 

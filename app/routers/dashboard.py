@@ -1,10 +1,12 @@
 """
 Dashboard routes — authenticated user home, account, profile edit, QR, card preview.
 """
+from datetime import datetime, timezone
 import logging
 from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
@@ -18,20 +20,26 @@ from app.core.permissions import (
     current_plan_label,
     should_show_ads,
 )
+from app.core.security import clear_auth_cookie, clear_csrf_cookie, hash_password, verify_password
 from app.core.templates import templates, flash, get_csrf_token
+from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.profile import (
     ProfileUpdate,
     ExperienceCreate, EducationCreate, SkillCreate,
     ProjectCreate,
 )
+from app.schemas.settings import AccountDeleteRequest, PasswordChangeRequest, SettingsProfileUpdate
 from app.services import profile_service, qr_service, file_service, analytics_service
 from app.services.storage import storage
+from app.services.user_service import delete_user_and_assets
 from app.utils.urls import external_base_url
 from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+settings_router = APIRouter(tags=["settings"])
 logger = logging.getLogger(__name__)
+_RESUME_AI_DAILY_LIMIT = 2
 
 
 def _normalize_plan(plan: str | None) -> str:
@@ -49,6 +57,60 @@ def _get_profile(user: User, db: Session):
         return get_profile_by_user(user.id, db)
     except ProfileNotFound:
         return None
+
+
+def _settings_form_values(user: User, profile: Profile | None) -> dict[str, str]:
+    return {
+        "username": user.username or "",
+        "full_name": profile.full_name if profile else "",
+        "email": user.email or "",
+        "phone": profile.phone if profile else "",
+        "address": profile.location if profile else "",
+    }
+
+
+def _render_settings_page(
+    request: Request,
+    current_user: User,
+    profile: Profile | None,
+    *,
+    profile_errors: dict | None = None,
+    password_errors: dict | None = None,
+    delete_errors: dict | None = None,
+    settings_values: dict | None = None,
+    status_code: int = 200,
+):
+    return templates.TemplateResponse(
+        "dashboard/settings.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": profile,
+            "settings_values": settings_values or _settings_form_values(current_user, profile),
+            "profile_errors": profile_errors or {},
+            "password_errors": password_errors or {},
+            "delete_errors": delete_errors or {},
+        },
+        status_code=status_code,
+    )
+
+
+def _reset_resume_ai_counter_if_needed(user: User, now: datetime) -> int:
+    last_request_at = getattr(user, "resume_ai_last_request_at", None)
+    if last_request_at is None:
+        user.resume_ai_requests_today = 0
+        return 0
+
+    last_day = (
+        last_request_at.astimezone(timezone.utc).date()
+        if last_request_at.tzinfo
+        else last_request_at.date()
+    )
+    if last_day != now.date():
+        user.resume_ai_requests_today = 0
+        user.resume_ai_last_request_at = now
+        return 0
+    return int(user.resume_ai_requests_today or 0)
 
 
 # ── Dashboard home ────────────────────────────────────────────────────────────
@@ -241,6 +303,190 @@ def dashboard_home(
             "dashboard_ad_slot": dashboard_ad_slot,
         },
     )
+
+
+# ── Account settings ─────────────────────────────────────────────────────────
+
+@router.get("/settings")
+def dashboard_settings_alias():
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.get("/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    return _render_settings_page(request, current_user, profile)
+
+
+@settings_router.post("/settings/profile", response_class=HTMLResponse)
+def update_account_settings(
+    request: Request,
+    username: str = Form(...),
+    full_name: str = Form(""),
+    email: str = Form(...),
+    phone: str = Form(""),
+    address: str = Form(""),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    settings_values = {
+        "username": username,
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+        "address": address,
+    }
+
+    try:
+        data = SettingsProfileUpdate(
+            username=username,
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            address=address,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            profile_errors=format_pydantic_errors(exc),
+            settings_values=settings_values,
+            status_code=422,
+        )
+
+    email_taken = (
+        db.query(User)
+        .filter(func.lower(User.email) == data.email.lower(), User.id != current_user.id)
+        .first()
+    )
+    if email_taken:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            profile_errors={"email": "That email address is already in use."},
+            settings_values=settings_values,
+            status_code=400,
+        )
+
+    username_taken = (
+        db.query(User)
+        .filter(func.lower(User.username) == data.username.lower(), User.id != current_user.id)
+        .first()
+    )
+    if username_taken:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            profile_errors={"username": "That username is already in use."},
+            settings_values=settings_values,
+            status_code=400,
+        )
+
+    current_user.username = data.username
+    current_user.email = data.email.lower()
+    if profile:
+        profile.full_name = data.full_name
+        profile.phone = data.phone
+        profile.location = data.address
+    db.commit()
+    if profile:
+        db.refresh(profile)
+    db.refresh(current_user)
+    flash(request, "Account settings updated.", "success")
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.post("/settings/password", response_class=HTMLResponse)
+def change_account_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    try:
+        data = PasswordChangeRequest(
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            password_errors=format_pydantic_errors(exc),
+            status_code=422,
+        )
+
+    if not verify_password(data.current_password, current_user.hashed_password):
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            password_errors={"current_password": "Current password is incorrect."},
+            status_code=400,
+        )
+
+    current_user.hashed_password = hash_password(data.new_password)
+    db.commit()
+    flash(request, "Password updated.", "success")
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.post("/settings/delete", response_class=HTMLResponse)
+def delete_account(
+    request: Request,
+    confirmation: str = Form(...),
+    current_password: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    try:
+        data = AccountDeleteRequest(
+            confirmation=confirmation,
+            current_password=current_password,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            delete_errors=format_pydantic_errors(exc),
+            status_code=422,
+        )
+
+    if not verify_password(data.current_password, current_user.hashed_password):
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            delete_errors={"current_password": "Current password is incorrect."},
+            status_code=400,
+        )
+
+    request.session.clear()
+    delete_user_and_assets(current_user, db)
+    response = RedirectResponse("/", status_code=303)
+    clear_auth_cookie(response)
+    clear_csrf_cookie(response)
+    response.delete_cookie("digibiofi_session", path="/")
+    flash(request, "Your account has been deleted.", "success")
+    return response
 
 
 # ── Basic profile info ────────────────────────────────────────────────────────
@@ -450,6 +696,16 @@ async def ai_fill_with_resume(
     db: Session = Depends(get_db),
 ):
     _get_profile(current_user, db)
+    now = datetime.now(timezone.utc)
+    requests_today = _reset_resume_ai_counter_if_needed(current_user, now)
+    if requests_today >= _RESUME_AI_DAILY_LIMIT:
+        db.commit()
+        flash(
+            request,
+            "AI resume fill is limited to two analyses per day on this account.",
+            "info",
+        )
+        return RedirectResponse("/dashboard/profile", status_code=303)
     try:
         from app.services.resume_ai_service import (
             ResumeAIExtractionError,
@@ -459,6 +715,9 @@ async def ai_fill_with_resume(
 
         resume_info = extract_resume_info(file)
         request.session["resume_prefill"] = resume_info.model_dump()
+        current_user.resume_ai_requests_today = requests_today + 1
+        current_user.resume_ai_last_request_at = now
+        db.commit()
         flash(
             request,
             "Resume analyzed. Review the suggested profile data before saving any changes.",

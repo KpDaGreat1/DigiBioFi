@@ -2,7 +2,8 @@
 Analytics service — record events and compute summary statistics.
 """
 from datetime import datetime, timezone, timedelta
-from sqlalchemy import func, and_
+
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.models.analytics import AnalyticsEvent, ProfileView
@@ -71,7 +72,7 @@ def get_summary(profile_id: int, db: Session) -> AnalyticsSummary:
 
     total_views = base.filter(AnalyticsEvent.event_type == "page_view").count()
 
-    # Unique visitors by distinct visitor_hash
+    # Unique visitors by distinct daily-rotating visitor_hash
     unique_visitors = (
         base.filter(AnalyticsEvent.event_type == "page_view")
         .with_entities(func.count(func.distinct(AnalyticsEvent.visitor_hash)))

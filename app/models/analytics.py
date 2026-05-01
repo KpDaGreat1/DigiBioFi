@@ -39,7 +39,7 @@ class AnalyticsEvent(Base):
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="direct")
     qr_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
-    # Anonymised visitor fingerprint — SHA-256(ip + user_agent) first 16 chars
+    # Anonymised visitor fingerprint — daily rotating SHA-256(secret + day + ip + user_agent)
     visitor_hash: Mapped[str] = mapped_column(String(32), nullable=False, default="")
 
     # Stored only for aggregation; strip PII before production if required

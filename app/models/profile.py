@@ -259,7 +259,7 @@ class QRCode(Base):
 
 
 class ProfileView(Base):
-    """Tracks unique profile views per IP/device per 24h to prevent refresh abuse."""
+    """Tracks unique profile views with daily-rotating anonymized visitor identifiers."""
     __tablename__ = "profile_views"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

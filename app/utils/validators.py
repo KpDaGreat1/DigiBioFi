@@ -69,13 +69,14 @@ def safe_filename(original: str) -> str:
     return name[:MAX_FILENAME_LEN]
 
 
-def hash_visitor(ip: str, user_agent: str) -> str:
+def hash_visitor(ip: str, user_agent: str, current_day: date | None = None) -> str:
     """
-    Create an anonymised visitor fingerprint for analytics deduplication.
-    SHA-256(ip + user_agent) — first 16 hex chars.
-    This is not reversible to PII and doesn't store raw IP.
+    Create a daily-rotating anonymised visitor fingerprint for analytics deduplication.
+    The hash is derived from SECRET_KEY + day + IP + user agent so it rotates every UTC day
+    and cannot be reversed back into a raw IP address from stored data.
     """
-    raw = f"{ip}|{user_agent}"
+    day = current_day or datetime.now(timezone.utc).date()
+    raw = f"{settings.secret_key}|{day.isoformat()}|{ip or 'unknown'}|{user_agent or ''}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 

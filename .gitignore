@@ -149,6 +149,7 @@ requirements.lock.txt
 *.sqlite3
 *.sqlite-shm
 *.sqlite-wal
+tmp_*
 pycache/
 uploads/
 qr_codes/

@@ -179,8 +179,8 @@
         <div class="relative inline-block mb-10">
           <div class="absolute -inset-8 bg-gradient-to-tr from-brand-blue to-brand-purple rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
           <div class="relative bg-white p-6 rounded-3xl shadow-glow">
-            {% if profile.qr_code %}
-            <img src="/{{ profile.qr_code.image_path }}" alt="QR Code" class="w-40 h-44 mx-auto object-contain" />
+            {% if profile and profile.slug %}
+            <img src="/api/qr/{{ profile.slug }}" alt="QR Code" class="w-40 h-44 mx-auto object-contain" />
             {% else %}
             <div class="w-40 h-40 flex flex-col items-center justify-center text-slate-300 gap-3">
               <i data-lucide="qr-code" class="w-12 h-12 opacity-10"></i>

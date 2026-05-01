@@ -639,6 +639,7 @@ def sitemap(request: Request, db=Depends(get_db)):
 
 app.include_router(auth.router)
 app.include_router(dashboard.router)
+app.include_router(dashboard.settings_router)
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(billing.router)
