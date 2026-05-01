@@ -164,37 +164,21 @@
           </div>
         </div>
 
-        <!-- Reach Section -->
+        <!-- Public Identity Note -->
         <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <i data-lucide="zap" class="w-5 h-5"></i>
             </div>
-            <h2 class="text-xl font-black text-slate-900">Reach</h2>
+            <h2 class="text-xl font-black text-slate-900">Public Profile Scope</h2>
           </div>
 
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Public Email</label>
-              <input type="email" name="email" value="{{ form_values.email if form_values else (profile.email or '') }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="alex@example.com" maxlength="200" />
-              {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Phone</label>
-              <input type="text" name="phone" value="{{ form_values.phone if form_values else (profile.phone or '') }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.phone %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="+1 (555) 000-0000" maxlength="20" />
-              {% if errors and errors.phone %}<p class="error-message">{{ errors.phone }}</p>{% endif %}
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
-              <input type="text" name="location" value="{{ form_values.location if form_values else (profile.location or '') }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.location %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="e.g. San Francisco, CA" maxlength="200" />
-              {% if errors and errors.location %}<p class="error-message">{{ errors.location }}</p>{% endif %}
-            </div>
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-6">
+            <p class="text-sm font-bold text-slate-700 leading-relaxed">
+              Public profiles now focus on your name, headline, bio, skills, experience, projects, and professional links.
+              Private account details like email, phone, address, password, and billing stay in
+              <a href="/settings" class="text-brand-600 hover:text-brand-700">Settings</a>.
+            </p>
           </div>
         </div>
 
@@ -305,9 +289,6 @@
           <div class="space-y-3 text-sm">
             {% if resume_prefill.full_name %}<p><span class="font-black text-slate-900">Name:</span> <span class="text-slate-600">{{ resume_prefill.full_name }}</span></p>{% endif %}
             {% if resume_prefill.headline %}<p><span class="font-black text-slate-900">Headline:</span> <span class="text-slate-600">{{ resume_prefill.headline }}</span></p>{% endif %}
-            {% if resume_prefill.location %}<p><span class="font-black text-slate-900">Location:</span> <span class="text-slate-600">{{ resume_prefill.location }}</span></p>{% endif %}
-            {% if resume_prefill.email %}<p><span class="font-black text-slate-900">Email:</span> <span class="text-slate-600">{{ resume_prefill.email }}</span></p>{% endif %}
-            {% if resume_prefill.phone %}<p><span class="font-black text-slate-900">Phone:</span> <span class="text-slate-600">{{ resume_prefill.phone }}</span></p>{% endif %}
           </div>
         </div>
         {% if resume_prefill.bio %}

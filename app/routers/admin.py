@@ -499,6 +499,7 @@ def admin_articles(
 
 
 @router.get("/articles/new", response_class=HTMLResponse)
+@router.get("/articles/create", response_class=HTMLResponse)
 def admin_article_new(
     request: Request,
     admin=Depends(require_admin),
@@ -510,6 +511,7 @@ def admin_article_new(
 
 
 @router.post("/articles/new", response_class=HTMLResponse)
+@router.post("/articles/create", response_class=HTMLResponse)
 async def admin_article_create(
     request: Request,
     title: str = Form(""),

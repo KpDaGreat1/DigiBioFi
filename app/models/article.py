@@ -58,3 +58,19 @@ class Article(Base):
 
     def __repr__(self) -> str:
         return f"<Article id={self.id} slug={self.slug!r} published={self.is_published}>"
+
+    @property
+    def excerpt(self) -> str:
+        return self.summary
+
+    @excerpt.setter
+    def excerpt(self, value: str) -> None:
+        self.summary = value
+
+    @property
+    def cover_image(self) -> str | None:
+        return self.hero_image
+
+    @cover_image.setter
+    def cover_image(self, value: str | None) -> None:
+        self.hero_image = value

@@ -2,29 +2,17 @@
 
 from __future__ import annotations
 
-import re
-
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.schemas.auth import validate_password_strength
 
 
 class SettingsProfileUpdate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=30)
-    full_name: str = Field(default="", max_length=200)
     email: EmailStr
     phone: str = Field(default="", max_length=50)
     address: str = Field(default="", max_length=200)
 
-    @field_validator("username")
-    @classmethod
-    def validate_username(cls, value: str) -> str:
-        normalized = value.strip().lower()
-        if not re.fullmatch(r"[a-z0-9_-]{3,30}", normalized):
-            raise ValueError("Username may only contain letters, numbers, underscores, and hyphens.")
-        return normalized
-
-    @field_validator("full_name", "phone", "address")
+    @field_validator("phone", "address")
     @classmethod
     def strip_whitespace(cls, value: str) -> str:
         return (value or "").strip()

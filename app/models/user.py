@@ -22,6 +22,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     username: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str] = mapped_column(String(50), nullable=False, default="")
+    address: Mapped[str] = mapped_column(String(200), nullable=False, default="")
 
     # Role: "user" | "admin"
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)

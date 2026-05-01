@@ -39,11 +39,7 @@
       "@id": {{ (base_url ~ "/p/" ~ profile.slug ~ "#person")|tojson }},
       "name": {{ (profile.full_name or profile.slug)|tojson }},
       "description": {{ (profile.headline or "Professional profile on DigiBioFi")|tojson }},
-      "url": {{ (base_url ~ "/p/" ~ profile.slug)|tojson }}{% if profile.location %},
-      "homeLocation": {
-        "@type": "Place",
-        "name": {{ profile.location|tojson }}
-      }{% endif %}{% if profile.website or profile.github or profile.twitter or profile.telegram %},
+      "url": {{ (base_url ~ "/p/" ~ profile.slug)|tojson }}{% if profile.website or profile.github or profile.twitter or profile.telegram %},
       "sameAs": [{% set comma = joiner(", ") %}{% if profile.website %}{{ comma() }}{{ profile.website|tojson }}{% endif %}{% if profile.github %}{{ comma() }}{{ profile.github|tojson }}{% endif %}{% if profile.twitter %}{{ comma() }}{{ profile.twitter|tojson }}{% endif %}{% if profile.telegram %}{{ comma() }}{{ profile.telegram|tojson }}{% endif %}]
       {% endif %}
     }
@@ -113,12 +109,6 @@
 
           <!-- Actions -->
           <div class="space-y-4">
-            {% if profile.email %}
-            <a href="mailto:{{ profile.email }}" class="btn-primary w-full flex items-center justify-center gap-3 py-4">
-              <i data-lucide="mail" class="w-5 h-5"></i>
-              Email
-            </a>
-            {% endif %}
           <div class="flex gap-4">
               {% for name, icon in [('github', 'github'), ('twitter', 'twitter'), ('website', 'globe')] %}
                 {% set url = profile | attr(name) %}

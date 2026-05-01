@@ -99,7 +99,6 @@ def explore_page(
         query = query.filter(
             func.lower(Profile.full_name).like(search)
             | func.lower(Profile.headline).like(search)
-            | func.lower(Profile.location).like(search)
         )
 
     total = query.count()
@@ -352,20 +351,20 @@ def job_matcher_submit(
 # Each entry links to a stable, publicly accessible page.  No fake content.
 _CURATED_ARTICLES = [
     {
-        "title": "How to Build a Strong Personal Brand",
-        "summary": "Harvard Business Review explains the fundamentals of professional branding and why your online identity matters more than ever.",
+        "title": "Personal Branding Articles from Harvard Business Review",
+        "summary": "A curated HBR search page covering personal branding, professional visibility, and how to present your work with more credibility.",
         "category": "Personal Branding",
         "read_time": "6 min",
-        "url": "https://hbr.org/2023/05/how-to-build-a-personal-brand",
+        "url": "https://hbr.org/search?term=personal%20brand",
         "source": "Harvard Business Review",
     },
     {
-        "title": "The Future of Remote Work",
-        "summary": "McKinsey research on how remote and hybrid work is reshaping the global labor market, and what skills employers are prioritizing.",
+        "title": "Remote Job Search on LinkedIn Jobs",
+        "summary": "A live LinkedIn Jobs search surface for remote roles, useful for monitoring demand and refining how you position your profile for hiring teams.",
         "category": "Career Strategy",
         "read_time": "8 min",
-        "url": "https://www.mckinsey.com/industries/real-estate/our-insights/americans-are-embracing-flexible-work-and-they-want-more-of-it",
-        "source": "McKinsey & Company",
+        "url": "https://www.linkedin.com/jobs/search?keywords=remote",
+        "source": "LinkedIn Jobs",
     },
     {
         "title": "LinkedIn's Workforce Confidence Index",
@@ -376,28 +375,28 @@ _CURATED_ARTICLES = [
         "source": "LinkedIn",
     },
     {
-        "title": "Freelancing in America — Annual Report",
-        "summary": "Upwork's comprehensive annual study on the freelance workforce, earnings trends, and the most in-demand freelance skills.",
+        "title": "Upwork Business and Freelancer Resources",
+        "summary": "A practical collection of guides on pricing, freelancing, proposals, client communication, and building a sustainable independent practice.",
         "category": "Freelancing",
         "read_time": "10 min",
-        "url": "https://www.upwork.com/research/freelance-forward-2023",
-        "source": "Upwork Research",
+        "url": "https://www.upwork.com/resources",
+        "source": "Upwork",
     },
     {
-        "title": "How to Write a Resume That Stands Out",
-        "summary": "Indeed's career experts share actionable tips on crafting resumes that pass ATS filters and catch the hiring manager's eye.",
+        "title": "Resume Tips from Coursera",
+        "summary": "Coursera's resume guidance covers structure, clarity, and how to present measurable results in a way that supports stronger applications.",
         "category": "Resume Tips",
         "read_time": "7 min",
-        "url": "https://www.indeed.com/career-advice/resumes-cover-letters/how-to-make-a-resume",
-        "source": "Indeed Career Guide",
+        "url": "https://www.coursera.org/articles/resume-tips",
+        "source": "Coursera",
     },
     {
-        "title": "The Art of the Career Pivot",
-        "summary": "Forbes contributor advice on how to successfully transition careers, rebrand yourself, and leverage transferable skills.",
+        "title": "The Muse on Interviewing",
+        "summary": "A practical set of interview guides and coaching articles covering preparation, answers, follow-up, and decision making.",
         "category": "Career Strategy",
         "read_time": "6 min",
-        "url": "https://www.forbes.com/sites/forbescoachescouncil/2023/03/28/how-to-successfully-pivot-your-career/",
-        "source": "Forbes",
+        "url": "https://www.themuse.com/advice/interviewing",
+        "source": "The Muse",
     },
     {
         "title": "Using AI Responsibly in Your Job Search",
@@ -408,11 +407,11 @@ _CURATED_ARTICLES = [
         "source": "MIT Technology Review",
     },
     {
-        "title": "Glassdoor's Guide to Salary Negotiation",
-        "summary": "Data-backed strategies for negotiating your salary, with real benchmarks and scripts you can use in your next conversation.",
+        "title": "Glassdoor Career and Workplace Blog",
+        "summary": "Glassdoor's workplace and career coverage includes salary context, interviewing advice, and practical job-search commentary.",
         "category": "Job Search",
         "read_time": "6 min",
-        "url": "https://www.glassdoor.com/blog/guide/how-to-negotiate-your-salary/",
+        "url": "https://www.glassdoor.com/blog/",
         "source": "Glassdoor",
     },
     {
@@ -424,12 +423,20 @@ _CURATED_ARTICLES = [
         "source": "freeCodeCamp",
     },
     {
-        "title": "Top In-Demand Skills Employers Want",
-        "summary": "Coursera's annual job skills report breaks down the technical and soft skills that hiring managers are prioritizing globally.",
+        "title": "Career Development Articles from Coursera",
+        "summary": "Coursera's career development hub covers skills growth, personal branding, and practical next steps for job seekers and career changers.",
         "category": "Skills & Growth",
         "read_time": "7 min",
-        "url": "https://www.coursera.org/articles/in-demand-skills",
+        "url": "https://www.coursera.org/articles/career-development",
         "source": "Coursera",
+    },
+    {
+        "title": "Codecademy Career and Learning Guides",
+        "summary": "Codecademy's resource library offers practical reading on technical growth, developer positioning, and portfolio-building habits.",
+        "category": "Skills & Growth",
+        "read_time": "6 min",
+        "url": "https://www.codecademy.com/resources/blog/",
+        "source": "Codecademy",
     },
 ]
 
@@ -492,6 +499,7 @@ def news_page(
 
 
 @router.get("/news/{slug}", response_class=HTMLResponse)
+@router.get("/articles/{slug}", response_class=HTMLResponse)
 def article_page(
     slug: str,
     request: Request,

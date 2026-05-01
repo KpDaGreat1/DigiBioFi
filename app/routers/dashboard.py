@@ -61,11 +61,9 @@ def _get_profile(user: User, db: Session):
 
 def _settings_form_values(user: User, profile: Profile | None) -> dict[str, str]:
     return {
-        "username": user.username or "",
-        "full_name": profile.full_name if profile else "",
         "email": user.email or "",
-        "phone": profile.phone if profile else "",
-        "address": profile.location if profile else "",
+        "phone": user.phone or "",
+        "address": user.address or "",
     }
 
 
@@ -90,6 +88,7 @@ def _render_settings_page(
             "profile_errors": profile_errors or {},
             "password_errors": password_errors or {},
             "delete_errors": delete_errors or {},
+            "can_manage_subscription": can_manage_subscription,
         },
         status_code=status_code,
     )
@@ -178,9 +177,6 @@ def _profile_form_values(profile, resume_prefill: dict | None = None) -> dict:
         "slug": profile.slug if profile else "",
         "headline": resume_prefill.get("headline") or (profile.headline if profile else ""),
         "bio": resume_prefill.get("bio") or (profile.bio if profile else ""),
-        "email": resume_prefill.get("email") or (profile.email if profile else ""),
-        "phone": resume_prefill.get("phone") or (profile.phone if profile else ""),
-        "location": resume_prefill.get("location") or (profile.location if profile else ""),
         "website": resume_prefill.get("website") or (profile.website if profile else ""),
         "github": resume_prefill.get("github") or (profile.github if profile else ""),
         "twitter": resume_prefill.get("twitter") or (profile.twitter if profile else ""),
@@ -325,8 +321,6 @@ def settings_page(
 @settings_router.post("/settings/profile", response_class=HTMLResponse)
 def update_account_settings(
     request: Request,
-    username: str = Form(...),
-    full_name: str = Form(""),
     email: str = Form(...),
     phone: str = Form(""),
     address: str = Form(""),
@@ -336,8 +330,6 @@ def update_account_settings(
 ):
     profile = _get_profile(current_user, db)
     settings_values = {
-        "username": username,
-        "full_name": full_name,
         "email": email,
         "phone": phone,
         "address": address,
@@ -345,8 +337,6 @@ def update_account_settings(
 
     try:
         data = SettingsProfileUpdate(
-            username=username,
-            full_name=full_name,
             email=email,
             phone=phone,
             address=address,
@@ -376,30 +366,10 @@ def update_account_settings(
             status_code=400,
         )
 
-    username_taken = (
-        db.query(User)
-        .filter(func.lower(User.username) == data.username.lower(), User.id != current_user.id)
-        .first()
-    )
-    if username_taken:
-        return _render_settings_page(
-            request,
-            current_user,
-            profile,
-            profile_errors={"username": "That username is already in use."},
-            settings_values=settings_values,
-            status_code=400,
-        )
-
-    current_user.username = data.username
     current_user.email = data.email.lower()
-    if profile:
-        profile.full_name = data.full_name
-        profile.phone = data.phone
-        profile.location = data.address
+    current_user.phone = data.phone
+    current_user.address = data.address
     db.commit()
-    if profile:
-        db.refresh(profile)
     db.refresh(current_user)
     flash(request, "Account settings updated.", "success")
     return RedirectResponse("/settings", status_code=303)
@@ -520,9 +490,6 @@ async def profile_edit_submit(
     full_name: str = Form(""),
     headline: str = Form(""),
     bio: str = Form(""),
-    email: str = Form(""),
-    phone: str = Form(""),
-    location: str = Form(""),
     website: str = Form(""),
     twitter: str = Form(""),
     github: str = Form(""),
@@ -544,9 +511,6 @@ async def profile_edit_submit(
             profile.full_name = full_name
             profile.headline = headline
             profile.bio = bio
-            profile.email = email
-            profile.phone = phone
-            profile.location = location
             profile.website = website
             profile.twitter = twitter
             profile.github = github
@@ -567,9 +531,6 @@ async def profile_edit_submit(
                     "slug": slug or (profile.slug if profile else ""),
                     "headline": headline,
                     "bio": bio,
-                    "email": email,
-                    "phone": phone,
-                    "location": location,
                     "website": website,
                     "twitter": twitter,
                     "github": github,
@@ -586,9 +547,6 @@ async def profile_edit_submit(
             full_name=full_name,
             headline=headline,
             bio=bio,
-            email=email,
-            phone=phone,
-            location=location,
             website=website,
             twitter=twitter,
             github=github,
