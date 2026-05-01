@@ -101,9 +101,6 @@ class LocalStorage(StorageInterface):
             return False
 
 def get_storage() -> StorageInterface:
-    # Future-ready: check settings for S3 vs Local
-    # if settings.storage_type == "s3":
-    #     return S3Storage(...)
     return LocalStorage()
 
 storage = get_storage()

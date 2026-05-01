@@ -10,12 +10,18 @@ Source values:
   internal — submitted by a logged-in registered user
   external — submitted by an anonymous / unauthenticated visitor
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class ContactMessage(Base):
@@ -31,7 +37,7 @@ class ContactMessage(Base):
     user_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])  # type: ignore[name-defined]
+    user: Mapped[User] = relationship("User", foreign_keys=[user_id])
 
     # Source distinguishes internal (registered) vs external (anonymous) senders
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="external", index=True)
@@ -53,4 +59,3 @@ class ContactMessage(Base):
 
     def __repr__(self) -> str:
         return f"<ContactMessage id={self.id} source={self.source!r} status={self.status!r} subject={self.subject!r}>"
-

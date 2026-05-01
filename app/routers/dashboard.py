@@ -23,7 +23,7 @@ from app.models.user import User
 from app.schemas.profile import (
     ProfileUpdate,
     ExperienceCreate, EducationCreate, SkillCreate,
-    ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
+    ProjectCreate,
 )
 from app.services import profile_service, qr_service, file_service, analytics_service
 from app.services.storage import storage
@@ -831,7 +831,7 @@ async def edit_education_submit(
         if uploaded_certificate_url and old_certificate_url and old_certificate_url != uploaded_certificate_url:
             _delete_upload_url(old_certificate_url)
         flash(request, "Education updated!", "success")
-    except ValidationError as e:
+    except ValidationError:
         if "uploaded_certificate_url" in locals() and uploaded_certificate_url:
             _delete_upload_url(uploaded_certificate_url)
         flash(request, "Invalid data. Please check your input.", "error")
@@ -1149,7 +1149,7 @@ async def edit_project_submit(
         if thumbnail and thumbnail.filename and old_thumbnail_url and old_thumbnail_url != thumbnail_url:
             _delete_upload_url(old_thumbnail_url)
         flash(request, "Project updated!", "success")
-    except ValidationError as e:
+    except ValidationError:
         if thumbnail and thumbnail.filename and thumbnail_url and thumbnail_url != proj.thumbnail_url:
             _delete_upload_url(thumbnail_url)
         flash(request, "Invalid data. Please check your input.", "error")

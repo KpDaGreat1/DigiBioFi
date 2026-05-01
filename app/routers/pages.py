@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.config import settings
 from app.core.dependencies import get_db, get_current_user_optional, require_csrf
 from app.core.templates import templates, flash
 from app.utils.urls import external_base_url

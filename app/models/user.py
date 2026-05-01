@@ -1,12 +1,18 @@
 """
 User model — authentication identity and role.
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.profile import Profile
 
 
 class User(Base):
@@ -47,7 +53,7 @@ class User(Base):
     )
 
     # One-to-one relationship with Profile
-    profile: Mapped["Profile"] = relationship(  # type: ignore[name-defined]
+    profile: Mapped[Profile] = relationship(
         "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 

@@ -14,7 +14,6 @@ from app.schemas.profile import (
     ExperienceCreate, EducationCreate, SkillCreate,
     ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
 )
-from app.utils.slug import unique_slug
 from app.utils.validators import sanitize_text
 
 

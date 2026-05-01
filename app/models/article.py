@@ -5,12 +5,18 @@ status values:
   draft     — not visible to the public
   published — visible at /news/{slug}
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Article(Base):
@@ -35,7 +41,7 @@ class Article(Base):
     author_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    author: Mapped["User"] = relationship("User", foreign_keys=[author_id])  # type: ignore[name-defined]
+    author: Mapped[User] = relationship("User", foreign_keys=[author_id])
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
