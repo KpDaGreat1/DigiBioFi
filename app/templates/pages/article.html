@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}{{ article.title }} — DigiBioFi{% endblock %}
-{% block canonical_url %}{{ base_url }}/news/{{ article.slug }}{% endblock %}
+{% block canonical_url %}{{ base_url }}/insights/{{ article.slug }}{% endblock %}
 
 {% block head %}
 <meta name="description" content="{{ article.summary | truncate(160) }}" />
@@ -24,7 +24,7 @@
       DigiBioFi
     </a>
     <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
       <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
       <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
     </nav>
@@ -42,7 +42,7 @@
 
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8">
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
       <span>/</span>
       {% if article.category %}
       <span class="text-brand-600">{{ article.category }}</span>
@@ -99,7 +99,7 @@
 
     <!-- Back -->
     <div class="mt-12 pt-8 border-t border-slate-100">
-      <a href="/news" class="inline-flex items-center gap-2 text-brand-600 font-black text-sm hover:gap-3 transition-all">
+      <a href="/insights" class="inline-flex items-center gap-2 text-brand-600 font-black text-sm hover:gap-3 transition-all">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         Back to News
       </a>
@@ -116,7 +116,7 @@
   <footer class="bg-slate-50 border-t border-slate-200 py-8 px-6 text-center">
     <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-3">
       <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
-      <a href="/news" class="hover:text-brand-600 transition-colors">News</a>
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
       <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
       <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
       <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>

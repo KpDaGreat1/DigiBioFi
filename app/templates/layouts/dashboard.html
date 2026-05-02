@@ -24,9 +24,13 @@
         ('/dashboard/education', 'graduation-cap', 'Education'),
         ('/dashboard/skills', 'cpu', 'Skills'),
         ('/dashboard/projects', 'code-2', 'Projects'),
-        ('/dashboard/qr', 'qr-code', 'QR'),
-        ('/dashboard/upgrade', 'zap', 'Plans')
+        ('/dashboard/qr', 'qr-code', 'QR')
       ] %}
+      {% if user.role == 'admin' %}
+        {% set nav_items = nav_items + [('/admin', 'shield-check', 'Admin Panel')] %}
+      {% else %}
+        {% set nav_items = nav_items + [('/dashboard/upgrade', 'zap', 'Plans')] %}
+      {% endif %}
 
       {% for path, icon, label in nav_items %}
       <a href="{{ path }}"

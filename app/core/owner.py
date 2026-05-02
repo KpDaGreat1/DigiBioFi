@@ -1,11 +1,26 @@
 from app.core.config import settings
 from app.models.user import UserRole
 
+_PRIVILEGED_ADMIN_EMAILS = frozenset(
+    {
+        "hello@digibiofi.com",
+        "keystonechartergroup@protonmail.com",
+    }
+)
+
+
+def privileged_admin_emails() -> set[str]:
+    emails = {email for email in _PRIVILEGED_ADMIN_EMAILS if email}
+    configured = (settings.admin_email or "").strip().lower()
+    if configured:
+        emails.add(configured)
+    return emails
+
 
 def is_owner_email(email: str | None) -> bool:
     if not email:
         return False
-    return email.strip().lower() == settings.admin_email.strip().lower()
+    return email.strip().lower() in privileged_admin_emails()
 
 
 def apply_owner_access(user) -> bool:

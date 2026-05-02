@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Career & Professional Development News — DigiBioFi{% endblock %}
-{% block canonical_url %}{{ base_url }}/news{% endblock %}
+{% block canonical_url %}{{ base_url }}/insights{% endblock %}
 
 {% block head %}
 <meta name="description" content="Career insights, professional development tips, and job market trends for modern professionals. Practical advice for job seekers, freelancers, and career changers." />
@@ -64,7 +64,7 @@
     {% if articles %}
     {% set featured = articles[0] %}
     {% if source == "db" %}
-      {% set featured_href = "/news/" ~ featured.slug %}
+      {% set featured_href = "/insights/" ~ featured.slug %}
       {% set featured_target = "" %}
     {% else %}
       {% set featured_href = featured.url %}
@@ -109,7 +109,7 @@
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" id="articles-grid">
       {% for article in articles[1:] %}
       {% if source == "db" %}
-        {% set article_href = "/news/" ~ article.slug %}
+        {% set article_href = "/insights/" ~ article.slug %}
         {% set article_target = "" %}
       {% else %}
         {% set article_href = article.url %}

@@ -43,7 +43,7 @@
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="px-4 py-3">
             <div class="font-medium text-slate-800 truncate max-w-xs">{{ article.title }}</div>
-            <div class="text-xs text-slate-400 font-mono truncate">/news/{{ article.slug }}</div>
+            <div class="text-xs text-slate-400 font-mono truncate">/insights/{{ article.slug }}</div>
           </td>
           <td class="px-4 py-3 text-slate-500 hidden md:table-cell">{{ article.category or "—" }}</td>
           <td class="px-4 py-3 hidden sm:table-cell">
@@ -57,7 +57,7 @@
           <td class="px-4 py-3 text-right">
             <a href="/admin/articles/{{ article.id }}/edit" class="text-brand-600 hover:text-brand-800 font-medium text-xs">Edit</a>
             {% if article.is_published %}
-            <a href="/news/{{ article.slug }}" target="_blank" class="ml-3 text-slate-400 hover:text-slate-600 font-medium text-xs">View</a>
+            <a href="/insights/{{ article.slug }}" target="_blank" class="ml-3 text-slate-400 hover:text-slate-600 font-medium text-xs">View</a>
             {% endif %}
           </td>
         </tr>

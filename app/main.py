@@ -10,6 +10,7 @@ Production:
 import asyncio
 import logging
 import re
+import secrets
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -23,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
-from app.core.owner import apply_owner_access, is_owner_email
+from app.core.owner import apply_owner_access, is_owner_email, privileged_admin_emails
 from app.core.security import AUTH_COOKIE_NAME, clear_auth_cookie, clear_csrf_cookie
 from app.core.templates import templates
 from app.db.database import engine
@@ -48,6 +49,11 @@ def _owner_username() -> str:
     return base or "owner"
 
 
+def _admin_username(email: str) -> str:
+    base = re.sub(r"[^a-zA-Z0-9_-]", "", email.split("@", 1)[0]).strip()
+    return base or "admin"
+
+
 def _unique_username(base: str, db) -> str:
     from app.models.user import User
 
@@ -60,67 +66,75 @@ def _unique_username(base: str, db) -> str:
 
 
 def _seed_admin_user():
-    """Ensure the configured owner account exists with permanent elite access."""
+    """Ensure privileged admin accounts exist with permanent elite access."""
     from app.db.database import SessionLocal
     from app.core.security import hash_password
     from sqlalchemy import func
 
     db = SessionLocal()
     try:
-        from app.models.user import User
+        from app.models.user import User, UserRole
         from app.models.profile import Profile
         from app.services import qr_service
         from app.utils.slug import unique_slug
 
-        user = (
-            db.query(User)
-            .filter(func.lower(User.email) == settings.admin_email.lower())
-            .first()
-        )
-        if not user:
-            username = _unique_username(_owner_username(), db)
-            user = User(
-                email=settings.admin_email.lower(),
-                username=username,
-                hashed_password=hash_password(settings.admin_password),
-                role="admin",
-                subscription_tier="elite",
-                subscription_status="active",
-                is_active=True,
-                is_verified=True,
+        created_any = False
+
+        for admin_email in sorted(privileged_admin_emails()):
+            user = (
+                db.query(User)
+                .filter(func.lower(User.email) == admin_email.lower())
+                .first()
             )
-            db.add(user)
-            db.flush()
-            profile = Profile(user_id=user.id, slug=unique_slug(username, db))
-            db.add(profile)
-            db.commit()
-            db.refresh(user)
-            db.refresh(profile)
-            try:
-                qr_service.generate_qr_for_profile(profile, db)
-            except Exception as e:
-                logger.warning(f"Owner QR seed failed: {e}")
-            logger.info("Owner account created")
-            return
+            if not user:
+                username = _unique_username(_admin_username(admin_email), db)
+                bootstrap_password = (
+                    settings.admin_password
+                    if admin_email.lower() == settings.admin_email.lower()
+                    else secrets.token_urlsafe(24)
+                )
+                user = User(
+                    email=admin_email.lower(),
+                    username=username,
+                    hashed_password=hash_password(bootstrap_password),
+                    role=UserRole.ADMIN.value,
+                    subscription_tier="elite",
+                    subscription_status="active",
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(user)
+                db.flush()
+                profile = Profile(user_id=user.id, slug=unique_slug(username, db))
+                db.add(profile)
+                db.commit()
+                db.refresh(user)
+                db.refresh(profile)
+                created_any = True
+                logger.info("Privileged admin account ensured for %s", admin_email)
+            else:
+                profile = user.profile
 
-        changed = apply_owner_access(user)
-        profile = user.profile
-        if not profile:
-            profile = Profile(user_id=user.id, slug=unique_slug(user.username, db))
-            db.add(profile)
-            changed = True
+            changed = apply_owner_access(user)
+            if not profile:
+                profile = Profile(user_id=user.id, slug=unique_slug(user.username, db))
+                db.add(profile)
+                changed = True
 
-        if changed:
-            db.commit()
-            db.refresh(user)
-            db.refresh(profile)
-            logger.info("Owner access ensured")
+            if changed:
+                db.commit()
+                db.refresh(user)
+                db.refresh(profile)
+                logger.info("Privileged admin access refreshed for %s", admin_email)
 
-        if profile and not profile.qr_code:
-            try:
-                qr_service.generate_qr_for_profile(profile, db)
-            except Exception as e:
-                logger.warning(f"Owner QR sync failed: {e}")
+            if profile and not profile.qr_code:
+                try:
+                    qr_service.generate_qr_for_profile(profile, db)
+                except Exception as e:
+                    logger.warning(f"Owner QR sync failed: {e}")
+
+        if created_any:
+            logger.info("Privileged admin bootstrap completed")
     except Exception as e:
         logger.warning(f"Admin seed failed: {e}")
     finally:
@@ -590,6 +604,7 @@ def sitemap(request: Request, db=Depends(get_db)):
         "/",
         "/explore",
         "/what-is-digibiofi",
+        "/insights",
         "/news",
         "/contact",
         "/tools/job-matcher",
@@ -623,7 +638,7 @@ def sitemap(request: Request, db=Depends(get_db)):
     for (slug,) in slugs:
         urls.append(f"  <url><loc>{base}/p/{slug}</loc></url>")
     for (slug,) in article_slugs:
-        urls.append(f"  <url><loc>{base}/news/{slug}</loc></url>")
+        urls.append(f"  <url><loc>{base}/insights/{slug}</loc></url>")
 
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'

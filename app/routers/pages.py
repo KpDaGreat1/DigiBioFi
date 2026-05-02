@@ -443,6 +443,7 @@ _CURATED_ARTICLES = [
 
 @router.get("/blog", response_class=HTMLResponse)
 @router.get("/articles", response_class=HTMLResponse)
+@router.get("/insights", response_class=HTMLResponse)
 @router.get("/news", response_class=HTMLResponse)
 def news_page(
     request: Request,
@@ -501,6 +502,7 @@ def news_page(
 
 
 @router.get("/news/{slug}", response_class=HTMLResponse)
+@router.get("/insights/{slug}", response_class=HTMLResponse)
 @router.get("/articles/{slug}", response_class=HTMLResponse)
 def article_page(
     slug: str,
