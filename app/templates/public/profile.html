@@ -80,6 +80,11 @@
           {% if profile.headline %}
           <p class="text-brand-blue font-bold text-sm uppercase tracking-widest mb-8 leading-relaxed">{{ profile.headline }}</p>
           {% endif %}
+          <div class="mb-6">
+            {% with role=profile.user.role %}
+              {% include "partials/role_badge.html" %}
+            {% endwith %}
+          </div>
           {% if is_example_profile %}
           <div class="mb-8 rounded-2xl border border-brand-blue/20 bg-brand-blue/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">
             Example Profile

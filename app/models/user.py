@@ -4,6 +4,7 @@ User model — authentication identity and role.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Integer, String
@@ -13,6 +14,28 @@ from app.db.database import Base
 
 if TYPE_CHECKING:
     from app.models.profile import Profile
+
+
+class UserRole(StrEnum):
+    ADMIN = "admin"
+    BUSINESS = "business"
+    FREELANCER = "freelancer"
+    USER = "user"
+
+
+PUBLIC_REGISTRATION_ROLES = {
+    UserRole.USER.value,
+    UserRole.BUSINESS.value,
+    UserRole.FREELANCER.value,
+}
+
+
+ALL_USER_ROLES = {
+    UserRole.ADMIN.value,
+    UserRole.BUSINESS.value,
+    UserRole.FREELANCER.value,
+    UserRole.USER.value,
+}
 
 
 class User(Base):
@@ -25,8 +48,7 @@ class User(Base):
     phone: Mapped[str] = mapped_column(String(50), nullable=False, default="")
     address: Mapped[str] = mapped_column(String(200), nullable=False, default="")
 
-    # Role: "user" | "admin"
-    role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default=UserRole.USER.value, nullable=False)
 
     # Subscription tier: "free" | "basic" | "elite"
     subscription_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)

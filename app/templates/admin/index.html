@@ -19,11 +19,11 @@
   <div class="grid grid-cols-2 lg:grid-cols-3 gap-6 reveal reveal-delay-1">
     {% for label, value, icon in [
       ('Total Users', stats.total_users, 'users'),
-      ('Active Users', stats.active_users, 'activity'),
-      ('Profiles', stats.total_profiles, 'user'),
+      ('Active Profiles', stats.active_profiles, 'user'),
+      ('QR Scan Count', stats.total_qr_scans, 'qr-code'),
       ('Event Volume', stats.total_events, 'zap'),
       ('Profile Views', stats.total_page_views, 'eye'),
-      ('QR Scans', stats.total_qr_scans, 'qr-code'),
+      ('Unread Messages', stats.unread_messages, 'mail'),
     ] %}
     <div class="premium-card p-8 group">
       <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand-gold/10 transition-all">

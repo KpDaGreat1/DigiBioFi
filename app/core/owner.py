@@ -1,4 +1,5 @@
 from app.core.config import settings
+from app.models.user import UserRole
 
 
 def is_owner_email(email: str | None) -> bool:
@@ -10,8 +11,8 @@ def is_owner_email(email: str | None) -> bool:
 def apply_owner_access(user) -> bool:
     changed = False
 
-    if user.role != "admin":
-        user.role = "admin"
+    if user.role != UserRole.ADMIN.value:
+        user.role = UserRole.ADMIN.value
         changed = True
     if user.subscription_tier != "elite":
         user.subscription_tier = "elite"

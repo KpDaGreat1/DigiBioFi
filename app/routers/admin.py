@@ -5,19 +5,21 @@ All routes require the authenticated user to have role='admin'.
 """
 import logging
 
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import settings
 from app.core.owner import apply_owner_access, is_owner_email
-from app.core.dependencies import get_db, require_admin, require_csrf
+from app.core.dependencies import get_current_user, get_db, require_admin, require_csrf
+from app.core.security import create_access_token, set_auth_cookie
 from app.core.templates import flash, templates
 from app.models.analytics import AnalyticsEvent
 from app.models.message import ContactMessage
 from app.models.profile import Profile
-from app.models.user import User
+from app.models.user import ALL_USER_ROLES, User, UserRole
+from app.services import file_service, stripe_service
 from app.services.user_service import delete_user_and_assets
 from app.utils.validators import normalize_external_url, sanitize_article_html
 
@@ -25,13 +27,36 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-VALID_ROLES = {"user", "admin"}
+VALID_ROLES = ALL_USER_ROLES
 VALID_TIERS = {"free", "basic", "elite"}
 VALID_MESSAGE_STATUSES = {"unread", "read", "resolved"}
 
 
 def _users_redirect() -> RedirectResponse:
     return RedirectResponse("/admin/users", status_code=303)
+
+
+def _normalize_role(role: str | None) -> str:
+    return (role or "").strip().lower()
+
+
+def _tier_from_price_id(price_id: str | None) -> str:
+    if not price_id:
+        return "free"
+    if price_id == settings.stripe_price_basic:
+        return "basic"
+    if price_id in {settings.stripe_price_elite, settings.stripe_price_premium}:
+        return "elite"
+    return "free"
+
+
+def _normalize_article_asset_url(value: str) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return ""
+    if normalized.startswith("/uploads/"):
+        return normalized
+    return normalize_external_url(normalized)
 
 
 # ── Admin dashboard ───────────────────────────────────────────────────────────
@@ -44,6 +69,12 @@ def admin_home(
 ):
     total_users = db.query(User).count()
     total_profiles = db.query(Profile).count()
+    active_profiles = (
+        db.query(Profile)
+        .join(User, User.id == Profile.user_id)
+        .filter(Profile.is_public.is_(True), User.is_active.is_(True))
+        .count()
+    )
     total_events = db.query(AnalyticsEvent).count()
     active_users = db.query(User).filter(User.is_active.is_(True)).count()
     total_page_views = (
@@ -115,6 +146,7 @@ def admin_home(
                 "total_users": total_users,
                 "active_users": active_users,
                 "total_profiles": total_profiles,
+                "active_profiles": active_profiles,
                 "total_events": total_events,
                 "total_page_views": total_page_views,
                 "total_qr_scans": total_qr_scans,
@@ -158,6 +190,7 @@ def admin_users(
             "admin": admin,
             "owner_email": settings.admin_email.lower(),
             "users": users,
+            "stripe_available": bool(settings.stripe_secret_key),
             "page": page,
             "total_pages": total_pages,
             "total": total,
@@ -211,6 +244,8 @@ async def set_user_role(
         flash(request, "That account role is locked.", "error")
         return _users_redirect()
 
+    role = _normalize_role(role)
+
     if role not in VALID_ROLES:
         flash(request, "Invalid role.", "error")
         return _users_redirect()
@@ -250,6 +285,52 @@ async def set_user_tier(
     user.subscription_status = "active"
     db.commit()
     flash(request, f"{user.email} tier set to {tier}.", "success")
+    return _users_redirect()
+
+
+@router.post("/users/{user_id}/sync-billing", response_class=HTMLResponse)
+async def sync_user_billing(
+    request: Request,
+    user_id: int,
+    csrf_token: str = Depends(require_csrf),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        flash(request, "User not found.", "error")
+        return _users_redirect()
+
+    if not settings.stripe_secret_key or not user.stripe_customer_id:
+        flash(request, "Stripe sync is not available for this account.", "info")
+        return _users_redirect()
+
+    try:
+        subscription = stripe_service.get_latest_subscription(user.stripe_customer_id)
+    except Exception:
+        logger.exception("Admin %s failed Stripe sync for user %s", admin.id, user.id)
+        flash(request, "Could not sync this subscription from Stripe.", "error")
+        return _users_redirect()
+
+    if not subscription:
+        user.subscription_tier = "free"
+        user.subscription_status = "inactive"
+        user.stripe_subscription_id = ""
+        db.commit()
+        flash(request, f"{user.email} now has no active Stripe subscription.", "info")
+        return _users_redirect()
+
+    price_id = ""
+    try:
+        price_id = subscription["items"]["data"][0]["price"]["id"]
+    except Exception:
+        price_id = ""
+
+    user.subscription_tier = _tier_from_price_id(price_id)
+    user.subscription_status = subscription.get("status", "") or "inactive"
+    user.stripe_subscription_id = subscription.get("id", "") or ""
+    db.commit()
+    flash(request, f"{user.email} subscription synced from Stripe.", "success")
     return _users_redirect()
 
 
@@ -310,6 +391,59 @@ async def delete_user(
     return _users_redirect()
 
 
+@router.post("/users/{user_id}/impersonate", response_class=HTMLResponse)
+async def impersonate_user(
+    request: Request,
+    user_id: int,
+    csrf_token: str = Depends(require_csrf),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        flash(request, "User not found.", "error")
+        return _users_redirect()
+    if user.id == admin.id:
+        flash(request, "You are already signed in as this account.", "info")
+        return _users_redirect()
+
+    request.session["admin_impersonator_id"] = admin.id
+    request.session["admin_impersonator_email"] = admin.email
+    token = create_access_token(subject=user.id, role=user.role)
+    response = RedirectResponse("/dashboard", status_code=303)
+    set_auth_cookie(response, token)
+    flash(request, f"Impersonating {user.email}.", "info")
+    return response
+
+
+@router.post("/impersonation/stop", response_class=HTMLResponse)
+async def stop_impersonation(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    admin_id = request.session.get("admin_impersonator_id")
+    if not admin_id:
+        flash(request, "No active impersonation session.", "info")
+        return RedirectResponse("/dashboard", status_code=303)
+
+    admin = db.query(User).filter(User.id == int(admin_id)).first()
+    if not admin or admin.role != UserRole.ADMIN.value:
+        request.session.pop("admin_impersonator_id", None)
+        request.session.pop("admin_impersonator_email", None)
+        flash(request, "Impersonation session expired.", "error")
+        return RedirectResponse("/dashboard", status_code=303)
+
+    request.session.pop("admin_impersonator_id", None)
+    request.session.pop("admin_impersonator_email", None)
+    token = create_access_token(subject=admin.id, role=admin.role)
+    response = RedirectResponse("/admin/users", status_code=303)
+    set_auth_cookie(response, token)
+    flash(request, f"Returned from {current_user.email}.", "success")
+    return response
+
+
 # ── Contact Messages ──────────────────────────────────────────────────────────
 
 @router.get("/messages", response_class=HTMLResponse)
@@ -338,6 +472,20 @@ def admin_messages(
     )
     total_pages = max(1, (total + per_page - 1) // per_page)
 
+    thread_rows = (
+        query
+        .with_entities(
+            ContactMessage.user_id.label("user_id"),
+            ContactMessage.sender_email.label("sender_email"),
+            func.max(ContactMessage.created_at).label("last_message_at"),
+            func.count(ContactMessage.id).label("message_count"),
+            func.sum(case((ContactMessage.status == "unread", 1), else_=0)).label("unread_count"),
+        )
+        .group_by(ContactMessage.user_id, ContactMessage.sender_email)
+        .order_by(func.max(ContactMessage.created_at).desc())
+        .all()
+    )
+
     # Unread count for badge
     unread_count = db.query(ContactMessage).filter(ContactMessage.status == "unread").count()
 
@@ -347,6 +495,7 @@ def admin_messages(
             "request": request,
             "admin": admin,
             "messages": messages,
+            "threads": thread_rows,
             "page": page,
             "total_pages": total_pages,
             "total": total,
@@ -381,6 +530,40 @@ def admin_message_detail(
             "request": request,
             "admin": admin,
             "msg": msg,
+        },
+    )
+
+
+@router.get("/messages/thread/{user_id}", response_class=HTMLResponse)
+def admin_message_thread(
+    request: Request,
+    user_id: int,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    thread_messages = (
+        db.query(ContactMessage)
+        .filter(ContactMessage.user_id == user_id)
+        .order_by(ContactMessage.created_at.desc())
+        .all()
+    )
+    if not thread_messages:
+        flash(request, "Support thread not found.", "error")
+        return RedirectResponse("/admin/messages", status_code=303)
+
+    db.query(ContactMessage).filter(
+        ContactMessage.user_id == user_id,
+        ContactMessage.status == "unread",
+    ).update({"status": "read"}, synchronize_session=False)
+    db.commit()
+
+    return templates.TemplateResponse(
+        "admin/message_thread.html",
+        {
+            "request": request,
+            "admin": admin,
+            "thread_user": thread_messages[0].user,
+            "thread_messages": thread_messages,
         },
     )
 
@@ -544,9 +727,9 @@ async def admin_article_create(
         errors["content_html"] = "Content is required."
     if hero_image:
         try:
-            hero_image = normalize_external_url(hero_image)
+            hero_image = _normalize_article_asset_url(hero_image)
         except ValueError:
-            errors["hero_image"] = "Hero image URL must start with http:// or https://"
+            errors["hero_image"] = "Hero image must be an uploaded asset or an http:// or https:// URL."
     if video_url:
         try:
             video_url = normalize_external_url(video_url)
@@ -591,6 +774,18 @@ async def admin_article_create(
     db.refresh(article)
     flash(request, "Article created.", "success")
     return RedirectResponse(f"/admin/articles/{article.id}/edit", status_code=303)
+
+
+@router.post("/articles/upload-image")
+async def admin_article_upload_image(
+    file: UploadFile = File(...),
+    admin=Depends(require_admin),
+):
+    try:
+        image_url = await file_service.save_project_thumbnail(file, admin.id)
+    except HTTPException as exc:
+        return JSONResponse({"error": exc.detail}, status_code=exc.status_code)
+    return JSONResponse({"url": image_url})
 
 
 @router.get("/articles/{article_id}/edit", response_class=HTMLResponse)
@@ -652,9 +847,9 @@ async def admin_article_update(
         errors["content_html"] = "Content is required."
     if hero_image:
         try:
-            hero_image = normalize_external_url(hero_image)
+            hero_image = _normalize_article_asset_url(hero_image)
         except ValueError:
-            errors["hero_image"] = "Hero image URL must start with http:// or https://"
+            errors["hero_image"] = "Hero image must be an uploaded asset or an http:// or https:// URL."
     if video_url:
         try:
             video_url = normalize_external_url(video_url)

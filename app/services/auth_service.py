@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
 from app.core.config import settings
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.profile import Profile
 from app.schemas.auth import RegisterRequest, LoginRequest, ResetPasswordRequest
 from app.utils.slug import unique_slug
@@ -54,7 +54,7 @@ def register_user(data: RegisterRequest, db: Session) -> User:
         email=email,
         username=data.username,
         hashed_password=hash_password(data.password),
-        role="user",
+        role=data.role or UserRole.USER.value,
         is_active=True,
         is_verified=False,
     )

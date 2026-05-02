@@ -154,6 +154,59 @@
       ]
     }
   });
+
+  function convertMarkdownShortcut() {
+    const range = quill.getSelection(true);
+    if (!range || range.index < 1) return;
+    const [line, offset] = quill.getLine(range.index);
+    if (!line) return;
+    const text = line.domNode?.textContent || '';
+    const normalized = text.trim();
+    if (offset < 1) return;
+
+    if (normalized === '#') {
+      quill.deleteText(range.index - 1, 1, 'user');
+      quill.formatLine(range.index - 1, 1, 'header', 1, 'user');
+    } else if (normalized === '##') {
+      quill.deleteText(range.index - 2, 2, 'user');
+      quill.formatLine(range.index - 2, 1, 'header', 2, 'user');
+    } else if (normalized === '-' || normalized === '*') {
+      quill.deleteText(range.index - 1, 1, 'user');
+      quill.formatLine(range.index - 1, 1, 'list', 'bullet', 'user');
+    }
+  }
+
+  quill.keyboard.addBinding({ key: ' ' }, convertMarkdownShortcut);
+
+  const toolbar = quill.getModule('toolbar');
+  toolbar.addHandler('image', () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/png,image/jpeg,image/webp');
+    input.click();
+    input.addEventListener('change', async () => {
+      if (!input.files || !input.files.length) return;
+      const formData = new FormData();
+      formData.append('file', input.files[0]);
+      try {
+        const response = await fetch('/admin/articles/upload-image', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.url) {
+          throw new Error(payload.error || 'Image upload failed.');
+        }
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', payload.url, 'user');
+        quill.setSelection(range.index + 1, 0, 'user');
+      } catch (error) {
+        window.alert(error.message || 'Image upload failed.');
+      }
+    });
+  });
+
   if (contentField.value) {
     quill.clipboard.dangerouslyPasteHTML(contentField.value);
   }

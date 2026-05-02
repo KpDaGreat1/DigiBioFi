@@ -29,6 +29,29 @@
     <a href="/admin/messages?status={{ s }}" class="px-4 py-2 rounded-full text-sm font-bold border transition-all {% if current_status_filter == s %}bg-slate-900 text-white border-slate-900{% else %}bg-white text-slate-500 border-slate-200{% endif %}">{{ s | capitalize }}</a>
     {% endfor %}
   </div>
+  {% if threads %}
+  <div class="grid gap-4 mb-8">
+    {% for thread in threads[:12] %}
+    <a href="{% if thread.user_id %}/admin/messages/thread/{{ thread.user_id }}{% else %}/admin/messages{% endif %}" class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 transition hover:border-brand-300 hover:bg-white">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="text-sm font-black text-slate-900 tracking-tight">
+            {% if thread.user_id %}User #{{ thread.user_id }}{% else %}External sender{% endif %}
+          </p>
+          <p class="text-xs font-medium text-slate-500">{{ thread.sender_email }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">{{ thread.message_count }} messages</p>
+          {% if thread.unread_count %}
+          <p class="mt-1 text-[10px] font-black uppercase tracking-widest text-brand-600">{{ thread.unread_count }} unread</p>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 border-b border-slate-100">
@@ -53,7 +76,13 @@
           <td class="px-6 py-4"><div class="font-medium text-slate-700">{{ msg.sender_name }}</div><div class="text-xs text-slate-400">{{ msg.sender_email }}</div></td>
           <td class="px-6 py-4 text-slate-700 font-medium">{{ msg.subject }}</td>
           <td class="px-6 py-4 text-xs text-slate-400">{{ msg.created_at.strftime('%b %d, %Y %H:%M') }}</td>
-          <td class="px-6 py-4"><a href="/admin/messages/{{ msg.id }}" class="text-brand-600 hover:text-brand-700 font-semibold text-sm">View</a></td>
+          <td class="px-6 py-4">
+            {% if msg.user_id %}
+            <a href="/admin/messages/thread/{{ msg.user_id }}" class="text-brand-600 hover:text-brand-700 font-semibold text-sm">Open Thread</a>
+            {% else %}
+            <a href="/admin/messages/{{ msg.id }}" class="text-brand-600 hover:text-brand-700 font-semibold text-sm">View</a>
+            {% endif %}
+          </td>
         </tr>
         {% else %}
         <tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">No messages found.</td></tr>

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.owner import apply_owner_access, is_owner_email
 from app.core.security import AUTH_COOKIE_NAME, decode_access_token, validate_csrf
 from app.db.database import SessionLocal  # adjust if your path differs
+from app.models.user import UserRole
 
 
 _UNVERIFIED_ALLOWED_PATH_PREFIXES = (
@@ -107,8 +108,7 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
 # ADMIN GUARD (THIS FIXES YOUR CRASH)
 # ───────────────────────────────
 def require_admin(current_user = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role != UserRole.ADMIN.value:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
-
 

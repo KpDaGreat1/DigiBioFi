@@ -2,12 +2,13 @@
 
 from app.core.config import settings
 from app.core.owner import is_owner_email
+from app.models.user import UserRole
 
 
 def _is_admin(user) -> bool:
     if not user:
         return False
-    if getattr(user, "role", "") == "admin":
+    if getattr(user, "role", "") == UserRole.ADMIN.value:
         return True
     return is_owner_email(getattr(user, "email", None))
 

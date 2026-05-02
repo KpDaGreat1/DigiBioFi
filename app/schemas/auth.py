@@ -5,6 +5,8 @@ import re
 
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
+from app.models.user import PUBLIC_REGISTRATION_ROLES, UserRole
+
 
 def validate_password_strength(value: str) -> str:
     if len(value) < 12:
@@ -23,6 +25,7 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
     confirm_password: str
+    role: str = UserRole.USER.value
 
     @field_validator("username")
     @classmethod
@@ -38,6 +41,14 @@ class RegisterRequest(BaseModel):
     @classmethod
     def password_strength(cls, v: str) -> str:
         return validate_password_strength(v)
+
+    @field_validator("role")
+    @classmethod
+    def role_allowed(cls, v: str) -> str:
+        normalized = (v or "").strip().lower()
+        if normalized not in PUBLIC_REGISTRATION_ROLES:
+            raise ValueError("Choose a valid account type")
+        return normalized
 
     @model_validator(mode="after")
     def passwords_match(self):

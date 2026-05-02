@@ -441,6 +441,8 @@ _CURATED_ARTICLES = [
 ]
 
 
+@router.get("/blog", response_class=HTMLResponse)
+@router.get("/articles", response_class=HTMLResponse)
 @router.get("/news", response_class=HTMLResponse)
 def news_page(
     request: Request,

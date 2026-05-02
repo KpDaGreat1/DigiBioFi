@@ -126,6 +126,12 @@
           <p class="text-slate-400 text-xs font-medium leading-relaxed mb-4 line-clamp-2">{{ profile.headline }}</p>
           {% endif %}
 
+          <div class="mb-4">
+            {% with role=profile.user.role %}
+              {% include "partials/role_badge.html" %}
+            {% endwith %}
+          </div>
+
           <div class="flex flex-wrap gap-2 mb-6">
             {% if profile.skills %}
               {% for skill in profile.skills[:2] %}

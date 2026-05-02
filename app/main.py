@@ -845,6 +845,13 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     ):
         response = RedirectResponse("/verify-email/pending", status_code=303)
         return _apply_security_headers(response)
+    if (
+        exc.status_code == 403
+        and exc.detail == "Admin access required"
+        and _request_expects_html(request)
+    ):
+        response = RedirectResponse("/dashboard", status_code=303)
+        return _apply_security_headers(response)
     response = _safe_http_exception_response(request, exc)
     return _apply_security_headers(response)
 

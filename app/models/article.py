@@ -74,3 +74,11 @@ class Article(Base):
     @cover_image.setter
     def cover_image(self, value: str | None) -> None:
         self.hero_image = value
+
+    @property
+    def status(self) -> str:
+        return "published" if self.is_published else "draft"
+
+    @status.setter
+    def status(self, value: str) -> None:
+        self.is_published = (value or "").strip().lower() == "published"

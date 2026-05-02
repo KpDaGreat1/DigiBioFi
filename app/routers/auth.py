@@ -18,7 +18,7 @@ from app.core.security import (
     clear_csrf_cookie,
 )
 from app.schemas.auth import RegisterRequest, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
-from app.models.user import User
+from app.models.user import PUBLIC_REGISTRATION_ROLES, User, UserRole
 from app.services.auth_service import (
     register_user,
     authenticate_user,
@@ -37,6 +37,11 @@ from app.utils.validators import format_pydantic_errors
 router = APIRouter(tags=["auth"])
 logger = logging.getLogger(__name__)
 _VERIFICATION_RESEND_COOLDOWN_SECONDS = 60
+_ROLE_OPTIONS = [
+    (UserRole.USER.value, "Professional"),
+    (UserRole.BUSINESS.value, "Business"),
+    (UserRole.FREELANCER.value, "Freelancer"),
+]
 
 
 def _base_url(request: Request) -> str:
@@ -64,7 +69,7 @@ def register_page(request: Request, current_user=Depends(get_current_user_option
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
         "auth/register.html",
-        {"request": request, "csrf_token": token}
+        {"request": request, "csrf_token": token, "role_options": _ROLE_OPTIONS, "selected_role": UserRole.USER.value}
     )
     set_csrf_cookie(response, token)
     return response
@@ -77,6 +82,7 @@ def register_submit(
     username: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    role: str = Form(UserRole.USER.value),
     company: str = Form(""),
     csrf_token: str = Depends(require_csrf),
     db: Session = Depends(get_db),
@@ -93,6 +99,7 @@ def register_submit(
             username=username,
             password=password,
             confirm_password=confirm_password,
+            role=role,
         )
 
         user = register_user(data, db)
@@ -132,6 +139,8 @@ def register_submit(
                 "email": email,
                 "username": username,
                 "csrf_token": generate_csrf_token(request),
+                "role_options": _ROLE_OPTIONS,
+                "selected_role": role if role in PUBLIC_REGISTRATION_ROLES else UserRole.USER.value,
             },
             status_code=422,
         )
@@ -145,6 +154,8 @@ def register_submit(
                 "email": email,
                 "username": username,
                 "csrf_token": generate_csrf_token(request),
+                "role_options": _ROLE_OPTIONS,
+                "selected_role": role if role in PUBLIC_REGISTRATION_ROLES else UserRole.USER.value,
             },
             status_code=400,
         )
@@ -158,6 +169,8 @@ def register_submit(
                 "email": email,
                 "username": username,
                 "csrf_token": generate_csrf_token(request),
+                "role_options": _ROLE_OPTIONS,
+                "selected_role": role if role in PUBLIC_REGISTRATION_ROLES else UserRole.USER.value,
             },
             status_code=500,
         )

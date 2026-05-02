@@ -18,7 +18,7 @@
       <form action="/dashboard/messages/send" method="post" class="space-y-5">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
         <div class="space-y-2">
-          <label class="block text-xs font-black text-slate-700 uppercase tracking-widest">Subject</label>
+          <label class="block text-xs font-black text-slate-700 uppercase tracking-widest">System Support Subject</label>
           <input type="text" name="subject" maxlength="300" value="Support Request"
                  class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10" />
         </div>
@@ -37,8 +37,8 @@
     <section class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h2 class="text-lg font-black text-slate-900 tracking-tight">Your thread</h2>
-          <p class="text-sm text-slate-500">Messages are reviewed in order and marked as they move through support.</p>
+          <h2 class="text-lg font-black text-slate-900 tracking-tight">System Support</h2>
+          <p class="text-sm text-slate-500">Messages are grouped into your support thread and reviewed in order.</p>
         </div>
       </div>
 

@@ -90,6 +90,22 @@
         </div>
 
         <div class="space-y-3">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Account Type</label>
+          <div class="grid gap-3 sm:grid-cols-3">
+            {% for role_value, role_label in role_options %}
+            <label class="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm font-bold text-slate-300 transition-all hover:border-brand-purple/30 hover:bg-brand-purple/5">
+              <input type="radio" name="role" value="{{ role_value }}" {% if (selected_role or 'user') == role_value %}checked{% endif %}
+                     class="h-4 w-4 accent-brand-purple">
+              <span>{{ role_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if errors and errors.role %}
+          <p class="text-red-400 text-xs font-bold ml-1">{{ errors.role }}</p>
+          {% endif %}
+        </div>
+
+        <div class="space-y-3">
           <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Password</label>
           <div class="auth-input-wrap auth-input-wrap-purple">
             <i data-lucide="lock" class="auth-input-icon w-5 h-5"></i>

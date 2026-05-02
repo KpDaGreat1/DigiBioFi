@@ -36,6 +36,11 @@
       <div class="p-6 rounded-2xl bg-brand-gold/5 border border-brand-gold/10">
         <p class="text-[10px] font-black text-brand-gold uppercase tracking-[0.2em] mb-2">Authority Level</p>
         <p class="text-xs font-bold text-white uppercase tracking-widest">Administrator</p>
+        <div class="mt-4">
+          {% with role=admin.role %}
+            {% include "partials/role_badge.html" %}
+          {% endwith %}
+        </div>
       </div>
     </div>
   </aside>
