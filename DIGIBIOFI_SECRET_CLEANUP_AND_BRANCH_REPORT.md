@@ -44,13 +44,13 @@ The SQLite database was committed in the same 3 commits as `.env`. This file con
 
 | Key | Risk Level | Action Required |
 |---|---|---|
-| `STRIPE_SECRET_KEY` (sk_live_REDACTED...) | CRITICAL | Roll in Stripe Dashboard → API Keys |
-| `STRIPE_WEBHOOK_SECRET` (whsec_REDACTED...) | CRITICAL | Delete endpoint & recreate in Stripe Dashboard → Webhooks |
-| `STRIPE_PUBLISHABLE_KEY` (pk_live_REDACTED...) | HIGH | Roll in Stripe Dashboard → API Keys |
+| `STRIPE_SECRET_KEY` (sk_live_**REDACTED**) | CRITICAL | Roll in Stripe Dashboard → API Keys |
+| `STRIPE_WEBHOOK_SECRET` (whsec_**REDACTED**) | CRITICAL | Delete endpoint & recreate in Stripe Dashboard → Webhooks |
+| `STRIPE_PUBLISHABLE_KEY` (pk_live_**REDACTED**) | HIGH | Roll in Stripe Dashboard → API Keys |
 | `SECRET_KEY` / JWT signing secret | HIGH | Regenerate: `python3 -c "import secrets; print(secrets.token_hex(32))"` — invalidates all user sessions |
 | `CSRF_SECRET_KEY` | HIGH | Regenerate same as SECRET_KEY |
-| `ADMIN_PASSWORD` (REDACTED_ADMIN_PASSWORD) | HIGH | Change in `.env` and DB immediately |
-| `SECRET_KEY` in `gen_verify_token.py` (96b27a...0638) | HIGH | Same as SECRET_KEY above — same key |
+| `ADMIN_PASSWORD` (**REDACTED**) | HIGH | Change in `.env` and DB immediately |
+| `SECRET_KEY` in `gen_verify_token.py` (**REDACTED**) | HIGH | Same as SECRET_KEY above — same key |
 | SMTP password | MEDIUM | Verify in production `.env`, rotate as precaution |
 | Gemini/Google API key | MEDIUM | Check if in use, rotate via Google Cloud Console |
 
