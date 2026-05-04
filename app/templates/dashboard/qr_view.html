@@ -1,13 +1,13 @@
 {% extends "layouts/dashboard.html" %}
 
-{% block title %}QR Identity — DigiBioFi{% endblock %}
-{% block page_title %}QR Identity{% endblock %}
+{% block title %}QR Code — DigiBioFi{% endblock %}
+{% block page_title %}QR Code{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto flex flex-col items-center">
+<div class="max-w-4xl mx-auto flex flex-col items-center surface-light">
   <div class="text-center mb-12">
-    <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-3">Your Digital Signature</h1>
-    <p class="text-slate-500 font-medium">Scan to connect instantly with your professional world.</p>
+    <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-3">Your QR Code</h1>
+    <p class="text-slate-500 font-medium">Share your profile quickly in person, on printed materials, or anywhere a scan is easier than a link.</p>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
@@ -42,10 +42,10 @@
 
     <!-- Actions & Info -->
     <div class="space-y-8">
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium">
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
         <h3 class="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
           <i data-lucide="share-2" class="w-5 h-5 text-brand-600"></i>
-          Share your identity
+          Share your profile
         </h3>
         
         <div class="space-y-4">
@@ -64,7 +64,7 @@
       {% if show_qr_analytics %}
       <div class="bg-brand-50 rounded-[2rem] p-8 border border-brand-100">
         <h3 class="text-lg font-black text-brand-900 mb-2">QR Analytics</h3>
-        <p class="text-sm font-medium text-brand-700 mb-6">Track how many times your identity has been scanned in the wild.</p>
+        <p class="text-sm font-medium text-brand-700 mb-6">Track how many times your QR code has been scanned.</p>
         
         <div class="flex items-end gap-4">
           <div class="text-5xl font-black text-brand-600 leading-none">{{ qr_scans }}</div>
@@ -77,7 +77,7 @@
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
         <button type="submit" data-loading-text="REFRESHING ASSET..." class="flex items-center gap-2 text-slate-400 hover:text-brand-600 font-bold text-sm transition-colors mx-auto">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          QR not scanning? Refresh QR Asset
+          QR not scanning? Regenerate QR Code
         </button>
       </form>
     </div>

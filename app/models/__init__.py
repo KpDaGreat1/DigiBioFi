@@ -16,3 +16,5 @@ from app.models.profile import (         # noqa: F401
 )
 from app.models.analytics import AnalyticsEvent  # noqa: F401
 from app.models.stripe import StripeEvent  # noqa: F401
+from app.models.message import ContactMessage  # noqa: F401
+from app.models.article import Article  # noqa: F401

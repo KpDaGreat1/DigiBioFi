@@ -10,8 +10,10 @@ from app.core.config import settings
 
 REQUIRED_TABLES = {
     "analytics_events",
+    "articles",
     "awards",
     "certifications",
+    "contact_messages",
     "custom_sections",
     "educations",
     "experiences",

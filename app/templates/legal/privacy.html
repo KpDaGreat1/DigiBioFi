@@ -1,52 +1,102 @@
 {% extends "base.html" %}
 
 {% block title %}Privacy Policy — DigiBioFi{% endblock %}
+{% block meta_description %}Read DigiBioFi's Privacy Policy to understand what data we collect, how we use it, and your rights as a user.{% endblock %}
+{% block canonical_url %}{{ base_url }}/privacy{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-slate-50/60">
+<div class="min-h-screen bg-[#0E1117]">
   <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
     <div class="mb-10">
-      <a href="/" class="inline-flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <a href="/" class="inline-flex items-center gap-2 font-display text-xl font-bold text-white tracking-tight hover:text-brand-blue transition-colors">
         <i data-lucide="layers" class="w-5 h-5"></i>
         DigiBioFi
       </a>
     </div>
 
-    <article class="bg-white rounded-[2.5rem] border border-slate-200 shadow-premium p-8 md:p-12 space-y-8">
-      <header class="space-y-3">
-        <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Legal</p>
-        <h1 class="text-4xl font-black text-slate-900 tracking-tight">Privacy Policy</h1>
-        <p class="text-slate-500 font-medium">Effective April 4, 2026</p>
+    <article class="bg-[#1F2633] rounded-[2.5rem] border border-white/5 shadow-2xl p-8 md:p-12 space-y-10">
+      <header class="space-y-3 pb-8 border-b border-white/5">
+        <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Legal</p>
+        <h1 class="text-4xl font-black text-white tracking-tight">Privacy Policy</h1>
+        <p class="text-slate-400 font-medium">Effective April 4, 2026 &middot; Last updated April 28, 2026</p>
       </header>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">What we collect</h2>
-        <p>DigiBioFi stores the account information, profile content, uploads, analytics events, and billing identifiers needed to operate your professional identity profile.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">1. Who we are</h2>
+        <p>DigiBioFi ("we", "our", or "us") operates the professional profile platform at digibiofi.com. Your privacy matters to us. This policy explains what personal data we collect, why we collect it, how we protect it, and the rights available to you.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">How we use it</h2>
-        <p>We use account and profile data to render public profiles, power dashboard editing, generate QR codes, and provide analytics. Payment processing is handled through Stripe when billing is enabled.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">2. Data we collect</h2>
+        <p><strong class="text-white">Account data:</strong> When you register, we store your email address, username, and hashed password. We never store plain-text passwords.</p>
+        <p><strong class="text-white">Profile data:</strong> Any content you choose to add to your public profile — full name, headline, bio, location, work experience, education, skills, projects, links, and profile image — is stored to render your profile page.</p>
+        <p><strong class="text-white">Uploaded files:</strong> Profile images, resumes (PDF), project thumbnails, and certificates you upload are stored in our file system and served at public URLs when your profile is public.</p>
+        <p><strong class="text-white">Analytics:</strong> When a visitor views your public profile, we log a pseudonymous visit event (a one-way hash of IP + User-Agent) to power your dashboard analytics. We do not store raw IP addresses in analytics records.</p>
+        <p><strong class="text-white">Contact messages:</strong> Messages submitted through the contact form are stored in our database and reviewed by our team.</p>
+        <p><strong class="text-white">Billing data:</strong> If you subscribe to a paid plan, payment processing is handled entirely by Stripe. DigiBioFi stores only Stripe customer and subscription identifiers — never raw card numbers or full payment details.</p>
+        <p><strong class="text-white">Session data:</strong> We use secure HTTP-only session cookies for authentication and flash messages. These are not used for advertising tracking.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Uploads and analytics</h2>
-        <p>Uploaded assets such as profile images, resumes, project thumbnails, QR codes, and certificates are stored to support your profile. Public profile visits, scans, and downloads may be logged for analytics and abuse prevention.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">3. How we use your data</h2>
+        <ul class="list-disc ml-6 space-y-2">
+          <li>To create and display your public professional profile</li>
+          <li>To send email verification and password reset messages through our configured SMTP provider</li>
+          <li>To display profile view and engagement analytics in your dashboard</li>
+          <li>To process subscription payments and manage billing state via Stripe webhooks</li>
+          <li>To prevent abuse, enforce rate limits, and protect platform security</li>
+          <li>To respond to contact form messages</li>
+        </ul>
+        <p>We do not sell your personal data. We do not use your data to build advertising profiles.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Billing data</h2>
-        <p>DigiBioFi does not store raw card numbers. Stripe processes subscription payments and may provide customer, subscription, and invoice identifiers back to the app for account state management.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">4. Advertising</h2>
+        <p>DigiBioFi may display Google AdSense advertisements on public and content pages. Google may use cookies to serve ads based on prior visits to our site or other sites. You can opt out of personalized advertising at <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" class="text-brand-blue hover:text-white transition-colors">Google Ads Settings</a>. Ads are not shown on authenticated account or billing pages.</p>
       </section>
 
-      <section class="space-y-3 text-slate-600 leading-relaxed">
-        <h2 class="text-xl font-black text-slate-900">Your controls</h2>
-        <p>You can update profile visibility, edit or delete profile content, and manage billing through the dashboard when those features are enabled on your account.</p>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">5. Data sharing</h2>
+        <p>We share data only with the following third-party services required to operate the platform:</p>
+        <ul class="list-disc ml-6 space-y-2">
+          <li><strong class="text-white">Stripe</strong> — payment processing</li>
+          <li><strong class="text-white">Configured SMTP provider</strong> — transactional email delivery</li>
+          <li><strong class="text-white">Google AdSense</strong> — advertising display (public pages only)</li>
+        </ul>
+        <p>We do not share your data with data brokers, list vendors, or unaffiliated third parties for marketing purposes.</p>
       </section>
 
-      <div class="pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-sm font-bold">
-        <a href="/terms" class="text-brand-600 hover:text-brand-700 transition-colors">Terms of Service</a>
-        <a href="/" class="text-slate-500 hover:text-brand-600 transition-colors">Back to DigiBioFi</a>
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">6. Data retention</h2>
+        <p>Account data is retained for as long as your account is active. If you close your account, your data will be deleted within 30 days unless we are required to retain it for legal or financial compliance purposes.</p>
+        <p>Contact messages are retained for up to 1 year. Analytics events are retained for up to 2 years.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">7. Security</h2>
+        <p>We use industry-standard measures to protect your data: HTTPS enforced in production, bcrypt password hashing, CSRF protection on all forms, HTTP security headers (HSTS, CSP, X-Frame-Options), and rate limiting. We conduct security reviews before deploying changes.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">8. Your rights</h2>
+        <p>You have the right to access, correct, export, or delete your personal data. To exercise these rights, contact us at <a href="mailto:privacy@digibiofi.com" class="text-brand-blue hover:text-white transition-colors">privacy@digibiofi.com</a>. We will respond within 30 days.</p>
+        <p>You can update profile visibility (public / private) and edit or delete profile content at any time through your dashboard.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">9. Cookies</h2>
+        <p>We use the following cookies: a session cookie for authentication state, a CSRF token cookie for form security, and Google AdSense cookies on ad-enabled pages. We do not use tracking pixels or third-party marketing cookies for our own purposes.</p>
+      </section>
+
+      <section class="space-y-4 text-slate-400 leading-relaxed">
+        <h2 class="text-xl font-bold text-white">10. Changes to this policy</h2>
+        <p>We may update this policy to reflect changes in our practices or applicable law. When we make material changes, we will update the effective date at the top of this page. Continued use of DigiBioFi after changes constitutes acceptance of the updated policy.</p>
+      </section>
+
+      <div class="pt-6 border-t border-white/5 flex flex-wrap gap-4 text-sm font-bold">
+        <a href="/terms" class="text-brand-blue hover:text-white transition-colors">Terms of Service</a>
+        <a href="/contact" class="text-slate-500 hover:text-brand-blue transition-colors">Contact Us</a>
+        <a href="/" class="text-slate-500 hover:text-white transition-colors">Back to DigiBioFi</a>
       </div>
     </article>
   </div>

@@ -2,33 +2,31 @@
 
 from app.core.config import settings
 from app.core.owner import is_owner_email
+from app.models.user import UserRole
 
 
 def _is_admin(user) -> bool:
-    from app.models.user import UserRole
     if not user:
         return False
-    if getattr(user, "role", "") == UserRole.ADMIN:
+    if getattr(user, "role", "") == UserRole.ADMIN.value:
         return True
     return is_owner_email(getattr(user, "email", None))
 
 
 def _has_active_paid_access(user) -> bool:
-    from app.models.user import SubscriptionTier
     if not user:
         return False
     if getattr(user, "subscription_status", "") != "active":
         return False
-    return getattr(user, "subscription_tier", "") in {SubscriptionTier.BASIC, SubscriptionTier.PREMIUM, SubscriptionTier.ELITE}
+    return getattr(user, "subscription_tier", "") in {"basic", "elite"}
 
 
 def can_access_analytics(user) -> bool:
-    from app.models.user import SubscriptionTier
     if _is_admin(user):
         return True
     return (
         getattr(user, "subscription_status", "") == "active"
-        and getattr(user, "subscription_tier", "") == SubscriptionTier.ELITE
+        and getattr(user, "subscription_tier", "") == "elite"
     )
 
 
@@ -43,16 +41,15 @@ def can_manage_subscription(user) -> bool:
 
 
 def current_plan_label(user) -> str:
-    from app.models.user import SubscriptionTier
     if _is_admin(user):
         return "Admin"
     if getattr(user, "subscription_status", "") != "active":
         return "Free"
 
     tier = getattr(user, "subscription_tier", "")
-    if tier == SubscriptionTier.ELITE:
+    if tier == "elite":
         return "Elite"
-    if tier in {SubscriptionTier.BASIC, SubscriptionTier.PREMIUM}:
+    if tier == "basic":
         return "Basic"
     return "Free"
 

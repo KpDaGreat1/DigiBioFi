@@ -4,13 +4,20 @@ Profile and all sub-section models.
 One Profile belongs to one User (1:1).
 All section tables (Experience, Education, etc.) belong to a Profile (1:N).
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
 import uuid
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID, desc
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.analytics import AnalyticsEvent
+    from app.models.user import User
 
 
 class Profile(Base):
@@ -68,7 +75,7 @@ class Profile(Base):
     )
 
     # ── Relationships ─────────────────────────────────────────────────────────
-    user: Mapped["User"] = relationship("User", back_populates="profile")  # type: ignore
+    user: Mapped[User] = relationship("User", back_populates="profile")
 
     experiences: Mapped[list["Experience"]] = relationship(
         "Experience", back_populates="profile", cascade="all, delete-orphan",
@@ -101,7 +108,7 @@ class Profile(Base):
     qr_code: Mapped["QRCode"] = relationship(
         "QRCode", back_populates="profile", uselist=False, cascade="all, delete-orphan"
     )
-    analytics_events: Mapped[list["AnalyticsEvent"]] = relationship(  # type: ignore
+    analytics_events: Mapped[list[AnalyticsEvent]] = relationship(
         "AnalyticsEvent", back_populates="profile", cascade="all, delete-orphan"
     )
 
@@ -252,7 +259,7 @@ class QRCode(Base):
 
 
 class ProfileView(Base):
-    """Tracks unique profile views per IP/device per 24h to prevent refresh abuse."""
+    """Tracks unique profile views with daily-rotating anonymized visitor identifiers."""
     __tablename__ = "profile_views"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

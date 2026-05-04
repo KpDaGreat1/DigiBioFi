@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     debug: bool = True
     secret_key: str
     base_url: str = "http://localhost:8000"
-    redis_url: str
+    trust_proxy_headers: bool | None = None
+    secure_cookies: bool | None = None
+    redis_url: str = ""
     # ── Security ─────────────────────────────────────────────────────────────
     # Session / CSRF / Rate limiting
     csrf_secret_key: str = "csrf-secret-key-change-me"
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
     password_reset_expire_minutes: int = 30
+    email_verification_expire_hours: int = 24
 
     # ── File uploads ─────────────────────────────────────────────────────────
     upload_dir: str = "uploads"
@@ -56,17 +59,21 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     emails_from_email: str = "noreply@example.com"
     emails_from_name: str = "DigiBioFi"
-    # ── AI / ML Pipeline ──────────────────────────────────────────────────────
-    gemini_api_key: str = ""
+    smtp_tls: bool = True
+    smtp_ssl: bool = False
 
     # ── Stripe ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
+    stripe_api_version: str = "2026-02-25.clover"
 
-    # Multiple pricing tiers
+    # Billing tiers
     stripe_price_basic: str = ""
-    stripe_price_premium: str = ""
     stripe_price_elite: str = ""
+
+    # ── Signal messaging ─────────────────────────────────────────────────────
+    signal_sender_number: str = ""
 
     # ── Ads ──────────────────────────────────────────────────────────────────
     adsense_client_id: str = ""
@@ -74,11 +81,16 @@ class Settings(BaseSettings):
     adsense_public_sidebar_slot: str = ""
     adsense_dashboard_slot: str = ""
 
+    # ── AI resume extraction ─────────────────────────────────────────────────
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+
     def get_stripe_price(self, plan: str) -> str:
-        if plan == "basic":
+        normalized_plan = (plan or "").strip().lower()
+        if normalized_plan == "basic":
             return self.stripe_price_basic
-        if plan in {"premium", "elite"}:
-            return self.stripe_price_elite or self.stripe_price_premium
+        if normalized_plan == "elite":
+            return self.stripe_price_elite
         raise ValueError(f"Invalid plan: {plan}")
 
     # ── CORS ─────────────────────────────────────────────────────────────────
@@ -110,7 +122,7 @@ class Settings(BaseSettings):
             )
         return v
 
-    @field_validator("database_url", "redis_url", "admin_email")
+    @field_validator("database_url", "admin_email")
     @classmethod
     def validate_required_strings(cls, v: str, info) -> str:
         if not v or not v.strip():
@@ -150,6 +162,29 @@ class Settings(BaseSettings):
             raise ValueError("FREE_DAILY_PROFILE_VIEW_LIMIT must be at least 1.")
         return v
 
+    @field_validator("email_verification_expire_hours")
+    @classmethod
+    def validate_email_verification_expire_hours(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("EMAIL_VERIFICATION_EXPIRE_HOURS must be at least 1.")
+        return v
+
+    @field_validator("smtp_ssl")
+    @classmethod
+    def validate_smtp_transport(cls, v: bool, info) -> bool:
+        smtp_tls = bool(info.data.get("smtp_tls"))
+        if v and smtp_tls:
+            raise ValueError("SMTP_SSL and SMTP_TLS cannot both be enabled.")
+        return v
+
+    @field_validator("smtp_tls")
+    @classmethod
+    def validate_smtp_tls_transport(cls, v: bool, info) -> bool:
+        smtp_ssl = bool(info.data.get("smtp_ssl"))
+        if v and smtp_ssl:
+            raise ValueError("SMTP_SSL and SMTP_TLS cannot both be enabled.")
+        return v
+
     # ── Derived helpers ───────────────────────────────────────────────────────
     @property
     def upload_path(self) -> Path:
@@ -166,6 +201,18 @@ class Settings(BaseSettings):
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
+
+    @property
+    def use_proxy_headers(self) -> bool:
+        if self.trust_proxy_headers is not None:
+            return self.trust_proxy_headers
+        return self.is_production
+
+    @property
+    def use_secure_cookies(self) -> bool:
+        if self.secure_cookies is not None:
+            return self.secure_cookies
+        return self.is_production
 
 
 @lru_cache

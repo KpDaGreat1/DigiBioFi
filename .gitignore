@@ -136,23 +136,41 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
+*.env
+requirements.lock.txt
 # DigiBioFi specific ignores (critical)
 .idea/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+tmp_*
 pycache/
 uploads/
 qr_codes/
 *.pyc
 .DS_Store
 .envrc
+.junie/
 .venv
+.venv/
+.venv*/
 env/
 venv/
+venv*/
 ENV/
 env.bak/
 venv.bak/
+tmp/
+*.tmp
+*.temp
+logs/
+.claude/
 
 # Spyder project settings
 .spyderproject
@@ -196,7 +214,7 @@ cython_debug/
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the entire vscode folder
-# .vscode/
+.vscode/
 
 # Ruff stuff:
 .ruff_cache/

@@ -10,25 +10,29 @@ Production:
 import asyncio
 import logging
 import re
+import secrets
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
-from app.core.owner import apply_owner_access, is_owner_email
+from app.core.owner import apply_owner_access, is_owner_email, privileged_admin_emails
 from app.core.security import AUTH_COOKIE_NAME, clear_auth_cookie, clear_csrf_cookie
 from app.core.templates import templates
 from app.db.database import engine
 from app.db.schema import assert_schema_ready
-from app.routers import auth, dashboard, public, admin, billing, legal
+from app.routers import auth, dashboard, public, admin, billing, legal, pages
 from app.core.dependencies import get_current_user_optional, get_db
+from app.utils.urls import external_base_url
+from app.utils.validators import hash_daily_client_token
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -45,6 +49,11 @@ def _owner_username() -> str:
     return base or "owner"
 
 
+def _admin_username(email: str) -> str:
+    base = re.sub(r"[^a-zA-Z0-9_-]", "", email.split("@", 1)[0]).strip()
+    return base or "admin"
+
+
 def _unique_username(base: str, db) -> str:
     from app.models.user import User
 
@@ -57,67 +66,75 @@ def _unique_username(base: str, db) -> str:
 
 
 def _seed_admin_user():
-    """Ensure the configured owner account exists with permanent elite access."""
+    """Ensure privileged admin accounts exist with permanent elite access."""
     from app.db.database import SessionLocal
     from app.core.security import hash_password
     from sqlalchemy import func
 
     db = SessionLocal()
     try:
-        from app.models.user import User
+        from app.models.user import User, UserRole
         from app.models.profile import Profile
         from app.services import qr_service
         from app.utils.slug import unique_slug
 
-        user = (
-            db.query(User)
-            .filter(func.lower(User.email) == settings.admin_email.lower())
-            .first()
-        )
-        if not user:
-            username = _unique_username(_owner_username(), db)
-            user = User(
-                email=settings.admin_email.lower(),
-                username=username,
-                hashed_password=hash_password(settings.admin_password),
-                role="admin",
-                subscription_tier="elite",
-                subscription_status="active",
-                is_active=True,
-                is_verified=False,
+        created_any = False
+
+        for admin_email in sorted(privileged_admin_emails()):
+            user = (
+                db.query(User)
+                .filter(func.lower(User.email) == admin_email.lower())
+                .first()
             )
-            db.add(user)
-            db.flush()
-            profile = Profile(user_id=user.id, slug=unique_slug(username, db))
-            db.add(profile)
-            db.commit()
-            db.refresh(user)
-            db.refresh(profile)
-            try:
-                qr_service.generate_qr_for_profile(profile, db)
-            except Exception as e:
-                logger.warning(f"Owner QR seed failed: {e}")
-            logger.info("Owner account created")
-            return
+            if not user:
+                username = _unique_username(_admin_username(admin_email), db)
+                bootstrap_password = (
+                    settings.admin_password
+                    if admin_email.lower() == settings.admin_email.lower()
+                    else secrets.token_urlsafe(24)
+                )
+                user = User(
+                    email=admin_email.lower(),
+                    username=username,
+                    hashed_password=hash_password(bootstrap_password),
+                    role=UserRole.ADMIN.value,
+                    subscription_tier="elite",
+                    subscription_status="active",
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(user)
+                db.flush()
+                profile = Profile(user_id=user.id, slug=unique_slug(username, db))
+                db.add(profile)
+                db.commit()
+                db.refresh(user)
+                db.refresh(profile)
+                created_any = True
+                logger.info("Privileged admin account ensured for %s", admin_email)
+            else:
+                profile = user.profile
 
-        changed = apply_owner_access(user)
-        profile = user.profile
-        if not profile:
-            profile = Profile(user_id=user.id, slug=unique_slug(user.username, db))
-            db.add(profile)
-            changed = True
+            changed = apply_owner_access(user)
+            if not profile:
+                profile = Profile(user_id=user.id, slug=unique_slug(user.username, db))
+                db.add(profile)
+                changed = True
 
-        if changed:
-            db.commit()
-            db.refresh(user)
-            db.refresh(profile)
-            logger.info("Owner access ensured")
+            if changed:
+                db.commit()
+                db.refresh(user)
+                db.refresh(profile)
+                logger.info("Privileged admin access refreshed for %s", admin_email)
 
-        if profile and not profile.qr_code:
-            try:
-                qr_service.generate_qr_for_profile(profile, db)
-            except Exception as e:
-                logger.warning(f"Owner QR sync failed: {e}")
+            if profile and not profile.qr_code:
+                try:
+                    qr_service.generate_qr_for_profile(profile, db)
+                except Exception as e:
+                    logger.warning(f"Owner QR sync failed: {e}")
+
+        if created_any:
+            logger.info("Privileged admin bootstrap completed")
     except Exception as e:
         logger.warning(f"Admin seed failed: {e}")
     finally:
@@ -132,7 +149,7 @@ async def lifespan(app: FastAPI):
     # Import models so relationship access in startup paths is registered.
     import app.models as app_models  # noqa: F401
 
-    for sub in ("profile_images", "qr_codes", "resumes", "certificates", "project_thumbnails"):
+    for sub in ("profile_images", "qr_codes", "resumes", "resume_previews", "certificates", "project_thumbnails"):
         (settings.upload_path / sub).mkdir(parents=True, exist_ok=True)
 
     if settings.free_daily_profile_view_limit < 1:
@@ -142,7 +159,6 @@ async def lifespan(app: FastAPI):
         settings.stripe_webhook_secret.strip()
         or settings.stripe_price_basic.strip()
         or settings.stripe_price_elite.strip()
-        or settings.stripe_price_premium.strip()
     )
     if stripe_enabled and not settings.stripe_secret_key.strip():
         raise RuntimeError("Stripe is enabled but STRIPE_SECRET_KEY is missing.")
@@ -165,7 +181,10 @@ async def lifespan(app: FastAPI):
             or not settings.smtp_user.strip()
             or not settings.smtp_password.strip()
         ):
-            logger.warning("Email is not fully configured; email delivery features remain disabled.")
+            logger.warning(
+                "Email is not fully configured; verification and password-reset delivery remain disabled. "
+                "Production signup is blocked until SMTP is configured."
+            )
 
     if app.state.environment != "testing":
         assert_schema_ready(engine)
@@ -195,6 +214,11 @@ def get_client_ip(request: Request) -> str:
     Extract client IP from request, checking trusted proxy headers first.
     In production, this helps get the real client IP when behind a load balancer.
     """
+    if not settings.use_proxy_headers:
+        if request.client:
+            return request.client.host
+        return "unknown"
+
     # Check X-Forwarded-For (most common with proxies)
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
@@ -241,6 +265,10 @@ def is_rate_limited(ip: str) -> bool:
     return False
 
 
+def _hash_daily_ip(ip: str) -> str:
+    return hash_daily_client_token(ip, settings.secret_key)
+
+
 async def rate_limiter(request: Request) -> JSONResponse | None:
     """Best-effort in-memory rate limiter that never breaks the request chain."""
     if request.app.state.environment == "testing":
@@ -269,7 +297,7 @@ def _apply_security_headers(response):
 
     script_src = (
         "'self' 'unsafe-inline' https://cdn.tailwindcss.com "
-        "https://unpkg.com https://cdnjs.cloudflare.com"
+        "https://unpkg.com https://cdnjs.cloudflare.com https://js.stripe.com"
     )
     img_src = (
         "'self' data: blob: https://images.unsplash.com "
@@ -278,7 +306,7 @@ def _apply_security_headers(response):
     connect_src = "'self'"
     frame_src = "'self'"
 
-    if settings.adsense_client_id:
+    if settings.adsense_client_id.strip():
         script_src += " https://pagead2.googlesyndication.com"
         img_src += (
             " https://pagead2.googlesyndication.com"
@@ -344,7 +372,8 @@ def _redirect_to_login() -> RedirectResponse:
 def _safe_error_response(request: Request, status_code: int = 500):
     if _request_expects_html(request):
         return templates.TemplateResponse(
-            request=request, name="errors/500.html", context={"request": request},
+            "errors/500.html",
+            {"request": request},
             status_code=status_code,
         )
     return JSONResponse(
@@ -352,7 +381,98 @@ def _safe_error_response(request: Request, status_code: int = 500):
         content={"detail": "Internal server error"},
     )
 
-# ── Rate Limiting ─────────────────────────────────────────────────────────────
+
+def _should_redirect_html_401(request: Request, auth_cookie_present: bool) -> bool:
+    if not _request_expects_html(request):
+        return False
+    if request.url.path == "/login":
+        return False
+    if auth_cookie_present:
+        return True
+    protected_prefixes = ("/dashboard", "/admin", "/billing")
+    return request.url.path.startswith(protected_prefixes)
+
+
+def _safe_http_exception_response(request: Request, exc: HTTPException):
+    if not _request_expects_html(request):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    if exc.status_code == 401:
+        return _redirect_to_login()
+
+    if exc.status_code == 403:
+        message = "This action is not available right now."
+        if exc.detail in {"Session expired", "Invalid CSRF token"}:
+            message = "Your session expired or this form is no longer valid. Refresh the page and try again."
+        elif isinstance(exc.detail, str) and exc.detail:
+            message = exc.detail
+        return templates.TemplateResponse(
+            "errors/403.html",
+            {"request": request, "message": message},
+            status_code=403,
+        )
+
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            "errors/404.html",
+            {"request": request},
+            status_code=404,
+        )
+
+    return _safe_error_response(request, status_code=max(400, exc.status_code))
+
+
+def _format_request_validation_errors(exc: RequestValidationError) -> dict:
+    errors: dict[str, str] = {}
+    for error in exc.errors():
+        location = error.get("loc") or ()
+        field = str(location[-1]) if location else "general"
+        message = error.get("msg", "Invalid request.")
+        if message.startswith("Value error, "):
+            message = message[len("Value error, "):]
+        errors[field] = message[:1].upper() + message[1:] if message else "Invalid request."
+    return errors
+
+
+async def _render_auth_validation_error(request: Request, exc: RequestValidationError):
+    from app.core.security import generate_csrf_token, set_csrf_cookie
+
+    form_data = {}
+    try:
+        form_data = dict(await request.form())
+    except Exception:
+        form_data = {}
+
+    template_name = None
+    context = {"request": request, "errors": _format_request_validation_errors(exc)}
+
+    if request.url.path == "/register":
+        template_name = "auth/register.html"
+        context.update(
+            {
+                "email": str(form_data.get("email", "")),
+                "username": str(form_data.get("username", "")),
+            }
+        )
+    elif request.url.path == "/login":
+        template_name = "auth/login.html"
+        context.update({"email": str(form_data.get("email", ""))})
+    elif request.url.path == "/forgot-password":
+        template_name = "auth/forgot_password.html"
+        context.update({"email": str(form_data.get("email", ""))})
+    elif request.url.path == "/reset-password":
+        template_name = "auth/reset_password.html"
+        context.update({"token": str(form_data.get("token", ""))})
+
+    if not template_name:
+        return None
+
+    csrf_token = generate_csrf_token(request)
+    context["csrf_token"] = csrf_token
+    response = templates.TemplateResponse(template_name, context, status_code=422)
+    set_csrf_cookie(response, csrf_token)
+    return response
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -371,6 +491,8 @@ app.state.environment = settings.app_env
 @app.middleware("http")
 async def security_and_rate_limit_middleware(request: Request, call_next):
     auth_cookie_present = bool(request.cookies.get(AUTH_COOKIE_NAME))
+    request.state.client_ip = get_client_ip(request)
+    request.state.daily_ip_hash = _hash_daily_ip(request.state.client_ip)
 
     try:
         if not request.url.path.startswith("/admin"):
@@ -380,15 +502,19 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
 
         response = await call_next(request)
     except HTTPException as exc:
-        if exc.status_code == 401 and _request_expects_html(request):
-            response = _redirect_to_login()
+        if (
+            exc.status_code == 403
+            and exc.detail == "Email verification required"
+            and _request_expects_html(request)
+        ):
+            response = RedirectResponse("/verify-email/pending", status_code=303)
         else:
-            response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            response = _safe_http_exception_response(request, exc)
     except Exception:
         logger.exception("Unhandled request error")
         response = _safe_error_response(request, status_code=500)
 
-    if response.status_code == 401 and _request_expects_html(request):
+    if response.status_code == 401 and _should_redirect_html_401(request, auth_cookie_present):
         response = _redirect_to_login()
 
     if auth_cookie_present and (_response_is_html(response) or _request_expects_html(request)):
@@ -408,6 +534,8 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
     session_cookie="digibiofi_session",
+    same_site="lax",
+    https_only=settings.use_secure_cookies,
     max_age=3600 * 24 * 30, # 30 days
 )
 
@@ -429,7 +557,7 @@ _uploads_path = Path(settings.upload_dir)
 _uploads_path.mkdir(exist_ok=True)
 qr_path = settings.upload_path / "qr_codes"
 qr_path.mkdir(parents=True, exist_ok=True)
-for subdir in ("profile_images", "project_thumbnails", "certificates"):
+for subdir in ("profile_images", "project_thumbnails", "certificates", "resume_previews"):
     public_dir = settings.upload_path / subdir
     public_dir.mkdir(parents=True, exist_ok=True)
     app.mount(
@@ -440,13 +568,85 @@ for subdir in ("profile_images", "project_thumbnails", "certificates"):
 app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
 
 
+# ── Health Check ─────────────────────────────────────
+
+@app.get("/health", include_in_schema=False)
+def health_check():
+    return JSONResponse({"status": "ok"}, status_code=200)
+
+
 # ── Robots.txt ───────────────────────────────────────
 
-from fastapi.responses import FileResponse
+@app.get("/robots.txt", include_in_schema=False)
+def robots(request: Request):
+    base_url = external_base_url(request)
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        f"Sitemap: {base_url.rstrip('/')}/sitemap.xml\n"
+    )
+    return Response(content=content, media_type="text/plain")
 
-@app.get("/robots.txt")
-def robots():
-    return FileResponse("app/static/robots.txt")
+
+# ── Sitemap ───────────────────────────────────────────────
+
+@app.get("/sitemap.xml")
+def sitemap(request: Request, db=Depends(get_db)):
+    """Generate a valid XML sitemap of all public routes and public profiles."""
+    from app.models.profile import Profile
+    from app.models.user import User
+    from sqlalchemy import func
+
+    base = external_base_url(request).rstrip("/")
+
+    # Static public routes
+    static_routes = [
+        "/",
+        "/explore",
+        "/what-is-digibiofi",
+        "/insights",
+        "/news",
+        "/contact",
+        "/tools/job-matcher",
+        "/privacy",
+        "/terms",
+    ]
+
+    # Dynamic: all public profiles
+    slugs = (
+        db.query(Profile.slug)
+        .join(User, User.id == Profile.user_id)
+        .filter(
+            Profile.is_public.is_(True),
+            User.is_active.is_(True),
+            ~func.lower(User.email).like("%@example.invalid"),
+        )
+        .all()
+    )
+
+    # Dynamic: published articles
+    from app.models.article import Article
+    article_slugs = (
+        db.query(Article.slug)
+        .filter(Article.is_published.is_(True))
+        .all()
+    )
+
+    urls = []
+    for route in static_routes:
+        urls.append(f"  <url><loc>{base}{route}</loc></url>")
+    for (slug,) in slugs:
+        urls.append(f"  <url><loc>{base}/p/{slug}</loc></url>")
+    for (slug,) in article_slugs:
+        urls.append(f"  <url><loc>{base}/insights/{slug}</loc></url>")
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(urls)
+        + "\n</urlset>\n"
+    )
+    return Response(content=xml, media_type="application/xml")
 
 
 
@@ -454,10 +654,12 @@ def robots():
 
 app.include_router(auth.router)
 app.include_router(dashboard.router)
+app.include_router(dashboard.settings_router)
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(billing.router)
 app.include_router(legal.router)
+app.include_router(pages.router)
 
 # ── Stripe Webhook ───────────────────────────────────────────────────────────
 
@@ -473,6 +675,24 @@ def _get_user_by_stripe(db, customer_id: str | None, user_id_str: str | None):
             return db.query(User).filter(User.id == int(user_id_str)).first()
         except (ValueError, TypeError):
             pass
+    return None
+
+
+def _stripe_price_to_tier_map() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    if settings.stripe_price_basic.strip():
+        mapping[settings.stripe_price_basic.strip()] = "basic"
+    if settings.stripe_price_elite.strip():
+        mapping[settings.stripe_price_elite.strip()] = "elite"
+    return mapping
+
+
+def _tier_from_subscription_items(items) -> str | None:
+    configured_prices = _stripe_price_to_tier_map()
+    for item in (items or {}).get("data", []):
+        price_id = (((item or {}).get("price") or {}).get("id") or "").strip()
+        if price_id in configured_prices:
+            return configured_prices[price_id]
     return None
 
 
@@ -492,9 +712,12 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
     try:
         import stripe
         stripe.api_key = settings.stripe_secret_key
+        stripe.api_version = settings.stripe_api_version
         payload = await request.body()
         sig = request.headers.get("stripe-signature", "")
         event = stripe.Webhook.construct_event(payload, sig, settings.stripe_webhook_secret)
+        if hasattr(event, "to_dict"):
+            event = event.to_dict()
     except ImportError:
         return JSONResponse({"error": "stripe not installed"}, status_code=500)
     except Exception as e:
@@ -519,20 +742,30 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
             customer_id = obj.get("customer")
             subscription_id = obj.get("subscription")
             metadata = obj.get("metadata", {}) or {}
-            plan = metadata.get("plan", "elite")
-            tier = "elite" if plan != "basic" else "basic"
+            plan = (metadata.get("plan") or "").strip().lower()
             user = _get_user_by_stripe(db, customer_id, metadata.get("user_id"))
             if user:
                 if is_owner_email(user.email):
                     apply_owner_access(user)
                 else:
-                    user.subscription_tier = tier
-                    user.subscription_status = "active"
-                    if customer_id and not user.stripe_customer_id:
-                        user.stripe_customer_id = customer_id
-                    if subscription_id:
-                        user.stripe_subscription_id = subscription_id
-                logger.info(f"User {user.id} upgraded to {tier} via checkout.session.completed")
+                    if plan not in {"basic", "elite"}:
+                        logger.warning(
+                            "checkout.session.completed received invalid plan=%r for user_id=%s",
+                            plan,
+                            user.id,
+                        )
+                    else:
+                        user.subscription_tier = plan
+                        user.subscription_status = "active"
+                        if customer_id and not user.stripe_customer_id:
+                            user.stripe_customer_id = customer_id
+                        if subscription_id:
+                            user.stripe_subscription_id = subscription_id
+                        logger.info(
+                            "User %s upgraded to %s via checkout.session.completed",
+                            user.id,
+                            plan,
+                        )
             else:
                 logger.warning(f"checkout.session.completed: no user found for customer={customer_id}")
 
@@ -548,6 +781,9 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
                     if subscription_id:
                         user.stripe_subscription_id = subscription_id
                     if status == "active":
+                        tier = _tier_from_subscription_items(obj.get("items"))
+                        if tier:
+                            user.subscription_tier = tier
                         user.subscription_status = "active"
                     elif status in ("past_due", "unpaid"):
                         user.subscription_status = status
@@ -597,15 +833,11 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request, user=Depends(get_current_user_optional)):
-    """Landing page — redirect authenticated users to dashboard unless explicitly visiting."""
-    # We still redirect to dashboard by default if they are logged in, 
-    # but we pass user to the template just in case we ever want to show it.
-    # Actually, the requirement suggests showing different buttons on the landing page based on state.
-    # If we always redirect, they never see those buttons on the landing page.
-    # So maybe we only redirect if they are not just browsing the root?
-    # No, I'll stick to what the requirement says: show the correct button.
-    # To show the button, they must be on the page.
-    return templates.TemplateResponse(request=request, name="landing.html", context={"request": request, "user": user})
+    """Landing page."""
+    return templates.TemplateResponse(
+        "landing.html",
+        {"request": request, "user": user, "base_url": external_base_url(request)},
+    )
 
 
 # ── Error handlers ────────────────────────────────────────────────────────────
@@ -615,14 +847,43 @@ def not_found(request: Request, exc):
     if not _request_expects_html(request):
         return JSONResponse({"detail": "Not Found"}, status_code=404)
     return templates.TemplateResponse(
-        request=request, name="errors/404.html", context={"request": request}, status_code=404
+        "errors/404.html", {"request": request}, status_code=404
     )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if (
+        exc.status_code == 403
+        and exc.detail == "Email verification required"
+        and _request_expects_html(request)
+    ):
+        response = RedirectResponse("/verify-email/pending", status_code=303)
+        return _apply_security_headers(response)
+    if (
+        exc.status_code == 403
+        and exc.detail == "Admin access required"
+        and _request_expects_html(request)
+    ):
+        response = RedirectResponse("/dashboard", status_code=303)
+        return _apply_security_headers(response)
+    response = _safe_http_exception_response(request, exc)
+    return _apply_security_headers(response)
 
 
 @app.exception_handler(500)
 async def internal_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled 500 error", exc_info=exc)
     return _safe_error_response(request, status_code=500)
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(request: Request, exc: RequestValidationError):
+    if _request_expects_html(request):
+        response = await _render_auth_validation_error(request, exc)
+        if response is not None:
+            return _apply_security_headers(response)
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 @app.exception_handler(Exception)

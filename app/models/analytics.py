@@ -12,13 +12,19 @@ source values:
   qr      — came from QR code
   referral — came from another site
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.profile import Profile
 
 
 class AnalyticsEvent(Base):
@@ -33,7 +39,7 @@ class AnalyticsEvent(Base):
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="direct")
     qr_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
-    # Anonymised visitor fingerprint — SHA-256(ip + user_agent) first 16 chars
+    # Anonymised visitor fingerprint — daily rotating SHA-256(secret + day + ip + user_agent)
     visitor_hash: Mapped[str] = mapped_column(String(32), nullable=False, default="")
 
     # Stored only for aggregation; strip PII before production if required
@@ -49,7 +55,7 @@ class AnalyticsEvent(Base):
         index=True,
     )
 
-    profile: Mapped["Profile"] = relationship(  # type: ignore[name-defined]
+    profile: Mapped[Profile] = relationship(
         "Profile", back_populates="analytics_events"
     )
 

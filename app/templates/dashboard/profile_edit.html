@@ -4,11 +4,11 @@
 {% block page_title %}Profile Settings{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto space-y-8">
+<div class="max-w-4xl mx-auto space-y-8 surface-light">
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-black text-slate-900 tracking-tight">Edit Profile</h1>
-      <p class="text-slate-500 font-medium mt-1">Your public-facing identity. Keep it sharp and current.</p>
+      <p class="text-slate-500 font-medium mt-1">Keep your public profile accurate, polished, and easy to share.</p>
     </div>
     {% if profile and profile.slug %}
     <a href="/p/{{ profile.slug }}" target="_blank" class="flex items-center gap-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-5 py-2.5 rounded-2xl transition-all border border-brand-100/50">
@@ -22,7 +22,7 @@
     <!-- Left Column: Visuals & Assets -->
     <div class="space-y-8">
       <!-- Profile Image -->
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium text-center">
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated text-center">
         <div class="relative inline-block mb-6 group">
           <div class="absolute -inset-2 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
           {% if profile and profile.profile_image %}
@@ -57,7 +57,7 @@
       </div>
 
       <!-- Resume Asset -->
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-premium">
+      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
         <h3 class="font-black text-slate-900 mb-4 flex items-center gap-2">
           <i data-lucide="file-text" class="w-5 h-5 text-brand-600"></i>
           Resume
@@ -75,6 +75,16 @@
             <i data-lucide="external-link" class="w-4 h-4"></i>
           </a>
         </div>
+        {% if resume_preview_url %}
+        <div class="mb-4">
+          <a href="{{ resume_preview_url }}" target="_blank" rel="noopener noreferrer" class="block group" aria-label="Open resume preview in a new tab">
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <img src="{{ resume_preview_url }}" alt="Resume preview" class="w-full h-auto object-cover transition-transform duration-200 group-hover:scale-[1.01]">
+            </div>
+            <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Preview of the first resume page</p>
+          </a>
+        </div>
+        {% endif %}
         {% endif %}
 
         <form action="/dashboard/profile/resume" method="post" enctype="multipart/form-data">
@@ -87,27 +97,26 @@
         </form>
         <p class="text-[10px] text-slate-400 mt-3 font-bold uppercase tracking-tighter text-center">Max file size: 5MB</p>
 
-        {% if profile and profile.resume_pdf %}
-        <form action="/dashboard/profile/resume/analyze" method="post" id="ai-analyze-form">
-          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-          <button type="submit" id="ai-analyze-btn"
-                  onclick="startAiAnalysis(event)"
-                  class="mt-3 w-full relative overflow-hidden flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-600 via-violet-600 to-brand-600 bg-[length:200%_100%] animate-shimmer text-white font-black py-3.5 px-5 rounded-2xl shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all hover:-translate-y-0.5 group">
-            <i data-lucide="sparkles" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i>
-            <span id="ai-btn-label">Analyze with AI</span>
-            <span id="ai-btn-loading" class="hidden items-center gap-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-              Analyzing...
-            </span>
-          </button>
-        </form>
-        <p class="text-[10px] text-center mt-2 text-slate-400 font-bold uppercase tracking-tight">
-          Auto-fills profile from your resume
-        </p>
-        {% endif %}
+        <div class="mt-6 pt-6 border-t border-slate-100 space-y-4">
+          <div>
+            <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest">AI Fill with Resume</h4>
+            <p class="mt-1 text-xs font-medium text-slate-500">Stage suggested profile data from a PDF resume for review. Nothing is published until you save profile changes.</p>
+          </div>
+          {% if ai_resume_enabled %}
+          <form action="/dashboard/profile/resume/ai-fill" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+            <label class="w-full flex items-center justify-center gap-2 bg-brand-50 border-2 border-dashed border-brand-200 hover:border-brand-400 p-4 rounded-2xl cursor-pointer transition-all group">
+              <i data-lucide="sparkles" class="w-5 h-5 text-brand-600"></i>
+              <span class="text-sm font-bold text-brand-700">Upload PDF for AI analysis</span>
+              <input type="file" name="file" accept="application/pdf" class="hidden" onchange="this.form.requestSubmit()" />
+            </label>
+          </form>
+          {% else %}
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-xs font-medium text-slate-500">
+            AI resume fill is unavailable until <code class="font-bold text-slate-700">GEMINI_API_KEY</code> is configured.
+          </div>
+          {% endif %}
+        </div>
       </div>
       
     </div>
@@ -118,18 +127,18 @@
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
         
         <!-- Identity Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
               <i data-lucide="fingerprint" class="w-5 h-5"></i>
             </div>
-            <h2 class="text-xl font-black text-slate-900">Identity</h2>
+            <h2 class="text-xl font-black text-slate-900">Profile Basics</h2>
           </div>
 
           <div class="grid md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Full Name</label>
-              <input type="text" name="full_name" value="{{ profile.full_name or '' }}" 
+              <input type="text" name="full_name" value="{{ form_values.full_name if form_values else (profile.full_name or '') }}" 
                      class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.full_name %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
                      placeholder="e.g. Alex Rivera" maxlength="200" required />
               {% if errors and errors.full_name %}<p class="error-message">{{ errors.full_name }}</p>{% endif %}
@@ -138,7 +147,7 @@
               <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Custom Slug</label>
               <div class="relative flex items-center group">
                 <span class="absolute left-5 text-slate-400 font-bold group-focus-within:text-brand-500 transition-colors">/p/</span>
-                <input type="text" name="slug" value="{{ profile.slug or '' }}" 
+                <input type="text" name="slug" value="{{ form_values.slug if form_values else (profile.slug or '') }}" 
                        class="w-full pl-11 pr-5 py-4 rounded-2xl border {% if errors and errors.slug %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
                        placeholder="alex-rivera" maxlength="50" required />
               </div>
@@ -146,7 +155,7 @@
             </div>
             <div class="md:col-span-2 space-y-2">
               <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Professional Headline</label>
-              <input type="text" name="headline" value="{{ profile.headline or '' }}" 
+              <input type="text" name="headline" value="{{ form_values.headline if form_values else (profile.headline or '') }}" 
                      class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.headline %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
                      placeholder="e.g. Senior Product Designer @ Helionexus" maxlength="200" />
               {% if errors and errors.headline %}<p class="error-message">{{ errors.headline }}</p>{% endif %}
@@ -158,49 +167,33 @@
               </div>
               <textarea name="bio" rows="4" id="bio-textarea"
                         class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.bio %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900 resize-none" 
-                        placeholder="Tell your professional story in a few sentences..." maxlength="1000">{{ profile.bio or '' }}</textarea>
+                        placeholder="Tell your professional story in a few sentences..." maxlength="1000">{{ form_values.bio if form_values else (profile.bio or '') }}</textarea>
               {% if errors and errors.bio %}<p class="error-message">{{ errors.bio }}</p>{% endif %}
-              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">Markdown supported</p>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">Basic formatting supported</p>
             </div>
           </div>
         </div>
 
-        <!-- Reach Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <!-- Public Identity Note -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <i data-lucide="zap" class="w-5 h-5"></i>
             </div>
-            <h2 class="text-xl font-black text-slate-900">Reach</h2>
+            <h2 class="text-xl font-black text-slate-900">Public Profile Scope</h2>
           </div>
 
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Public Email</label>
-              <input type="email" name="email" value="{{ profile.email or '' }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.email %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="alex@example.com" maxlength="200" />
-              {% if errors and errors.email %}<p class="error-message">{{ errors.email }}</p>{% endif %}
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Phone</label>
-              <input type="text" name="phone" value="{{ profile.phone or '' }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.phone %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="+1 (555) 000-0000" maxlength="20" />
-              {% if errors and errors.phone %}<p class="error-message">{{ errors.phone }}</p>{% endif %}
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
-              <input type="text" name="location" value="{{ profile.location or '' }}" 
-                     class="w-full px-5 py-4 rounded-2xl border {% if errors and errors.location %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
-                     placeholder="e.g. San Francisco, CA" maxlength="200" />
-              {% if errors and errors.location %}<p class="error-message">{{ errors.location }}</p>{% endif %}
-            </div>
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-6">
+            <p class="text-sm font-bold text-slate-700 leading-relaxed">
+              Public profiles now focus on your name, headline, bio, skills, experience, projects, and professional links.
+              Private account details like email, phone, address, password, and billing stay in
+              <a href="/settings" class="text-brand-600 hover:text-brand-700">Settings</a>.
+            </p>
           </div>
         </div>
 
         <!-- Links Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
               <i data-lucide="share-2" class="w-5 h-5"></i>
@@ -219,7 +212,7 @@
               <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">{{ label }}</label>
               <div class="relative flex items-center group">
                 <i data-lucide="{{ icon }}" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
-                <input type="url" name="{{ name }}" value="{{ profile | attr(name) or '' }}" 
+                <input type="url" name="{{ name }}" value="{{ form_values[name] if form_values else (profile | attr(name) or '') }}" 
                        class="w-full pl-12 pr-5 py-4 rounded-2xl border {% if errors and errors[name] %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
                        placeholder="{{ placeholder }}" maxlength="500" />
               </div>
@@ -230,7 +223,7 @@
         </div>
 
         <!-- Visibility Section -->
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-premium">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
               <i data-lucide="eye" class="w-5 h-5"></i>
@@ -284,9 +277,76 @@
     </div>
   </div>
 
+  {% if resume_prefill %}
+  <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-brand-200 shadow-elevated">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+      <div>
+        <h2 class="text-xl font-black text-slate-900">AI Resume Review</h2>
+        <p class="text-sm text-slate-500 mt-1">These suggestions are staged for review only. Save your profile to publish any edits you keep.</p>
+      </div>
+      <form action="/dashboard/profile/resume/ai-clear" method="post">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <button type="submit" class="rounded-2xl border border-slate-200 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
+          Clear AI Draft
+        </button>
+      </form>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-8">
+      <div class="space-y-4">
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Suggested basics</p>
+          <div class="space-y-3 text-sm">
+            {% if resume_prefill.full_name %}<p><span class="font-black text-slate-900">Name:</span> <span class="text-slate-600">{{ resume_prefill.full_name }}</span></p>{% endif %}
+            {% if resume_prefill.headline %}<p><span class="font-black text-slate-900">Headline:</span> <span class="text-slate-600">{{ resume_prefill.headline }}</span></p>{% endif %}
+          </div>
+        </div>
+        {% if resume_prefill.bio %}
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Suggested summary</p>
+          <p class="text-sm font-medium leading-relaxed text-slate-700 whitespace-pre-line">{{ resume_prefill.bio }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="space-y-4">
+        {% if resume_prefill.skills %}
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Suggested skills</p>
+          <div class="flex flex-wrap gap-2">
+            {% for skill in resume_prefill.skills %}
+            <span class="rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 border border-slate-200">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% for title, items in [('Experience', resume_prefill.experience), ('Education', resume_prefill.education), ('Projects', resume_prefill.projects)] %}
+          {% if items %}
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Suggested {{ title }}</p>
+            <div class="space-y-3">
+              {% for item in items[:3] %}
+              <div class="rounded-xl bg-white border border-slate-200 px-4 py-3">
+                <p class="text-sm font-black text-slate-900">{{ item.title or item.school or item.name }}</p>
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">{{ item.company or item.degree or item.url or 'Resume extraction' }}</p>
+                {% if item.description %}
+                <p class="mt-2 text-sm font-medium text-slate-600 leading-relaxed">{{ item.description }}</p>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Elite Customization (full-width, below the grid, shown to active elite users only) -->
   {% if user.role == 'admin' or (user.subscription_tier == 'elite' and user.subscription_status == 'active') %}
-  <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-brand-200 shadow-premium">
+  <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-brand-200 shadow-elevated">
     <div class="flex items-center gap-3 mb-8">
       <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
         <i data-lucide="sparkles" class="w-5 h-5"></i>
@@ -405,21 +465,5 @@
       indicator.style.visibility = 'hidden';
     });
   })();
-
-  // AI Resume Analyze — loading state
-  function startAiAnalysis(e) {
-    const btn = document.getElementById('ai-analyze-btn');
-    const label = document.getElementById('ai-btn-label');
-    const spinner = document.getElementById('ai-btn-loading');
-    if (!btn || !label || !spinner) return;
-
-    btn.disabled = true;
-    btn.classList.add('opacity-80', 'cursor-not-allowed');
-    label.classList.add('hidden');
-    spinner.classList.remove('hidden');
-    spinner.classList.add('flex');
-
-    // Allow form submission to proceed naturally
-  }
 </script>
 {% endblock %}

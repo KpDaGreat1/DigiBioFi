@@ -11,6 +11,8 @@
     <span class="text-sm text-white font-medium">Users</span>
   </div>
   <div class="flex items-center gap-4">
+    <a href="/admin/messages" class="text-sm text-slate-300 hover:text-white">Messages</a>
+    <a href="/admin/articles" class="text-sm text-slate-300 hover:text-white">Articles</a>
     <a href="/dashboard" class="text-sm text-slate-400 hover:text-white">My Dashboard</a>
     <a href="/logout" class="text-sm text-red-400 hover:text-red-300">Logout</a>
   </div>
@@ -44,9 +46,9 @@
             <div class="font-medium text-slate-800">{{ u.username }}</div>
             <div class="text-xs text-slate-400 break-all">{{ u.email }}</div>
             <div class="flex gap-2 mt-2 flex-wrap">
-              {% if u.role == "admin" %}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-50 text-brand-700">Admin</span>
-              {% endif %}
+              {% with role=u.role %}
+                {% include "partials/role_badge.html" %}
+              {% endwith %}
               {% if is_locked %}
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700">Locked</span>
               {% endif %}
@@ -62,8 +64,9 @@
             <form action="/admin/users/{{ u.id }}/set-role" method="post" class="flex items-center gap-2">
               <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
               <select name="role" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
-                <option value="user" {{ 'selected' if u.role == 'user' else '' }}>user</option>
-                <option value="admin" {{ 'selected' if u.role == 'admin' else '' }}>admin</option>
+                {% for role_name in ("user", "business", "freelancer", "admin") %}
+                <option value="{{ role_name }}" {{ 'selected' if u.role == role_name else '' }}>{{ role_name }}</option>
+                {% endfor %}
               </select>
               <button type="submit" class="rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
                 Save
@@ -82,14 +85,21 @@
               <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
               <select name="tier" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
                 {% for tier in ("free", "basic", "elite") %}
-                {# treat legacy "premium" as "elite" for display #}
-                <option value="{{ tier }}" {{ 'selected' if u.subscription_tier == tier or (tier == 'elite' and u.subscription_tier == 'premium') else '' }}>{{ tier }}</option>
+                <option value="{{ tier }}" {{ 'selected' if u.subscription_tier == tier else '' }}>{{ tier }}</option>
                 {% endfor %}
               </select>
               <button type="submit" class="rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                Save
+                Manual Override
               </button>
             </form>
+            {% if stripe_available and u.stripe_customer_id %}
+            <form action="/admin/users/{{ u.id }}/sync-billing" method="post" class="mt-2">
+              <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+              <button type="submit" class="rounded-lg border border-brand-blue/20 px-2.5 py-2 text-xs font-semibold text-brand-blue hover:bg-brand-blue/10">
+                Sync Stripe
+              </button>
+            </form>
+            {% endif %}
             {% endif %}
           </td>
 
@@ -122,7 +132,16 @@
               <form action="/admin/users/{{ u.id }}/toggle-active" method="post">
                 <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
                 <button type="submit" class="w-full rounded-lg border px-3 py-2 text-xs font-semibold transition-colors {% if u.is_active %}border-red-200 text-red-600 hover:bg-red-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %}">
-                  {{ 'Deactivate' if u.is_active else 'Activate' }}
+                  {{ 'Freeze' if u.is_active else 'Unfreeze' }}
+                </button>
+              </form>
+              {% endif %}
+
+              {% if not is_locked %}
+              <form action="/admin/users/{{ u.id }}/impersonate" method="post">
+                <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+                <button type="submit" class="w-full rounded-lg border border-brand-gold/25 px-3 py-2 text-xs font-semibold text-brand-gold hover:bg-brand-gold/10">
+                  Impersonate
                 </button>
               </form>
               {% endif %}
@@ -140,7 +159,7 @@
               <form action="/admin/users/{{ u.id }}/delete" method="post" onsubmit="return confirm('Delete {{ u.email }} and all related records?');">
                 <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
                 <button type="submit" class="w-full rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">
-                  Delete User
+                  Nuke User
                 </button>
               </form>
               {% else %}

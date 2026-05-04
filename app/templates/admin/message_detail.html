@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Message #{{ msg.id }} - Admin - DigiBioFi{% endblock %}
+
+{% block body %}
+<nav class="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <a href="/dashboard" class="font-bold text-brand-400 text-lg">DigiBioFi</a>
+    <span class="text-slate-600">/</span>
+    <a href="/admin" class="text-sm text-slate-300 font-medium hover:text-white transition-colors">Admin</a>
+    <span class="text-slate-600">/</span>
+    <a href="/admin/messages" class="text-sm text-slate-300 font-medium hover:text-white transition-colors">Messages</a>
+    <span class="text-slate-600">/</span>
+    <span class="text-sm text-slate-300 font-medium">#{{ msg.id }}</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="/admin/messages" class="text-sm text-slate-300 hover:text-white transition-colors">Back to Messages</a>
+    <a href="/logout" class="text-sm text-red-400 hover:text-red-300 transition-colors">Logout</a>
+  </div>
+</nav>
+
+<main class="max-w-4xl mx-auto px-4 py-8">
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+    <div class="flex items-start justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-bold text-slate-800 mb-1">{{ msg.subject }}</h1>
+        <p class="text-sm text-slate-400">
+          From <strong class="text-slate-600">{{ msg.sender_name }}</strong>
+          &lt;{{ msg.sender_email }}&gt;
+        </p>
+        <p class="text-xs text-slate-400 mt-1">{{ msg.created_at.strftime('%B %d, %Y at %H:%M UTC') }}</p>
+        <p class="mt-2">
+          <span class="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase {% if msg.source == 'internal' %}bg-sky-100 text-sky-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+            {{ msg.source }} sender
+          </span>
+          {% if msg.user_id %}
+          <a href="/admin/users" class="ml-2 text-xs text-brand-600 hover:underline">Registered user #{{ msg.user_id }}</a>
+          {% endif %}
+        </p>
+      </div>
+      <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold uppercase
+        {% if msg.status == 'unread' %}bg-brand-100 text-brand-700
+        {% elif msg.status == 'read' %}bg-slate-100 text-slate-600
+        {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+        {{ msg.status }}
+      </span>
+    </div>
+
+    <div class="bg-slate-50 rounded-xl p-6 mb-8 text-slate-700 leading-relaxed whitespace-pre-wrap text-sm">{{ msg.body }}</div>
+
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold text-slate-500 mr-2">Set status:</span>
+        {% for s in ["unread", "read", "resolved"] %}
+        <form method="post" action="/admin/messages/{{ msg.id }}/set-status" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+          <input type="hidden" name="status" value="{{ s }}">
+          <button type="submit" class="px-4 py-2 rounded-full text-sm font-bold border transition-all
+            {% if msg.status == s %}bg-slate-900 text-white border-slate-900
+            {% else %}bg-white text-slate-500 border-slate-200 hover:border-brand-300{% endif %}">
+            {{ s | capitalize }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="/admin/messages/{{ msg.id }}/delete" onsubmit="return confirm('Delete this message permanently?');">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <button type="submit" class="px-4 py-2 rounded-full text-sm font-bold border border-red-200 bg-white text-red-600 hover:bg-red-50 transition-all">
+          Delete Message
+        </button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

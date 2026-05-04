@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} — DigiBioFi{% endblock %}
+{% block canonical_url %}{{ base_url }}/insights/{{ article.slug }}{% endblock %}
+
+{% block head %}
+<meta name="description" content="{{ article.summary | truncate(160) }}" />
+{% if article.hero_image %}
+<meta property="og:image" content="{{ article.hero_image }}">
+{% endif %}
+<meta property="og:title" content="{{ article.title }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-white surface-light">
+
+  <!-- Nav -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-black text-brand-600 text-xl tracking-tight">
+      <div class="bg-gradient-to-br from-brand-500 to-accent-500 p-1.5 rounded-lg">
+        <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+      </div>
+      DigiBioFi
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-500">
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/tools/job-matcher" class="hover:text-brand-600 transition-colors">Job Matcher</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      {% if user %}
+      <a href="/dashboard" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Dashboard</a>
+      {% else %}
+      <a href="/login" class="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Log in</a>
+      <a href="/register" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-black px-6 py-2.5 rounded-full transition-all">Get Started Free</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-12">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8">
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
+      <span>/</span>
+      {% if article.category %}
+      <span class="text-brand-600">{{ article.category }}</span>
+      {% else %}
+      <span>Article</span>
+      {% endif %}
+    </nav>
+
+    <!-- Hero image -->
+    {% if article.hero_image %}
+    <img src="{{ article.hero_image }}" alt="{{ article.title }}"
+         class="w-full rounded-2xl object-cover max-h-72 mb-8">
+    {% endif %}
+
+    <!-- Header -->
+    <header class="mb-8">
+      {% if article.category %}
+      <span class="text-xs font-black text-brand-600 uppercase tracking-[0.2em] bg-brand-50 px-3 py-1 rounded-full">{{ article.category }}</span>
+      {% endif %}
+      <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mt-4 mb-3 leading-tight">{{ article.title }}</h1>
+      {% if article.summary %}
+      <p class="text-slate-500 font-medium text-lg leading-relaxed">{{ article.summary }}</p>
+      {% endif %}
+      <div class="flex items-center gap-4 mt-4 text-xs text-slate-400 font-bold">
+        <span>{{ article.created_at.strftime('%B %d, %Y') }}</span>
+        {% if article.tags %}
+        <span>&middot;</span>
+        {% for tag in article.tags.split(',') %}
+          {% set t = tag.strip() %}
+          {% if t %}<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{{ t }}</span>{% endif %}
+        {% endfor %}
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Video embed -->
+    {% if article.video_url %}
+    <div class="mb-8 aspect-video rounded-2xl overflow-hidden bg-slate-100">
+      <iframe src="{{ article.video_url }}" class="w-full h-full" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen title="{{ article.title }}"></iframe>
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <div class="prose prose-slate max-w-none
+                prose-headings:font-black prose-headings:tracking-tight
+                prose-a:text-brand-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                prose-img:rounded-xl prose-img:shadow-sm
+                prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                prose-blockquote:border-brand-400 prose-blockquote:bg-brand-50 prose-blockquote:py-1 prose-blockquote:rounded-r-xl">
+      {{ article.content_html | safe }}
+    </div>
+
+    <!-- Back -->
+    <div class="mt-12 pt-8 border-t border-slate-100">
+      <a href="/insights" class="inline-flex items-center gap-2 text-brand-600 font-black text-sm hover:gap-3 transition-all">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back to News
+      </a>
+    </div>
+  </main>
+
+  <!-- Bottom CTA -->
+  <section class="bg-brand-600 py-16 px-6 text-center mt-12">
+    <h2 class="text-2xl font-black text-white mb-3 tracking-tight">Build your professional profile</h2>
+    <p class="text-brand-100 font-medium mb-6 max-w-lg mx-auto">Put your skills and experience front and center with a free DigiBioFi profile.</p>
+    <a href="/register" class="bg-white text-brand-600 font-black px-10 py-4 rounded-2xl hover:bg-brand-50 transition-all shadow-xl">Create Free Profile</a>
+  </section>
+
+  <footer class="bg-slate-50 border-t border-slate-200 py-8 px-6 text-center">
+    <div class="flex flex-wrap justify-center gap-8 text-sm font-bold text-slate-400 mb-3">
+      <a href="/" class="hover:text-brand-600 transition-colors">Home</a>
+      <a href="/insights" class="hover:text-brand-600 transition-colors">Insights</a>
+      <a href="/explore" class="hover:text-brand-600 transition-colors">Explore</a>
+      <a href="/contact" class="hover:text-brand-600 transition-colors">Contact</a>
+      <a href="/privacy" class="hover:text-brand-600 transition-colors">Privacy</a>
+      <a href="/terms" class="hover:text-brand-600 transition-colors">Terms</a>
+    </div>
+    <p class="text-xs text-slate-300 font-bold uppercase tracking-widest">&copy; 2026 DigiBioFi. All rights reserved.</p>
+  </footer>
+</div>
+{% endblock %}

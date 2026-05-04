@@ -21,7 +21,7 @@
   {% if profile.educations %}
   <div class="grid md:grid-cols-2 gap-8">
     {% for edu in profile.educations %}
-    <div class="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-premium hover:border-violet-300 transition-all group relative flex flex-col justify-between">
+    <div class="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-elevated hover:border-violet-300 transition-all group relative flex flex-col justify-between">
       <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 flex gap-2">
         <a href="/dashboard/education/{{ edu.id }}/edit"
            class="p-2.5 rounded-2xl text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all border border-transparent hover:border-violet-100 shadow-sm bg-white" title="Edit">
@@ -98,7 +98,7 @@
   {% endif %}
 
   <!-- Add new entry form -->
-  <div id="add-edu-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-premium relative overflow-hidden">
+  <div id="add-edu-form" class="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-200 shadow-elevated relative overflow-hidden">
     <div class="absolute top-0 right-0 w-64 h-64 bg-violet-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-40"></div>
     
     <div class="relative z-10">

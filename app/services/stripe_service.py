@@ -13,6 +13,7 @@ def create_checkout_session(
     from app.core.config import settings
 
     stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
     price_id = settings.get_stripe_price(plan)
 
     session = stripe.checkout.Session.create(
@@ -33,6 +34,7 @@ def get_or_create_customer(email: str, existing_customer_id: str | None) -> str:
     from app.core.config import settings
 
     stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
 
     if existing_customer_id:
         return existing_customer_id
@@ -47,8 +49,22 @@ def create_billing_portal_session(customer_id: str, return_url: str) -> str:
     from app.core.config import settings
 
     stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
     session = stripe.billing_portal.Session.create(
         customer=customer_id,
         return_url=return_url,
     )
     return session.url
+
+
+def get_latest_subscription(customer_id: str):
+    """Return the most recent subscription for a Stripe customer, if any."""
+    import stripe
+    from app.core.config import settings
+
+    stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
+    subscriptions = stripe.Subscription.list(customer=customer_id, limit=1)
+    if not subscriptions.data:
+        return None
+    return subscriptions.data[0]

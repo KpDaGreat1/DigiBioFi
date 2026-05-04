@@ -18,8 +18,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app
 COPY . .
 
+RUN useradd --create-home --shell /usr/sbin/nologin appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
 # Expose port
 EXPOSE 8000
 
 # Start app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "if [ \"${TRUST_PROXY_HEADERS:-}\" = \"true\" ] || [ \"${APP_ENV:-development}\" = \"production\" ]; then exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'; else exec uvicorn app.main:app --host 0.0.0.0 --port 8000; fi"]

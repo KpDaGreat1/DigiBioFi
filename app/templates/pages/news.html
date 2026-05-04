@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Career & Professional Development News — DigiBioFi{% endblock %}
+{% block canonical_url %}{{ base_url }}/insights{% endblock %}
+
+{% block head %}
+<meta name="description" content="Career insights, professional development tips, and job market trends for modern professionals. Practical advice for job seekers, freelancers, and career changers." />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
+
+  <main class="flex-1 max-w-7xl mx-auto px-6 py-20">
+    <!-- Header -->
+    <div class="mb-20">
+      <div class="reveal inline-flex items-center gap-2 text-brand-blue text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+        <span class="w-8 h-[1px] bg-brand-blue"></span>
+        Career Insights
+      </div>
+      <h1 class="reveal reveal-delay-1 font-display text-5xl md:text-7xl font-bold text-white tracking-tight mb-8">
+        Insights for <span class="text-gradient-blue">modern careers.</span>
+      </h1>
+      <p class="reveal reveal-delay-2 text-slate-400 font-medium text-lg max-w-2xl leading-relaxed">
+        Practical coverage on hiring, professional visibility, career growth, and the tools people use to move forward.
+      </p>
+    </div>
+
+    <section class="grid md:grid-cols-3 gap-6 mb-16">
+      {% for title, desc in [
+        ('Career strategy', 'Advice on positioning, job search decisions, and professional visibility.'),
+        ('Portfolio growth', 'Ideas for presenting your work, profile, and skills with more clarity.'),
+        ('Freelance and tools', 'Useful resources for finding clients, improving workflows, and staying current.'),
+      ] %}
+      <div class="premium-card p-6">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-2">{{ title }}</h2>
+        <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- Category Filter -->
+    <div class="reveal reveal-delay-3 flex flex-wrap gap-3 mb-16" id="filter-bar">
+      <button
+        onclick="filterCategory('all')"
+        id="filter-all"
+        class="filter-btn active px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all bg-brand-blue border-brand-blue text-white shadow-glow"
+      >
+        All Topics
+      </button>
+      {% for cat in categories %}
+      <button
+        onclick="filterCategory('{{ cat | lower | replace(' ', '-') }}')"
+        id="filter-{{ cat | lower | replace(' ', '-') }}"
+        class="filter-btn px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-white"
+        data-category="{{ cat | lower | replace(' ', '-') }}"
+      >
+        {{ cat }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Featured Article -->
+    {% if articles %}
+    {% set featured = articles[0] %}
+    {% if source == "db" %}
+      {% set featured_href = "/insights/" ~ featured.slug %}
+      {% set featured_target = "" %}
+    {% else %}
+      {% set featured_href = featured.url %}
+      {% set featured_target = "_blank" %}
+    {% endif %}
+
+    <div class="featured-article mb-20 premium-panel overflow-hidden group" data-category="{{ featured.category | lower | replace(' ', '-') }}">
+      <div class="grid md:grid-cols-2">
+        <div class="p-10 md:p-16 flex flex-col justify-center">
+          <span class="inline-block text-brand-purple font-black text-[10px] uppercase tracking-[0.2em] mb-6">{{ featured.category }}</span>
+          <h2 class="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight tracking-tight group-hover:text-brand-blue transition-colors">{{ featured.title }}</h2>
+          <p class="text-slate-400 font-medium leading-relaxed mb-8 text-lg">{{ featured.summary }}</p>
+
+          <div class="flex items-center gap-8">
+              <a href="{{ featured_href }}" {% if featured_target %}target="{{ featured_target }}" rel="noopener noreferrer"{% endif %}
+               class="btn-primary py-3 px-8 text-sm">
+              Read Article
+              <i data-lucide="arrow-right" class="inline-block ml-2 w-4 h-4"></i>
+            </a>
+            {% if featured.source %}
+            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">Source: {{ featured.source }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="relative min-h-[300px] bg-slate-800/50 flex items-center justify-center overflow-hidden">
+          {% if source == "db" and featured.hero_image %}
+          <img src="{{ featured.hero_image }}" alt="{{ featured.title }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700">
+          {% else %}
+          <div class="text-center relative z-10">
+            <div class="w-24 h-24 bg-brand-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-brand-blue/20">
+              <i data-lucide="zap" class="w-10 h-10 text-brand-blue"></i>
+            </div>
+            <p class="text-slate-500 font-bold text-xs uppercase tracking-widest">Featured Article</p>
+          </div>
+          {% endif %}
+          <div class="absolute inset-0 bg-gradient-to-r from-ui-panel via-transparent to-transparent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Article Grid -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" id="articles-grid">
+      {% for article in articles[1:] %}
+      {% if source == "db" %}
+        {% set article_href = "/insights/" ~ article.slug %}
+        {% set article_target = "" %}
+      {% else %}
+        {% set article_href = article.url %}
+        {% set article_target = "_blank" %}
+      {% endif %}
+      <article
+        class="article-card premium-card overflow-hidden group"
+        data-category="{{ article.category | lower | replace(' ', '-') }}"
+      >
+        <div class="aspect-[16/10] bg-slate-800 relative overflow-hidden">
+          {% if source == "db" and article.hero_image %}
+          <img src="{{ article.hero_image }}" alt="{{ article.title }}" class="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+             <i data-lucide="file-text" class="w-12 h-12 text-slate-700"></i>
+          </div>
+          {% endif %}
+          <div class="absolute top-4 left-4">
+            <span class="text-[9px] font-black text-white uppercase tracking-widest bg-brand-blue px-3 py-1.5 rounded-lg shadow-lg">
+              {{ article.category }}
+            </span>
+          </div>
+        </div>
+
+        <div class="p-8">
+          <h3 class="font-bold text-white text-xl leading-tight mb-4 group-hover:text-brand-blue transition-colors tracking-tight">
+            {{ article.title }}
+          </h3>
+          <p class="text-slate-400 text-sm font-medium leading-relaxed mb-6 line-clamp-3">
+            {{ article.summary }}
+          </p>
+
+          <div class="flex items-center justify-between">
+            <a href="{{ article_href }}" {% if article_target %}target="{{ article_target }}" rel="noopener noreferrer"{% endif %}
+               class="text-brand-blue font-bold text-sm flex items-center gap-2 group/link">
+              Read More
+              <i data-lucide="chevron-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
+            </a>
+            {% if article.read_time %}
+            <span class="text-slate-600 text-[10px] font-bold uppercase tracking-widest">{{ article.read_time }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if not articles %}
+    <div class="premium-panel p-12 text-center mb-20">
+      <h2 class="text-2xl font-bold text-white mb-4 tracking-tight">Fresh articles are on the way.</h2>
+      <p class="text-slate-400 font-medium max-w-xl mx-auto mb-8">In the meantime, browse public profiles, try the job matcher, or learn how DigiBioFi helps professionals present their work clearly.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/explore" class="btn-primary px-8">Explore Profiles</a>
+        <a href="/tools/job-matcher" class="px-8 py-3 border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all">Try Job Matcher</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Resource Section -->
+    <section class="mt-32 premium-panel p-10 md:p-16">
+      <div class="mb-12">
+        <h2 class="text-3xl font-bold text-white tracking-tight mb-4">Useful Career Resources</h2>
+        <p class="text-slate-400 font-medium">Established platforms and guides that can support job search, learning, and client work.</p>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for icon, name, desc, href in [
+          ('briefcase', 'LinkedIn Jobs', 'Professional networking and job discovery', 'https://www.linkedin.com/jobs'),
+          ('graduation-cap', 'Coursera', 'Structured online learning', 'https://www.coursera.org'),
+          ('search', 'Indeed', 'Job search and listings', 'https://www.indeed.com/jobs'),
+          ('code', 'freeCodeCamp', 'Technical literacy and portfolio-ready projects', 'https://www.freecodecamp.org'),
+          ('briefcase-business', 'The Muse', 'Career advice, interviewing, and job search guidance', 'https://www.themuse.com/advice'),
+          ('book-open', 'Codecademy Guides', 'Technical learning and career growth reading', 'https://www.codecademy.com/resources/blog/'),
+          ('file-text', 'Upwork Resources', 'Freelance pricing, proposals, and client-work guidance', 'https://www.upwork.com/resources')
+        ] %}
+        <a href="{{ href }}" target="_blank" rel="noopener noreferrer" aria-label="{{ name }} (opens in a new tab)"
+           class="block p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors">
+          <div class="w-10 h-10 bg-brand-blue/10 rounded-xl flex items-center justify-center mb-4">
+            <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-blue"></i>
+          </div>
+          <p class="font-bold text-white text-sm mb-1">{{ name }}</p>
+          <p class="text-slate-500 text-xs font-medium leading-relaxed">{{ desc }}</p>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom CTA -->
+  <section class="relative py-24 px-6 text-center border-t border-white/5 overflow-hidden">
+    <div class="absolute inset-0 z-0">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-brand-purple/10 rounded-full blur-[100px]"></div>
+    </div>
+    <div class="relative z-10">
+      <h2 class="text-3xl font-bold text-white mb-4 tracking-tight">Turn your experience into a stronger public profile.</h2>
+      <p class="text-slate-400 font-medium mb-10 max-w-lg mx-auto">Create a profile that makes it easier for recruiters, clients, and collaborators to understand what you do.</p>
+      <div class="flex flex-col sm:flex-row gap-6 justify-center">
+        <a href="/register" class="btn-primary px-10">Create Your Profile</a>
+        <a href="/tools/job-matcher" class="px-10 py-3 border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all">Try Job Matcher</a>
+      </div>
+    </div>
+  </section>
+
+  {% include "partials/footer.html" %}
+</div>
+
+<script>
+function filterCategory(cat) {
+  // Update active button
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active', 'bg-brand-blue', 'border-brand-blue', 'text-white', 'shadow-glow');
+    btn.classList.add('bg-white/5', 'border-white/10', 'text-slate-400');
+  });
+
+  const activeBtn = cat === 'all'
+    ? document.getElementById('filter-all')
+    : document.querySelector(`[data-category="${cat}"]`);
+
+  if (activeBtn) {
+    activeBtn.classList.remove('bg-white/5', 'border-white/10', 'text-slate-400');
+    activeBtn.classList.add('bg-brand-blue', 'border-brand-blue', 'text-white', 'shadow-glow');
+  }
+
+  // Filter articles
+  document.querySelectorAll('.article-card, .featured-article').forEach(card => {
+    if (cat === 'all' || card.dataset.category === cat) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

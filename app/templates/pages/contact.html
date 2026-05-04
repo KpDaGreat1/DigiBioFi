@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Contact — DigiBioFi{% endblock %}
+{% block canonical_url %}{{ base_url }}/contact{% endblock %}
+
+{% block head %}
+<meta name="description" content="Get in touch with the DigiBioFi team. Questions, feedback, support, or business inquiries — we'd love to hear from you." />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
+
+  <main class="flex-1 max-w-6xl mx-auto px-6 py-20">
+    <div class="grid lg:grid-cols-12 gap-20 items-start">
+
+      <!-- Left: Info -->
+      <div class="lg:col-span-5 reveal">
+        <div class="inline-flex items-center gap-2 text-brand-purple text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+          <span class="w-8 h-[1px] bg-brand-purple"></span>
+          Contact
+        </div>
+        <h1 class="text-5xl md:text-7xl font-bold text-white tracking-tight mb-8 leading-[0.9]">
+          Talk with the <br/><span class="text-gradient-blue">DigiBioFi team.</span>
+        </h1>
+        <p class="text-slate-400 font-medium leading-relaxed mb-12 text-lg">
+          Use this form for support, billing questions, feedback, or business inquiries.
+        </p>
+
+        <div class="space-y-8">
+          {% for icon, label, value in [
+            ('send', 'Response channel', 'Email follow-up'),
+            ('globe', 'Website', 'digibiofi.com'),
+            ('clock', 'Queue', 'Handled in submission order'),
+          ] %}
+          <div class="flex items-center gap-5 group">
+            <div class="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:border-brand-blue/30 transition-all">
+              <i data-lucide="{{ icon }}" class="w-5 h-5 text-brand-blue"></i>
+            </div>
+            <div>
+              <p class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{{ label }}</p>
+              <p class="font-bold text-white text-sm tracking-wide">{{ value }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-16 p-8 bg-white/[0.02] border border-white/5 rounded-[2rem]">
+          <h3 class="font-bold text-white mb-6 tracking-tight">Helpful links</h3>
+          <ul class="space-y-4">
+            <li><a href="/register" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-3 transition-colors"><i data-lucide="user-plus" class="w-4 h-4 text-brand-blue"></i> Create Profile</a></li>
+            <li><a href="/what-is-digibiofi" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-3 transition-colors"><i data-lucide="info" class="w-4 h-4 text-brand-blue"></i> How DigiBioFi Works</a></li>
+            <li><a href="/privacy" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-3 transition-colors"><i data-lucide="shield" class="w-4 h-4 text-brand-blue"></i> Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div class="lg:col-span-7 reveal reveal-delay-1">
+        {% if submitted %}
+        <!-- Success State -->
+        <div class="premium-panel p-16 text-center border-dashed">
+          <div class="w-20 h-20 bg-brand-green/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-brand-green/20 shadow-glow">
+            <i data-lucide="check-circle" class="w-10 h-10 text-brand-green"></i>
+          </div>
+          <h2 class="text-3xl font-bold text-white mb-4 tracking-tight">Message received</h2>
+          <p class="text-slate-400 font-medium leading-relaxed mb-10 max-w-sm mx-auto">
+            Thanks for reaching out. We will reply using the email address you provided.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/" class="btn-primary px-10">Return to Home</a>
+            <a href="/contact" class="px-10 py-3 border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all text-xs uppercase tracking-widest">Send Another Message</a>
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Contact Form -->
+        <div class="premium-panel p-10 md:p-12">
+          <h2 class="text-2xl font-bold text-white mb-8 tracking-tight">Send a message</h2>
+
+          {% if errors %}
+          <div class="mb-8 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-300">
+            Please correct the highlighted fields and try again.
+          </div>
+          {% endif %}
+
+          <form method="post" action="/contact" class="space-y-8">
+            <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+
+            <div class="grid sm:grid-cols-2 gap-8">
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value="{{ form.name if form else '' }}"
+                  placeholder="Full Name"
+                  class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all text-sm"
+                />
+                {% if errors and errors.name %}
+                <p class="text-xs font-bold text-red-300">{{ errors.name }}</p>
+                {% endif %}
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value="{{ form.email if form else '' }}"
+                  placeholder="email@example.com"
+                  class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all text-sm"
+                />
+                {% if errors and errors.email %}
+                <p class="text-xs font-bold text-red-300">{{ errors.email }}</p>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Subject</label>
+              <select
+                name="subject"
+                required
+                class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all text-sm appearance-none cursor-pointer"
+              >
+                <option value="" disabled {% if not form or not form.subject %}selected{% endif %}>Select a subject</option>
+                <option value="Account Support" {% if form and form.subject == 'Account Support' %}selected{% endif %}>Account support</option>
+                <option value="Billing Question" {% if form and form.subject == 'Billing Question' %}selected{% endif %}>Billing question</option>
+                <option value="Technical Issue" {% if form and form.subject == 'Technical Issue' %}selected{% endif %}>Technical issue</option>
+                <option value="Feature Request" {% if form and form.subject == 'Feature Request' %}selected{% endif %}>Feature request</option>
+                <option value="Business Inquiry" {% if form and form.subject == 'Business Inquiry' %}selected{% endif %}>Business inquiry</option>
+                <option value="Other" {% if form and form.subject == 'Other' %}selected{% endif %}>Miscellaneous</option>
+              </select>
+              {% if errors and errors.subject %}
+              <p class="text-xs font-bold text-red-300">{{ errors.subject }}</p>
+              {% endif %}
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Message</label>
+              <textarea
+                name="message"
+                required
+                rows="5"
+                placeholder="How can we help?"
+                class="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-brand-blue transition-all text-sm resize-none"
+              >{{ form.message if form else '' }}</textarea>
+              {% if errors and errors.message %}
+              <p class="text-xs font-bold text-red-300">{{ errors.message }}</p>
+              {% endif %}
+            </div>
+
+            <button
+              type="submit"
+              class="btn-primary w-full py-5 text-xs font-black uppercase tracking-[0.2em] shadow-glow"
+            >
+              Send Message
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  {% include "partials/footer.html" %}
+</div>
+{% endblock %}

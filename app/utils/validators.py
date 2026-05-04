@@ -2,6 +2,7 @@
 File upload and input validation helpers.
 """
 import hashlib
+from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -68,13 +69,24 @@ def safe_filename(original: str) -> str:
     return name[:MAX_FILENAME_LEN]
 
 
-def hash_visitor(ip: str, user_agent: str) -> str:
+def hash_visitor(ip: str, user_agent: str, current_day: date | None = None) -> str:
     """
-    Create an anonymised visitor fingerprint for analytics deduplication.
-    SHA-256(ip + user_agent) — first 16 hex chars.
-    This is not reversible to PII and doesn't store raw IP.
+    Create a daily-rotating anonymised visitor fingerprint for analytics deduplication.
+    The hash is derived from SECRET_KEY + day + IP + user agent so it rotates every UTC day
+    and cannot be reversed back into a raw IP address from stored data.
     """
-    raw = f"{ip}|{user_agent}"
+    day = current_day or datetime.now(timezone.utc).date()
+    raw = f"{settings.secret_key}|{day.isoformat()}|{ip or 'unknown'}|{user_agent or ''}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def hash_daily_client_token(ip: str, secret_key: str, current_day: date | None = None) -> str:
+    """
+    Create a daily-rotating anonymized token for a client IP.
+    The same IP hashes consistently for one UTC day, then rotates automatically.
+    """
+    day = current_day or datetime.now(timezone.utc).date()
+    raw = f"{secret_key}|{day.isoformat()}|{ip or 'unknown'}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
@@ -91,6 +103,42 @@ def sanitize_text(value: str) -> str:
     return cleaned
 
 
+def sanitize_plain_text(value: str) -> str:
+    """
+    Strip all HTML from plain-text inputs such as contact subjects and messages.
+    """
+    import bleach
+
+    return bleach.clean(value or "", tags=[], attributes={}, strip=True).strip()
+
+
+def sanitize_article_html(value: str) -> str:
+    """
+    Sanitize admin-authored article HTML before it is stored or rendered publicly.
+    Allows basic editorial formatting while stripping active content.
+    """
+    import re
+    import bleach
+
+    cleaned = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", "", value or "")
+    cleaned = re.sub(r"(?is)<iframe[^>]*>.*?</iframe>", "", cleaned)
+
+    allowed_tags = [
+        "p", "br", "ul", "ol", "li",
+        "a", "strong", "em", "b", "i",
+        "blockquote", "code", "pre", "hr",
+        "h2", "h3", "h4",
+    ]
+    allowed_attrs = {"a": ["href", "rel", "target"]}
+    return bleach.clean(
+        cleaned,
+        tags=allowed_tags,
+        attributes=allowed_attrs,
+        protocols=["http", "https", "mailto"],
+        strip=True,
+    )
+
+
 def normalize_external_url(value: str) -> str:
     value = value.strip()
     if not value:
@@ -101,6 +149,16 @@ def normalize_external_url(value: str) -> str:
         raise ValueError("URL must start with http:// or https://")
 
     return value
+
+
+def normalize_optional_external_url(value: str | None) -> str | None:
+    if not value:
+        return None
+
+    try:
+        return normalize_external_url(value)
+    except ValueError:
+        return None
 
 
 _BLOCKED_WORDS: set[str] = {
@@ -119,8 +177,11 @@ def format_pydantic_errors(e: ValidationError) -> dict:
     """Format Pydantic errors into a {field: message} dictionary."""
     errors = {}
     for error in e.errors():
-        # Get the field name from the location tuple
-        field = str(error["loc"][-1])
+        location = error.get("loc") or ()
+        if location:
+            field = str(location[-1])
+        else:
+            field = "confirm_password" if "match" in error["msg"].lower() else "general"
         msg = error["msg"]
         # Clean up common Pydantic message prefixes
         if msg.startswith("Value error, "):

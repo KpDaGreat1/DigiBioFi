@@ -1,0 +1,74 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Messages — DigiBioFi{% endblock %}
+{% block page_title %}Messages{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl mx-auto space-y-8 surface-light">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight">Messages</h1>
+      <p class="text-slate-500 font-medium mt-1">Send support questions to the DigiBioFi team and track their status here.</p>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-[360px_1fr] gap-8">
+    <section class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
+      <h2 class="text-lg font-black text-slate-900 tracking-tight mb-6">Send a message</h2>
+      <form action="/dashboard/messages/send" method="post" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+        <div class="space-y-2">
+          <label class="block text-xs font-black text-slate-700 uppercase tracking-widest">System Support Subject</label>
+          <input type="text" name="subject" maxlength="300" value="Support Request"
+                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10" />
+        </div>
+        <div class="space-y-2">
+          <label class="block text-xs font-black text-slate-700 uppercase tracking-widest">Message</label>
+          <textarea name="body" rows="7" maxlength="5000" required spellcheck="true"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10 resize-none"
+                    placeholder="Describe the issue, question, or billing concern you need help with."></textarea>
+        </div>
+        <button type="submit" class="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black uppercase tracking-widest text-white transition hover:bg-slate-800">
+          Send Message
+        </button>
+      </form>
+    </section>
+
+    <section class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-lg font-black text-slate-900 tracking-tight">System Support</h2>
+          <p class="text-sm text-slate-500">Messages are grouped into your support thread and reviewed in order.</p>
+        </div>
+      </div>
+
+      {% if messages %}
+      <div class="space-y-4">
+        {% for msg in messages %}
+        <article class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+            <div>
+              <h3 class="text-sm font-black text-slate-900 tracking-tight">{{ msg.subject }}</h3>
+              <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">{{ msg.created_at.strftime('%b %d, %Y at %H:%M UTC') }}</p>
+            </div>
+            <span class="inline-flex w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest
+              {% if msg.status == 'unread' %}bg-brand-50 text-brand-600
+              {% elif msg.status == 'read' %}bg-slate-200 text-slate-600
+              {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+              {{ msg.status }}
+            </span>
+          </div>
+          <p class="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700">{{ msg.body }}</p>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+        <p class="text-sm font-black uppercase tracking-widest text-slate-400">No messages yet</p>
+        <p class="mt-3 text-sm font-medium text-slate-500">Use the form to send your first support message.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

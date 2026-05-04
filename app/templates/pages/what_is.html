@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}What Is DigiBioFi? — Professional Profiles for Career Growth{% endblock %}
+{% block canonical_url %}{{ base_url }}/what-is-digibiofi{% endblock %}
+
+{% block head %}
+<meta name="description" content="Learn how DigiBioFi helps professionals turn a static resume into a stronger public profile with projects, QR sharing, and analytics." />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col bg-transparent">
+  {% include "partials/nav.html" %}
+
+  <main>
+    <!-- Hero -->
+    <section class="py-24 md:py-40 px-6">
+      <div class="max-w-5xl mx-auto text-center reveal">
+        <div class="inline-flex items-center gap-2 text-brand-blue text-[10px] font-black uppercase tracking-[0.3em] mb-8">
+          <span class="w-8 h-[1px] bg-brand-blue"></span>
+          How DigiBioFi Works
+        </div>
+        <h1 class="font-display text-6xl md:text-9xl font-bold text-white leading-[0.85] mb-12 tracking-tight">
+          What is<br/>
+          <span class="text-gradient-blue">DigiBioFi?</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
+          DigiBioFi gives you one polished profile for your work, experience, links, QR sharing, and engagement insights.
+        </p>
+      </div>
+    </section>
+
+    <section class="pb-24 px-6">
+      <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
+        {% for title, desc in [
+          ('Profile basics', 'Name, headline, summary, links, contact information, and visibility settings.'),
+          ('Proof of work', 'Experience, projects, education, and skills that help people understand what you do.'),
+          ('Sharing and insight', 'A profile link, QR code, and analytics-ready surfaces for stronger follow-up and visibility.'),
+        ] %}
+        <div class="premium-card p-8">
+          <h2 class="text-xl font-bold text-white tracking-tight mb-3">{{ title }}</h2>
+          <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Why it matters NOW -->
+    <section class="py-32 border-y border-white/5 bg-white/[0.01]">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid md:grid-cols-2 gap-20 items-center">
+          <div class="reveal">
+            <h2 class="text-xs font-black text-brand-purple uppercase tracking-[0.3em] mb-8">The Context</h2>
+            <h3 class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">A static resume is not enough.</h3>
+            <p class="text-slate-400 text-lg leading-relaxed font-medium mb-8">
+              A resume PDF is still useful, but it does not show your projects, links, updates, or the full picture of your work.
+            </p>
+            <div class="space-y-6">
+               <div class="flex gap-4">
+                  <div class="w-6 h-6 rounded-full bg-brand-purple/20 flex items-center justify-center shrink-0">
+                    <i data-lucide="zap" class="w-3 h-3 text-brand-purple"></i>
+                  </div>
+                  <p class="text-slate-300 text-sm font-bold">Always current: update your profile once and keep your public presence up to date.</p>
+               </div>
+               <div class="flex gap-4">
+                  <div class="w-6 h-6 rounded-full bg-brand-blue/20 flex items-center justify-center shrink-0">
+                    <i data-lucide="eye" class="w-3 h-3 text-brand-blue"></i>
+                  </div>
+                  <p class="text-slate-300 text-sm font-bold">Clear engagement data: see visits, QR scans, and profile activity when analytics are enabled.</p>
+               </div>
+            </div>
+          </div>
+          <div class="premium-panel p-12 relative overflow-hidden">
+             <div class="absolute inset-0 bg-gradient-to-br from-brand-purple/10 to-transparent"></div>
+             <div class="relative z-10">
+                <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10">
+                   <i data-lucide="clock" class="w-8 h-8 text-brand-purple"></i>
+                </div>
+                <h4 class="text-2xl font-bold text-white mb-4">Why Now?</h4>
+                <p class="text-slate-400 leading-relaxed font-medium">People increasingly judge opportunities, follow-up, and fit based on what they can quickly review online. A strong public profile makes that easier.</p>
+             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it benefits YOU -->
+    <section class="py-40">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-24 reveal">
+          <h2 class="text-4xl md:text-6xl font-bold text-white tracking-tight">Built for career growth.</h2>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          {% for icon, title, desc in [
+            ('briefcase', 'Job Seekers', 'Give recruiters one current profile that is easier to review than a scattered set of links and attachments.'),
+            ('laptop', 'Freelancers', 'Show your services, portfolio, and availability in one place you can share with clients.'),
+            ('users', 'Networkers', 'Use a QR code or profile link to make follow-up easier after events, meetings, and introductions.'),
+            ('graduation-cap', 'Emerging Talent', 'Build credibility early with a public profile that highlights your strengths, projects, and direction.'),
+            ('star', 'Career Changers', 'Explain your transition clearly by combining experience, projects, and skills in one profile.'),
+            ('shield-check', 'Leaders', 'Control how your profile is presented while keeping it easy to share and maintain.')
+          ] %}
+          <div class="premium-card p-10 group reveal">
+            <div class="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-8 group-hover:bg-brand-blue/20 transition-all">
+              <i data-lucide="{{ icon }}" class="w-6 h-6 text-brand-blue"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-4 tracking-tight">{{ title }}</h3>
+            <p class="text-slate-400 leading-relaxed font-medium text-sm">{{ desc }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing / Tiers -->
+    <section class="py-32 bg-white/[0.01] border-t border-white/5">
+      <div class="max-w-5xl mx-auto px-6 text-center">
+        <h2 class="text-3xl md:text-5xl font-bold text-white mb-16 tracking-tight">Plans.</h2>
+        <div class="grid sm:grid-cols-3 gap-8 text-left">
+          {% for tier, price, features, color in [
+            ('Free', '$0', ['Public profile', 'QR code', 'Essential profile sections'], 'slate-500'),
+            ('Basic', '$1', ['Project portfolio', 'Unlimited profile views', 'Ad-free experience'], 'brand-blue'),
+            ('Elite', '$3', ['Advanced analytics', 'Custom visuals', 'Expanded profile options'], 'brand-purple'),
+          ] %}
+          <div class="premium-panel p-10 border-white/10 hover:border-{{ color }}/30 transition-all">
+            <p class="text-{{ color }} font-black uppercase tracking-widest text-[10px] mb-4">{{ tier }}</p>
+            <p class="text-4xl font-bold text-white mb-8">{{ price }}<span class="text-sm text-slate-600 font-medium">/mo</span></p>
+            <ul class="space-y-4 mb-10">
+              {% for f in features %}
+              <li class="flex items-center gap-3 text-slate-400 text-sm font-medium">
+                <i data-lucide="check" class="w-4 h-4 text-{{ color }}"></i>
+                {{ f }}
+              </li>
+              {% endfor %}
+            </ul>
+            <a href="/register" class="block text-center py-3 rounded-xl border border-white/10 text-white font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">Select</a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="py-40 px-6 max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-white tracking-tight mb-16 text-center">Frequently Asked Questions</h2>
+      <div class="grid gap-6">
+        {% for q, a in [
+          ('Replacement for LinkedIn?', 'Not exactly. DigiBioFi is a professional profile platform built for clear sharing, not a social feed.'),
+          ('Is it hard to set up?', 'No. You can create a profile, add your main details, and start sharing it in just a few minutes.'),
+          ('What happens to my QR code?', 'Your QR code points people to your profile. When you update your profile, the shared destination stays current.'),
+          ('Can I keep my profile private?', 'Yes. You can switch visibility settings and control what is shown publicly.')
+        ] %}
+        <div class="premium-panel p-8 group hover:border-brand-blue/30 transition-all">
+          <h3 class="font-bold text-white mb-4 flex items-center gap-3">
+             <span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>
+             {{ q }}
+          </h3>
+          <p class="text-slate-400 font-medium leading-relaxed text-sm pl-4.5">{{ a }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-40 text-center relative overflow-hidden border-t border-white/5">
+      <div class="absolute inset-0 z-0">
+         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-blue/10 rounded-full blur-[120px]"></div>
+      </div>
+      <div class="relative z-10 px-6">
+        <h2 class="font-display text-5xl md:text-8xl font-bold text-white mb-12 tracking-tight">Build a stronger<br/><span class="text-gradient-blue">professional profile.</span></h2>
+        <a href="/register" class="btn-primary px-16 py-6 rounded-2xl shadow-glow">
+          Create My Profile
+        </a>
+      </div>
+    </section>
+  </main>
+
+  {% include "partials/footer.html" %}
+</div>
+{% endblock %}

@@ -3,18 +3,25 @@
 {% block title %}Upgrade — DigiBioFi{% endblock %}
 {% block page_title %}Upgrade{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  {% if basic_checkout_enabled or elite_checkout_enabled %}
+  <script async src="https://js.stripe.com/clover/stripe.js"></script>
+  {% endif %}
+{% endblock %}
+
 {% block dashboard_content %}
 <div class="max-w-4xl mx-auto">
   <div class="text-center mb-12">
     <div class="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 text-brand-700 text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full mb-6">
       <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-      Level Up
+      Plans
     </div>
     <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">Choose Your Plan</h1>
     <p class="text-slate-500 font-medium text-lg max-w-xl mx-auto">Unlock your full professional identity with a plan that fits your goals.</p>
   </div>
 
-  {% if user.subscription_status == 'active' and user.subscription_tier in ('basic', 'elite', 'premium') %}
+  {% if user.subscription_status == 'active' and user.subscription_tier in ('basic', 'elite') %}
   <!-- Already subscribed and active -->
   <div class="p-10 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 text-center shadow-sm">
     <i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-500 mx-auto mb-3"></i>
@@ -33,7 +40,7 @@
   <div class="grid md:grid-cols-2 gap-8">
 
     <!-- Basic Plan -->
-    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-premium overflow-hidden flex flex-col">
+    <div class="bg-white rounded-[3rem] border border-slate-200 shadow-elevated overflow-hidden flex flex-col">
       <div class="bg-gradient-to-br from-slate-700 to-slate-900 p-8 text-white text-center relative overflow-hidden">
         <div class="absolute inset-0 opacity-10">
           <div class="absolute -top-16 -left-16 w-64 h-64 bg-white rounded-full blur-3xl"></div>
@@ -46,9 +53,9 @@
       <div class="p-8 flex-1 flex flex-col">
         <ul class="space-y-3 mb-8 flex-1">
           {% for feature in [
-            'Digital resume profile',
-            'Unrestricted profile view',
-            'QR code identity',
+            'Professional profile',
+            'Unlimited profile views',
+            'QR code sharing',
             'Experience & skills sections',
             'Project portfolio',
           ] %}
@@ -98,12 +105,12 @@
         <ul class="space-y-3 mb-8 flex-1">
           {% for feature in [
             'Everything in Basic',
-            'Unrestricted profile view',
+            'Unlimited profile views',
             'Advanced analytics dashboard',
-            'Physical BioFi Card (Coming soon)',
-            'Custom header & background',
+            'Custom header & background images',
             'Multiple profile photos',
-            'Priority support',
+            'Job matcher access',
+            'Expanded profile presentation',
             'Early access to new features',
           ] %}
           <li class="flex items-center gap-3 text-slate-700 font-bold text-sm">

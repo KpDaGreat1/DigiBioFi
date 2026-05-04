@@ -46,6 +46,7 @@ def collect_user_file_paths(user) -> list[Path]:
     for pattern in (
         f"profile_images/profile_{user.id}_*",
         f"resumes/resume_{user.id}_*",
+        f"resume_previews/resume_preview_{user.id}.png",
         f"project_thumbnails/project_{user.id}_*",
         f"certificates/cert_{user.id}_*",
     ):

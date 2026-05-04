@@ -1,7 +1,7 @@
 """
 Profile CRUD service — create, read, update profile and all sub-sections.
 """
-from typing import Optional, List
+from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,6 @@ from app.schemas.profile import (
     ExperienceCreate, EducationCreate, SkillCreate,
     ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
 )
-from app.utils.slug import unique_slug
 from app.utils.validators import sanitize_text
 
 

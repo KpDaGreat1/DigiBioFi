@@ -127,9 +127,6 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, max_length=200)
     headline: Optional[str] = Field(default=None, max_length=200)
     bio: Optional[str] = Field(default=None, max_length=1000)
-    email: Optional[str] = Field(default=None, max_length=200)
-    phone: Optional[str] = Field(default=None, max_length=20)
-    location: Optional[str] = Field(default=None, max_length=200)
     website: Optional[str] = Field(default=None, max_length=500)
     twitter: Optional[str] = Field(default=None, max_length=500)
     github: Optional[str] = Field(default=None, max_length=500)
@@ -172,9 +169,6 @@ class ProfileRead(BaseModel):
     full_name: str
     headline: str
     bio: str
-    email: str
-    phone: str
-    location: str
     website: str
     twitter: str
     github: str

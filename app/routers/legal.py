@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 
 from app.core.dependencies import get_current_user_optional
 from app.core.templates import templates
+from app.utils.urls import external_base_url
 
 router = APIRouter(tags=["legal"])
 
@@ -15,7 +16,8 @@ def privacy(
     user=Depends(get_current_user_optional),
 ):
     return templates.TemplateResponse(
-        request=request, name="legal/privacy.html", context={"request": request, "user": user},
+        "legal/privacy.html",
+        {"request": request, "user": user, "base_url": external_base_url(request)},
     )
 
 
@@ -25,5 +27,6 @@ def terms(
     user=Depends(get_current_user_optional),
 ):
     return templates.TemplateResponse(
-        request=request, name="legal/terms.html", context={"request": request, "user": user},
+        "legal/terms.html",
+        {"request": request, "user": user, "base_url": external_base_url(request)},
     )

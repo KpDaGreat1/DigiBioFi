@@ -9,16 +9,43 @@
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("mobile-menu-btn");
   const menu = document.getElementById("mobile-menu");
+  const closeBtn = document.getElementById("mobile-menu-close");
 
   if (btn && menu) {
-    btn.addEventListener("click", () => {
-      menu.classList.toggle("hidden");
+    const openMenu = () => {
+      menu.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      btn.setAttribute("aria-expanded", "true");
+    };
+
+    const closeMenu = () => {
+      menu.classList.add("hidden");
+      document.body.style.overflow = "";
+      btn.setAttribute("aria-expanded", "false");
+    };
+
+    btn.addEventListener("click", openMenu);
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeMenu);
+    }
+
+    menu.addEventListener("click", (event) => {
+      if (event.target === menu) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
     });
 
     // Close mobile menu when clicking a link inside it
     menu.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
-        menu.classList.add("hidden");
+        closeMenu();
       });
     });
   }

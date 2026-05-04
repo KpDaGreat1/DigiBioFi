@@ -66,9 +66,9 @@ def main():
         db.add(profile)
         db.commit()
 
-        print(f"Admin user created:")
+        print("Admin user created:")
         print(f"  Email: {settings.admin_email}")
-        print(f"  Password: (from ADMIN_PASSWORD env var)")
+        print("  Password: (from ADMIN_PASSWORD env var)")
         print(f"  Profile slug: {slug}")
         print(f"\nLog in at: {settings.base_url}/login")
 

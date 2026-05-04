@@ -1,9 +1,12 @@
 """
 Dashboard routes — authenticated user home, account, profile edit, QR, card preview.
 """
+from datetime import datetime, timezone
 import logging
+from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
@@ -17,19 +20,26 @@ from app.core.permissions import (
     current_plan_label,
     should_show_ads,
 )
+from app.core.security import clear_auth_cookie, clear_csrf_cookie, hash_password, verify_password
 from app.core.templates import templates, flash, get_csrf_token
+from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.profile import (
     ProfileUpdate,
     ExperienceCreate, EducationCreate, SkillCreate,
-    ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
+    ProjectCreate,
 )
-from app.services import profile_service, qr_service, file_service, analytics_service, ai_service
+from app.schemas.settings import AccountDeleteRequest, PasswordChangeRequest, SettingsProfileUpdate
+from app.services import profile_service, qr_service, file_service, analytics_service
 from app.services.storage import storage
+from app.services.user_service import delete_user_and_assets
+from app.utils.urls import external_base_url
 from app.utils.validators import format_pydantic_errors
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+settings_router = APIRouter(tags=["settings"])
 logger = logging.getLogger(__name__)
+_RESUME_AI_DAILY_LIMIT = 2
 
 
 def _normalize_plan(plan: str | None) -> str:
@@ -47,6 +57,59 @@ def _get_profile(user: User, db: Session):
         return get_profile_by_user(user.id, db)
     except ProfileNotFound:
         return None
+
+
+def _settings_form_values(user: User, profile: Profile | None) -> dict[str, str]:
+    return {
+        "email": user.email or "",
+        "phone": user.phone or "",
+        "address": user.address or "",
+    }
+
+
+def _render_settings_page(
+    request: Request,
+    current_user: User,
+    profile: Profile | None,
+    *,
+    profile_errors: dict | None = None,
+    password_errors: dict | None = None,
+    delete_errors: dict | None = None,
+    settings_values: dict | None = None,
+    status_code: int = 200,
+):
+    return templates.TemplateResponse(
+        "dashboard/settings.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": profile,
+            "settings_values": settings_values or _settings_form_values(current_user, profile),
+            "profile_errors": profile_errors or {},
+            "password_errors": password_errors or {},
+            "delete_errors": delete_errors or {},
+            "can_manage_subscription": can_manage_subscription,
+        },
+        status_code=status_code,
+    )
+
+
+def _reset_resume_ai_counter_if_needed(user: User, now: datetime) -> int:
+    last_request_at = getattr(user, "resume_ai_last_request_at", None)
+    if last_request_at is None:
+        user.resume_ai_requests_today = 0
+        return 0
+
+    last_day = (
+        last_request_at.astimezone(timezone.utc).date()
+        if last_request_at.tzinfo
+        else last_request_at.date()
+    )
+    if last_day != now.date():
+        user.resume_ai_requests_today = 0
+        user.resume_ai_last_request_at = now
+        return 0
+    return int(user.resume_ai_requests_today or 0)
 
 
 # ── Dashboard home ────────────────────────────────────────────────────────────
@@ -107,6 +170,70 @@ def _require_portfolio_access(request: Request, current_user: User):
     return RedirectResponse("/dashboard/upgrade", status_code=303)
 
 
+def _profile_form_values(profile, resume_prefill: dict | None = None) -> dict:
+    resume_prefill = resume_prefill or {}
+    return {
+        "full_name": resume_prefill.get("full_name") or (profile.full_name if profile else ""),
+        "slug": profile.slug if profile else "",
+        "headline": resume_prefill.get("headline") or (profile.headline if profile else ""),
+        "bio": resume_prefill.get("bio") or (profile.bio if profile else ""),
+        "website": resume_prefill.get("website") or (profile.website if profile else ""),
+        "github": resume_prefill.get("github") or (profile.github if profile else ""),
+        "twitter": resume_prefill.get("twitter") or (profile.twitter if profile else ""),
+        "telegram": resume_prefill.get("telegram") or (profile.telegram if profile else ""),
+    }
+
+
+def _map_resume_links(links: list[str]) -> dict[str, str]:
+    mapped = {"website": "", "github": "", "twitter": "", "telegram": ""}
+    for raw_link in links or []:
+        try:
+            hostname = (urlparse(raw_link).hostname or "").lower()
+        except Exception:
+            hostname = ""
+        if "github.com" in hostname and not mapped["github"]:
+            mapped["github"] = raw_link
+        elif ("twitter.com" in hostname or "x.com" in hostname) and not mapped["twitter"]:
+            mapped["twitter"] = raw_link
+        elif "t.me" in hostname and not mapped["telegram"]:
+            mapped["telegram"] = raw_link
+        elif not mapped["website"]:
+            mapped["website"] = raw_link
+    return mapped
+
+
+def _resume_prefill_payload(prefill: dict | None) -> dict | None:
+    if not prefill:
+        return None
+    mapped_links = _map_resume_links(prefill.get("links") or [])
+    return {
+        **prefill,
+        **mapped_links,
+        "skills": prefill.get("skills") or [],
+        "experience": prefill.get("experience") or [],
+        "education": prefill.get("education") or [],
+        "projects": prefill.get("projects") or [],
+    }
+
+
+def _resume_ai_enabled() -> bool:
+    try:
+        from app.services.resume_ai_service import is_resume_ai_available
+
+        return is_resume_ai_available()
+    except Exception:
+        return False
+
+
+def _resume_preview_url(current_user: User, profile: Profile | None) -> str:
+    if not profile or not profile.resume_pdf:
+        return ""
+    try:
+        return file_service.get_resume_preview_url(current_user.id)
+    except Exception:
+        return ""
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard_home(
     request: Request,
@@ -161,7 +288,8 @@ def dashboard_home(
     plan_label = current_plan_label(current_user)
 
     return templates.TemplateResponse(
-        request=request, name="dashboard/index.html", context={
+        "dashboard/index.html",
+        {
             "request": request,
             "user": current_user,
             "profile": profile,
@@ -169,16 +297,175 @@ def dashboard_home(
             "analytics_overview": analytics_overview,
             "show_dashboard_analytics": show_dashboard_analytics,
             "completion_score": completion_score,
-            "base_url": str(request.base_url).rstrip("/"),
+            "base_url": external_base_url(request),
             "csrf_token": csrf_token,
             "current_plan_label": plan_label,
             "show_upgrade_callout": plan_label == "Free" and current_user.role != "admin",
             "show_manage_subscription": can_manage_subscription(current_user),
             "show_dashboard_ad": show_dashboard_ad,
+            "adsense_client_id": dashboard_ad_client_id if show_dashboard_ad else "",
             "dashboard_ad_client_id": dashboard_ad_client_id,
             "dashboard_ad_slot": dashboard_ad_slot,
         },
     )
+
+
+# ── Account settings ─────────────────────────────────────────────────────────
+
+@router.get("/settings")
+def dashboard_settings_alias():
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.get("/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    return _render_settings_page(request, current_user, profile)
+
+
+@settings_router.post("/settings/profile", response_class=HTMLResponse)
+def update_account_settings(
+    request: Request,
+    email: str = Form(...),
+    phone: str = Form(""),
+    address: str = Form(""),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    settings_values = {
+        "email": email,
+        "phone": phone,
+        "address": address,
+    }
+
+    try:
+        data = SettingsProfileUpdate(
+            email=email,
+            phone=phone,
+            address=address,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            profile_errors=format_pydantic_errors(exc),
+            settings_values=settings_values,
+            status_code=422,
+        )
+
+    email_taken = (
+        db.query(User)
+        .filter(func.lower(User.email) == data.email.lower(), User.id != current_user.id)
+        .first()
+    )
+    if email_taken:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            profile_errors={"email": "That email address is already in use."},
+            settings_values=settings_values,
+            status_code=400,
+        )
+
+    current_user.email = data.email.lower()
+    current_user.phone = data.phone
+    current_user.address = data.address
+    db.commit()
+    db.refresh(current_user)
+    flash(request, "Account settings updated.", "success")
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.post("/settings/password", response_class=HTMLResponse)
+def change_account_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    try:
+        data = PasswordChangeRequest(
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            password_errors=format_pydantic_errors(exc),
+            status_code=422,
+        )
+
+    if not verify_password(data.current_password, current_user.hashed_password):
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            password_errors={"current_password": "Current password is incorrect."},
+            status_code=400,
+        )
+
+    current_user.hashed_password = hash_password(data.new_password)
+    db.commit()
+    flash(request, "Password updated.", "success")
+    return RedirectResponse("/settings", status_code=303)
+
+
+@settings_router.post("/settings/delete", response_class=HTMLResponse)
+def delete_account(
+    request: Request,
+    confirmation: str = Form(...),
+    current_password: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _get_profile(current_user, db)
+    try:
+        data = AccountDeleteRequest(
+            confirmation=confirmation,
+            current_password=current_password,
+        )
+    except ValidationError as exc:
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            delete_errors=format_pydantic_errors(exc),
+            status_code=422,
+        )
+
+    if not verify_password(data.current_password, current_user.hashed_password):
+        return _render_settings_page(
+            request,
+            current_user,
+            profile,
+            delete_errors={"current_password": "Current password is incorrect."},
+            status_code=400,
+        )
+
+    request.session.clear()
+    delete_user_and_assets(current_user, db)
+    response = RedirectResponse("/", status_code=303)
+    clear_auth_cookie(response)
+    clear_csrf_cookie(response)
+    response.delete_cookie("digibiofi_session", path="/")
+    flash(request, "Your account has been deleted.", "success")
+    return response
 
 
 # ── Basic profile info ────────────────────────────────────────────────────────
@@ -190,8 +477,19 @@ def profile_edit_page(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
+    resume_prefill = _resume_prefill_payload(request.session.get("resume_prefill"))
+    ai_resume_enabled = _resume_ai_enabled()
     return templates.TemplateResponse(
-        request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
+        "dashboard/profile_edit.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": profile,
+            "form_values": _profile_form_values(profile, resume_prefill),
+            "resume_prefill": resume_prefill,
+            "ai_resume_enabled": ai_resume_enabled,
+            "resume_preview_url": _resume_preview_url(current_user, profile),
+        },
     )
 
 
@@ -202,9 +500,6 @@ async def profile_edit_submit(
     full_name: str = Form(""),
     headline: str = Form(""),
     bio: str = Form(""),
-    email: str = Form(""),
-    phone: str = Form(""),
-    location: str = Form(""),
     website: str = Form(""),
     twitter: str = Form(""),
     github: str = Form(""),
@@ -226,9 +521,6 @@ async def profile_edit_submit(
             profile.full_name = full_name
             profile.headline = headline
             profile.bio = bio
-            profile.email = email
-            profile.phone = phone
-            profile.location = location
             profile.website = website
             profile.twitter = twitter
             profile.github = github
@@ -238,7 +530,26 @@ async def profile_edit_submit(
             profile.recruiter_visibility = (recruiter_visibility == "on")
             profile.freelance_availability = (freelance_availability == "on")
         return templates.TemplateResponse(
-            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile, "errors": errors},
+            "dashboard/profile_edit.html",
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "errors": errors,
+                "form_values": {
+                    "full_name": full_name,
+                    "slug": slug or (profile.slug if profile else ""),
+                    "headline": headline,
+                    "bio": bio,
+                    "website": website,
+                    "twitter": twitter,
+                    "github": github,
+                    "telegram": telegram,
+                },
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+                "resume_preview_url": _resume_preview_url(current_user, profile),
+            },
             status_code=status_code,
         )
 
@@ -247,9 +558,6 @@ async def profile_edit_submit(
             full_name=full_name,
             headline=headline,
             bio=bio,
-            email=email,
-            phone=phone,
-            location=location,
             website=website,
             twitter=twitter,
             github=github,
@@ -260,6 +568,7 @@ async def profile_edit_submit(
             freelance_availability=(freelance_availability == "on"),
         )
         profile_service.update_profile(profile, data, db)
+        request.session.pop("resume_prefill", None)
         flash(request, "Profile updated successfully!", "success")
         return RedirectResponse("/dashboard/profile", status_code=303)
 
@@ -296,7 +605,15 @@ async def upload_profile_image(
         logger.error(f"Image upload error for user {current_user.id}: {e}", exc_info=True)
         flash(request, "Failed to upload image.", "error")
         return templates.TemplateResponse(
-            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
+            "dashboard/profile_edit.html",
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "form_values": _profile_form_values(profile, _resume_prefill_payload(request.session.get("resume_prefill"))),
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+            },
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile", status_code=303)
@@ -318,6 +635,7 @@ async def upload_resume(
         path = await file_service.save_resume_pdf(file, current_user.id)
         data = ProfileUpdate(resume_pdf=path)
         profile_service.update_profile(profile, data, db)
+        file_service.refresh_resume_pdf_preview(path, current_user.id)
         if old_resume and old_resume != path:
             _delete_upload_url(old_resume)
         flash(request, "Resume uploaded successfully!", "success")
@@ -325,167 +643,137 @@ async def upload_resume(
         logger.error(f"Resume upload error for user {current_user.id}: {e}", exc_info=True)
         flash(request, "Failed to upload resume.", "error")
         return templates.TemplateResponse(
-            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
+            "dashboard/profile_edit.html",
+            {
+                "request": request,
+                "user": current_user,
+                "profile": profile,
+                "form_values": _profile_form_values(profile, _resume_prefill_payload(request.session.get("resume_prefill"))),
+                "resume_prefill": _resume_prefill_payload(request.session.get("resume_prefill")),
+                "ai_resume_enabled": _resume_ai_enabled(),
+                "resume_preview_url": _resume_preview_url(current_user, profile),
+            },
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile", status_code=303)
 
 
-# ── AI Resume Analyzer ────────────────────────────────────────────────────────
-
-@router.post("/profile/resume/analyze", response_class=HTMLResponse)
-async def analyze_resume(
+@router.post("/profile/resume/ai-fill", response_class=HTMLResponse)
+async def ai_fill_with_resume(
     request: Request,
+    csrf_token: str = Depends(require_csrf),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _get_profile(current_user, db)
+    now = datetime.now(timezone.utc)
+    requests_today = _reset_resume_ai_counter_if_needed(current_user, now)
+    if requests_today >= _RESUME_AI_DAILY_LIMIT:
+        db.commit()
+        flash(
+            request,
+            "AI resume fill is limited to two analyses per day on this account.",
+            "info",
+        )
+        return RedirectResponse("/dashboard/profile", status_code=303)
+    try:
+        from app.services.resume_ai_service import (
+            ResumeAIExtractionError,
+            ResumeAIUnavailable,
+            extract_resume_info,
+        )
+
+        resume_info = extract_resume_info(file)
+        request.session["resume_prefill"] = resume_info.model_dump()
+        current_user.resume_ai_requests_today = requests_today + 1
+        current_user.resume_ai_last_request_at = now
+        db.commit()
+        flash(
+            request,
+            "Resume analyzed. Review the suggested profile data before saving any changes.",
+            "success",
+        )
+    except ResumeAIUnavailable as exc:
+        flash(request, str(exc), "info")
+    except (ResumeAIExtractionError, HTTPException) as exc:
+        detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+        flash(request, detail or "Resume analysis failed.", "error")
+    except Exception:
+        logger.exception("Unexpected AI resume fill failure")
+        flash(request, "Resume analysis failed. Please try again later.", "error")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.post("/profile/resume/ai-clear", response_class=HTMLResponse)
+def clear_ai_resume_prefill(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+):
+    request.session.pop("resume_prefill", None)
+    flash(request, "Resume suggestions cleared.", "info")
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+@router.get("/messages", response_class=HTMLResponse)
+def messages_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+
+    messages = (
+        db.query(ContactMessage)
+        .filter(ContactMessage.user_id == current_user.id)
+        .order_by(ContactMessage.created_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        "dashboard/messages.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": _get_profile(current_user, db),
+            "messages": messages,
+        },
+    )
+
+
+@router.post("/messages/send", response_class=HTMLResponse)
+def send_support_message(
+    request: Request,
+    body: str = Form(default=""),
+    subject: str = Form(default="Support Request"),
     csrf_token: str = Depends(require_csrf),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    Parse the user's existing uploaded resume PDF with PyMuPDF + Gemini API
-    and bulk-apply the extracted structured data to their profile.
-    """
-    if not settings.gemini_api_key:
-        flash(request, "AI resume analysis is not enabled on this platform.", "info")
-        return RedirectResponse("/dashboard/profile", status_code=303)
+    from app.models.message import ContactMessage
+    from app.utils.validators import sanitize_plain_text
+
+    clean_subject = sanitize_plain_text(subject)[:300] or "Support Request"
+    clean_body = sanitize_plain_text(body)[:5000]
+    if not clean_body:
+        flash(request, "Message cannot be empty.", "error")
+        return RedirectResponse("/dashboard/messages", status_code=303)
 
     profile = _get_profile(current_user, db)
-    if not profile:
-        flash(request, "Profile not found.", "error")
-        return RedirectResponse("/dashboard/profile", status_code=303)
-
-    if not profile.resume_pdf:
-        flash(request, "Please upload a resume PDF first before using AI analysis.", "error")
-        return RedirectResponse("/dashboard/profile", status_code=303)
-
-    try:
-        # Resolve the on-disk path from the stored URL/relative path
-        from pathlib import Path
-        stored = profile.resume_pdf
-        # stored_path is either a URL like /uploads/resumes/... or a relative path
-        if stored.startswith("http"):
-            flash(request, "AI analysis is not available for externally hosted resumes.", "error")
-            return RedirectResponse("/dashboard/profile", status_code=303)
-
-        # Strip leading slash if present, build absolute path
-        relative = stored.lstrip("/")
-        pdf_path = str(Path(settings.upload_dir).parent / relative)
-        if not Path(pdf_path).is_file():
-            # Try direct join as fallback
-            pdf_path = str(Path(settings.upload_dir) / Path(stored).name)
-
-        if not Path(pdf_path).is_file():
-            flash(request, "Resume file not found on server. Please re-upload.", "error")
-            return RedirectResponse("/dashboard/profile", status_code=303)
-
-        logger.info("Starting AI resume analysis for user %s", current_user.id)
-        parsed = ai_service.process_resume(pdf_path)
-
-        if not parsed:
-            flash(request, "AI could not extract data from this resume. Try a text-based PDF.", "error")
-            return RedirectResponse("/dashboard/profile", status_code=303)
-
-        applied = []
-
-        # ── Apply core profile fields ──
-        profile_patch: dict = {}
-        if parsed.get("headline") and not profile.headline:
-            profile_patch["headline"] = str(parsed["headline"])[:300]
-            applied.append("headline")
-        if parsed.get("bio") and not profile.bio:
-            profile_patch["bio"] = str(parsed["bio"])[:1000]
-            applied.append("bio")
-        if parsed.get("location") and not profile.location:
-            profile_patch["location"] = str(parsed["location"])[:200]
-            applied.append("location")
-
-        if profile_patch:
-            for k, v in profile_patch.items():
-                setattr(profile, k, v)
-
-        # ── Apply skills (additive — only add new ones) ──
-        raw_skills = parsed.get("skills") or []
-        if isinstance(raw_skills, list) and raw_skills:
-            existing_names = {s.name.lower() for s in profile.skills}
-            from app.models.profile import Skill
-            order_start = len(profile.skills)
-            new_skills = []
-            seen = set(existing_names)
-            for i, skill_name in enumerate(raw_skills[:50]):
-                name = str(skill_name).strip()[:100]
-                if not name or name.lower() in seen:
-                    continue
-                seen.add(name.lower())
-                new_skills.append(Skill(
-                    profile_id=profile.id,
-                    name=name,
-                    category="",
-                    display_order=order_start + len(new_skills),
-                ))
-            if new_skills:
-                db.add_all(new_skills)
-                applied.append(f"{len(new_skills)} skills")
-
-        # ── Apply experience (only if none exists) ──
-        raw_exp = parsed.get("experience") or []
-        if isinstance(raw_exp, list) and raw_exp and not profile.experiences:
-            from app.models.profile import Experience
-            for i, exp in enumerate(raw_exp[:10]):
-                if not isinstance(exp, dict):
-                    continue
-                company = str(exp.get("company") or "").strip()[:200]
-                role = str(exp.get("role") or "").strip()[:200]
-                if not company or not role:
-                    continue
-                db.add(Experience(
-                    profile_id=profile.id,
-                    company=company,
-                    title=role,
-                    start_date=str(exp.get("start_date") or "")[:20],
-                    end_date=str(exp.get("end_date") or "")[:20],
-                    is_current=(str(exp.get("end_date") or "").lower() in {"present", "current", ""}),
-                    description=str(exp.get("description") or "")[:2000],
-                    display_order=i,
-                ))
-            applied.append("experience")
-
-        # ── Apply education (only if none exists) ──
-        raw_edu = parsed.get("education") or []
-        if isinstance(raw_edu, list) and raw_edu and not profile.educations:
-            from app.models.profile import Education
-            for i, edu in enumerate(raw_edu[:10]):
-                if not isinstance(edu, dict):
-                    continue
-                school = str(edu.get("institution") or "").strip()[:200]
-                if not school:
-                    continue
-                db.add(Education(
-                    profile_id=profile.id,
-                    school=school,
-                    degree=str(edu.get("degree") or "")[:200],
-                    field=str(edu.get("field_of_study") or "")[:200],
-                    start_date=str(edu.get("start_date") or "")[:20],
-                    end_date=str(edu.get("end_date") or "")[:20],
-                    display_order=i,
-                ))
-            applied.append("education")
-
-        db.commit()
-        db.refresh(profile)
-
-        if applied:
-            summary = ", ".join(applied)
-            flash(request, f"AI analysis complete. Applied: {summary}.", "success")
-        else:
-            flash(request, "AI analysis ran but found nothing new to add (profile already populated).", "info")
-
-        logger.info("AI resume analysis applied [%s] for user %s", ", ".join(applied), current_user.id)
-
-    except Exception as e:
-        db.rollback()
-        logger.error("AI resume analysis failed for user %s: %s", current_user.id, e, exc_info=True)
-        flash(request, "AI analysis encountered an error. Please try again.", "error")
-
-    return RedirectResponse("/dashboard/profile", status_code=303)
+    sender_name = (profile.full_name if profile and profile.full_name else current_user.username)[:200]
+    message = ContactMessage(
+        sender_name=sender_name,
+        sender_email=current_user.email[:255],
+        user_id=current_user.id,
+        source="internal",
+        subject=clean_subject,
+        body=clean_body,
+        status="unread",
+    )
+    db.add(message)
+    db.commit()
+    flash(request, "Message sent to the DigiBioFi team.", "success")
+    return RedirectResponse("/dashboard/messages", status_code=303)
 
 
 # ── Experience ────────────────────────────────────────────────────────────────
@@ -498,7 +786,8 @@ def experience_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        request=request, name="dashboard/experience.html", context={"request": request, "user": current_user, "profile": profile},
+        "dashboard/experience.html",
+        {"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -529,7 +818,8 @@ def add_experience(
         return RedirectResponse("/dashboard/experience", status_code=303)
     except ValidationError as e:
         return templates.TemplateResponse(
-            request=request, name="dashboard/experience.html", context={
+            "dashboard/experience.html",
+            {
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -555,7 +845,8 @@ def edit_experience_page(
         flash(request, "Experience not found.", "error")
         return RedirectResponse("/dashboard/experience", status_code=303)
     return templates.TemplateResponse(
-        request=request, name="dashboard/experience.html", context={"request": request, "user": current_user, "profile": profile, "edit_exp": exp},
+        "dashboard/experience.html",
+        {"request": request, "user": current_user, "profile": profile, "edit_exp": exp},
     )
 
 
@@ -593,7 +884,8 @@ def edit_experience_submit(
             is_current=(is_current == "on"), description=description,
         )
         return templates.TemplateResponse(
-            request=request, name="dashboard/experience.html", context={
+            "dashboard/experience.html",
+            {
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -628,7 +920,8 @@ def education_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        request=request, name="dashboard/education.html", context={"request": request, "user": current_user, "profile": profile},
+        "dashboard/education.html",
+        {"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -655,7 +948,8 @@ async def add_education(
             certificate_url = uploaded_certificate_url
         except HTTPException as exc:
             return templates.TemplateResponse(
-                request=request, name="dashboard/education.html", context={
+                "dashboard/education.html",
+                {
                     "request": request,
                     "user": current_user,
                     "profile": profile,
@@ -677,7 +971,8 @@ async def add_education(
         if uploaded_certificate_url:
             _delete_upload_url(uploaded_certificate_url)
         return templates.TemplateResponse(
-            request=request, name="dashboard/education.html", context={
+            "dashboard/education.html",
+            {
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -707,7 +1002,8 @@ def edit_education_page(
         flash(request, "Education not found.", "error")
         return RedirectResponse("/dashboard/education", status_code=303)
     return templates.TemplateResponse(
-        request=request, name="dashboard/education.html", context={"request": request, "user": current_user, "profile": profile, "edit_edu": edu},
+        "dashboard/education.html",
+        {"request": request, "user": current_user, "profile": profile, "edit_edu": edu},
     )
 
 
@@ -744,7 +1040,8 @@ async def edit_education_submit(
                 new_certificate_url = uploaded_certificate_url
             except HTTPException as exc:
                 return templates.TemplateResponse(
-                    request=request, name="dashboard/education.html", context={
+                    "dashboard/education.html",
+                    {
                         "request": request,
                         "user": current_user,
                         "profile": profile,
@@ -764,7 +1061,7 @@ async def edit_education_submit(
         if uploaded_certificate_url and old_certificate_url and old_certificate_url != uploaded_certificate_url:
             _delete_upload_url(old_certificate_url)
         flash(request, "Education updated!", "success")
-    except ValidationError as e:
+    except ValidationError:
         if "uploaded_certificate_url" in locals() and uploaded_certificate_url:
             _delete_upload_url(uploaded_certificate_url)
         flash(request, "Invalid data. Please check your input.", "error")
@@ -823,7 +1120,8 @@ def skills_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        request=request, name="dashboard/skills.html", context={"request": request, "user": current_user, "profile": profile, "csrf_token": get_csrf_token(request)},
+        "dashboard/skills.html",
+        {"request": request, "user": current_user, "profile": profile, "csrf_token": get_csrf_token(request)},
     )
 
 
@@ -909,7 +1207,8 @@ def projects_page(
         return access_redirect
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        request=request, name="dashboard/projects.html", context={"request": request, "user": current_user, "profile": profile},
+        "dashboard/projects.html",
+        {"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -991,7 +1290,8 @@ async def add_project(
         if uploaded_thumbnail_url:
             _delete_upload_url(uploaded_thumbnail_url)
         return templates.TemplateResponse(
-            request=request, name="dashboard/projects.html", context={
+            "dashboard/projects.html",
+            {
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -1024,7 +1324,8 @@ def edit_project_page(
         flash(request, "Project not found.", "error")
         return RedirectResponse("/dashboard/projects", status_code=303)
     return templates.TemplateResponse(
-        request=request, name="dashboard/projects.html", context={"request": request, "user": current_user, "profile": profile, "edit_proj": proj},
+        "dashboard/projects.html",
+        {"request": request, "user": current_user, "profile": profile, "edit_proj": proj},
     )
 
 
@@ -1078,7 +1379,7 @@ async def edit_project_submit(
         if thumbnail and thumbnail.filename and old_thumbnail_url and old_thumbnail_url != thumbnail_url:
             _delete_upload_url(old_thumbnail_url)
         flash(request, "Project updated!", "success")
-    except ValidationError as e:
+    except ValidationError:
         if thumbnail and thumbnail.filename and thumbnail_url and thumbnail_url != proj.thumbnail_url:
             _delete_upload_url(thumbnail_url)
         flash(request, "Invalid data. Please check your input.", "error")
@@ -1144,13 +1445,14 @@ def qr_view(
     show_qr_analytics = can_access_analytics(current_user)
     stats = analytics_service.get_summary(profile.id, db) if profile and show_qr_analytics else None
     return templates.TemplateResponse(
-        request=request, name="dashboard/qr_view.html", context={
+        "dashboard/qr_view.html",
+        {
             "request": request,
             "user": current_user,
             "profile": profile,
             "show_qr_analytics": show_qr_analytics,
             "qr_scans": stats.qr_scans if stats else 0,
-            "base_url": str(request.base_url).rstrip("/"),
+            "base_url": external_base_url(request),
         },
     )
 
@@ -1199,12 +1501,14 @@ def upgrade_page(
     elite_checkout_enabled = bool(settings.stripe_secret_key and settings.get_stripe_price("elite"))
 
     return templates.TemplateResponse(
-        request=request, name="dashboard/upgrade.html", context={
+        "dashboard/upgrade.html",
+        {
             "request": request,
             "user": current_user,
             "profile": profile,
             "basic_checkout_enabled": basic_checkout_enabled,
             "elite_checkout_enabled": elite_checkout_enabled,
+            "stripe_publishable_key": settings.stripe_publishable_key.strip(),
         },
     )
 
@@ -1222,7 +1526,8 @@ def card_preview(
         qr_service.generate_qr_for_profile(profile, db)
         db.refresh(profile)
     return templates.TemplateResponse(
-        request=request, name="dashboard/card_preview.html", context={"request": request, "user": current_user, "profile": profile},
+        "dashboard/card_preview.html",
+        {"request": request, "user": current_user, "profile": profile},
     )
 
 
