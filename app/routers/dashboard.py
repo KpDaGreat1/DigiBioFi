@@ -177,6 +177,9 @@ def _profile_form_values(profile, resume_prefill: dict | None = None) -> dict:
         "slug": profile.slug if profile else "",
         "headline": resume_prefill.get("headline") or (profile.headline if profile else ""),
         "bio": resume_prefill.get("bio") or (profile.bio if profile else ""),
+        "location": profile.location if profile else "",
+        "profile_email": profile.email if profile else "",
+        "profile_phone": profile.phone if profile else "",
         "website": resume_prefill.get("website") or (profile.website if profile else ""),
         "github": resume_prefill.get("github") or (profile.github if profile else ""),
         "twitter": resume_prefill.get("twitter") or (profile.twitter if profile else ""),
@@ -500,6 +503,9 @@ async def profile_edit_submit(
     full_name: str = Form(""),
     headline: str = Form(""),
     bio: str = Form(""),
+    location: str = Form(""),
+    profile_email: str = Form(""),
+    profile_phone: str = Form(""),
     website: str = Form(""),
     twitter: str = Form(""),
     github: str = Form(""),
@@ -515,12 +521,13 @@ async def profile_edit_submit(
 
     def _render_edit_with_errors(errors: dict, status_code: int):
         """Return the edit form with submitted values still populated."""
-        # Update profile fields in-memory so the template reflects what the user typed.
-        # db.commit() is never called here, so these changes are discarded after the response.
         if profile:
             profile.full_name = full_name
             profile.headline = headline
             profile.bio = bio
+            profile.location = location
+            profile.email = profile_email
+            profile.phone = profile_phone
             profile.website = website
             profile.twitter = twitter
             profile.github = github
@@ -541,6 +548,9 @@ async def profile_edit_submit(
                     "slug": slug or (profile.slug if profile else ""),
                     "headline": headline,
                     "bio": bio,
+                    "location": location,
+                    "profile_email": profile_email,
+                    "profile_phone": profile_phone,
                     "website": website,
                     "twitter": twitter,
                     "github": github,
@@ -558,6 +568,9 @@ async def profile_edit_submit(
             full_name=full_name,
             headline=headline,
             bio=bio,
+            location=location,
+            email=profile_email,
+            phone=profile_phone,
             website=website,
             twitter=twitter,
             github=github,

@@ -203,22 +203,68 @@
 
           <div class="grid md:grid-cols-2 gap-6">
             {% for name, label, icon, placeholder in [
-              ('website', 'Portfolio/Website', 'globe', 'https://alexrivera.com'),
+              ('website', 'Portfolio / Website', 'globe', 'https://alexrivera.com'),
               ('github', 'GitHub', 'github', 'https://github.com/alexrivera'),
               ('twitter', 'X (Twitter)', 'twitter', 'https://x.com/alexrivera'),
-              ('telegram', 'Telegram', 'send', 'https://t.me/alexrivera')
+              ('telegram', 'Reach Me @:', 'send', 'https://t.me/alexrivera')
             ] %}
             <div class="space-y-2">
               <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">{{ label }}</label>
               <div class="relative flex items-center group">
-                <i data-lucide="{{ icon }}" class="absolute left-5 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
-                <input type="url" name="{{ name }}" value="{{ form_values[name] if form_values else (profile | attr(name) or '') }}" 
-                       class="w-full pl-12 pr-5 py-4 rounded-2xl border {% if errors and errors[name] %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900" 
+                <i data-lucide="{{ icon }}" class="absolute left-4 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none"></i>
+                <input type="url" name="{{ name }}" value="{{ form_values[name] if form_values else (profile | attr(name) or '') }}"
+                       class="w-full pl-11 pr-4 py-4 rounded-2xl border {% if errors and errors[name] %}border-red-500 bg-red-50/30{% else %}border-slate-200 bg-slate-50{% endif %} focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900"
                        placeholder="{{ placeholder }}" maxlength="500" />
               </div>
               {% if errors and errors[name] %}<p class="error-message">{{ errors[name] }}</p>{% endif %}
             </div>
             {% endfor %}
+          </div>
+        </div>
+
+        <!-- Public Contact Info Section -->
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-elevated">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center">
+              <i data-lucide="contact" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-slate-900">Public Contact Info</h2>
+              <p class="text-xs font-bold text-sky-600 uppercase tracking-widest mt-0.5">Shown on your public profile</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-slate-100 bg-sky-50/30 px-5 py-4 mb-6 text-xs font-medium text-slate-600">
+            These fields are <strong>visible on your public profile</strong>. Your private account email, phone, and address stay in
+            <a href="/settings" class="text-brand-600 hover:underline font-bold">Settings</a>.
+          </div>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Location</label>
+              <div class="relative flex items-center group">
+                <i data-lucide="map-pin" class="absolute left-4 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none"></i>
+                <input type="text" name="location" value="{{ form_values.location if form_values else (profile.location or '') }}"
+                       class="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900"
+                       placeholder="City, Country" maxlength="200" />
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Public Email</label>
+              <div class="relative flex items-center group">
+                <i data-lucide="mail" class="absolute left-4 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none"></i>
+                <input type="email" name="profile_email" value="{{ form_values.profile_email if form_values else (profile.email or '') }}"
+                       class="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900"
+                       placeholder="contact@yourname.com" maxlength="255" />
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-black text-slate-700 uppercase tracking-widest ml-1">Public Phone</label>
+              <div class="relative flex items-center group">
+                <i data-lucide="phone" class="absolute left-4 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none"></i>
+                <input type="tel" name="profile_phone" value="{{ form_values.profile_phone if form_values else (profile.phone or '') }}"
+                       class="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none font-bold text-slate-900"
+                       placeholder="+1 555 000 0000" maxlength="50" />
+              </div>
+            </div>
           </div>
         </div>
 

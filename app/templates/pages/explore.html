@@ -106,16 +106,22 @@
             <img
               src="{{ profile.profile_image }}"
               alt="{{ profile.full_name or profile.slug }}"
-              class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium object-cover transition-transform group-hover:scale-105"
+              class="w-20 h-20 rounded-2xl border-4 border-ui-panel shadow-premium object-cover transition-transform group-hover:scale-105"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
             />
+            <div class="w-20 h-20 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple items-center justify-center transition-transform group-hover:scale-105" style="display:none;">
+              <span class="text-white font-bold text-2xl">
+                {{ (profile.full_name or profile.slug)[:1].upper() }}
+              </span>
+            </div>
             {% else %}
-            <div class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center transition-transform group-hover:scale-105">
-              <span class="text-white font-bold text-xl">
+            <div class="w-20 h-20 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center transition-transform group-hover:scale-105">
+              <span class="text-white font-bold text-2xl">
                 {{ (profile.full_name or profile.slug)[:1].upper() }}
               </span>
             </div>
             {% endif %}
-            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
           </div>
 
           <h2 class="font-bold text-white text-lg leading-tight mb-2 group-hover:text-brand-blue transition-colors tracking-tight">
@@ -170,12 +176,12 @@
 
         <div class="px-6 pb-8 -mt-8 relative">
           <div class="relative inline-block mb-4">
-            <div class="w-16 h-16 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center">
-              <span class="text-white font-bold text-xl">
+            <div class="w-20 h-20 rounded-2xl border-4 border-ui-panel shadow-premium bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center">
+              <span class="text-white font-bold text-2xl">
                 {{ demo.name[:1].upper() }}
               </span>
             </div>
-            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-brand-blue rounded-full border-2 border-ui-panel shadow-glow"></div>
           </div>
 
           <h2 class="font-bold text-white text-lg leading-tight mb-2 tracking-tight">

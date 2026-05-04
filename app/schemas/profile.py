@@ -127,6 +127,10 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, max_length=200)
     headline: Optional[str] = Field(default=None, max_length=200)
     bio: Optional[str] = Field(default=None, max_length=1000)
+    # Public contact info — independent from private account fields
+    location: Optional[str] = Field(default=None, max_length=200)
+    email: Optional[str] = Field(default=None, max_length=255)
+    phone: Optional[str] = Field(default=None, max_length=50)
     website: Optional[str] = Field(default=None, max_length=500)
     twitter: Optional[str] = Field(default=None, max_length=500)
     github: Optional[str] = Field(default=None, max_length=500)
