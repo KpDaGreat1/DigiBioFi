@@ -8,12 +8,12 @@ from app.core.config import settings
 from app.core.dependencies import get_current_user, require_csrf
 from app.core.owner import is_owner_email
 from app.core.templates import flash
-from app.models.user import User
+from app.models.user import User, SubscriptionTier
 from app.services import stripe_service
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 logger = logging.getLogger(__name__)
-_ALLOWED_PLANS = {"basic", "elite"}
+_ALLOWED_PLANS = {SubscriptionTier.BASIC.value, SubscriptionTier.ELITE.value}
 
 
 def _normalize_plan(plan: str | None) -> str:

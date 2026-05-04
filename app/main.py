@@ -344,8 +344,7 @@ def _redirect_to_login() -> RedirectResponse:
 def _safe_error_response(request: Request, status_code: int = 500):
     if _request_expects_html(request):
         return templates.TemplateResponse(
-            "errors/500.html",
-            {"request": request},
+            request=request, name="errors/500.html", context={"request": request},
             status_code=status_code,
         )
     return JSONResponse(
@@ -606,7 +605,7 @@ def root(request: Request, user=Depends(get_current_user_optional)):
     # So maybe we only redirect if they are not just browsing the root?
     # No, I'll stick to what the requirement says: show the correct button.
     # To show the button, they must be on the page.
-    return templates.TemplateResponse("landing.html", {"request": request, "user": user})
+    return templates.TemplateResponse(request=request, name="landing.html", context={"request": request, "user": user})
 
 
 # ── Error handlers ────────────────────────────────────────────────────────────
@@ -616,7 +615,7 @@ def not_found(request: Request, exc):
     if not _request_expects_html(request):
         return JSONResponse({"detail": "Not Found"}, status_code=404)
     return templates.TemplateResponse(
-        "errors/404.html", {"request": request}, status_code=404
+        request=request, name="errors/404.html", context={"request": request}, status_code=404
     )
 
 

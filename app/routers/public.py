@@ -159,8 +159,7 @@ def public_profile(
     if user is None and not _allow_anonymous_profile_view(ip, now):
         logger.warning("Anonymous public profile throttle exceeded slug=%s viewer_ip=%s", slug, ip)
         return templates.TemplateResponse(
-            "errors/429.html",
-            {"request": request},
+            request=request, name="errors/429.html", context={"request": request},
             status_code=429,
         )
 
@@ -190,8 +189,7 @@ def public_profile(
     show_ads = should_show_ads(profile.user)
 
     return templates.TemplateResponse(
-        "public/profile.html",
-        {
+        request=request, name="public/profile.html", context={
             "request": request,
             "profile": profile,
             "base_url": settings.base_url,

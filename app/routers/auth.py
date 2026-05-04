@@ -38,8 +38,7 @@ def register_page(request: Request, current_user=Depends(get_current_user_option
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
-        "auth/register.html",
-        {"request": request, "csrf_token": token}
+        request=request, name="auth/register.html", context={"request": request, "csrf_token": token}
     )
     set_csrf_cookie(response, token)
     return response
@@ -70,8 +69,7 @@ def register_submit(
 
     except ValidationError as e:
         return templates.TemplateResponse(
-            "auth/register.html",
-            {
+            request=request, name="auth/register.html", context={
                 "request": request,
                 "errors": format_pydantic_errors(e),
                 "email": email,
@@ -83,8 +81,7 @@ def register_submit(
 
     except AuthError as e:
         return templates.TemplateResponse(
-            "auth/register.html",
-            {
+            request=request, name="auth/register.html", context={
                 "request": request,
                 "errors": {"general": str(e)},
                 "email": email,
@@ -96,8 +93,7 @@ def register_submit(
 
     except Exception:
         return templates.TemplateResponse(
-            "auth/register.html",
-            {
+            request=request, name="auth/register.html", context={
                 "request": request,
                 "error": "Something went wrong. Try again.",
                 "email": email,
@@ -119,8 +115,7 @@ def login_page(request: Request, registered: str = "", current_user=Depends(get_
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
-        "auth/login.html",
-        {
+        request=request, name="auth/login.html", context={
             "request": request,
             "registered": registered == "1",
             "csrf_token": token,
@@ -149,8 +144,7 @@ def login_submit(
 
     except ValidationError as e:
         return templates.TemplateResponse(
-            "auth/login.html",
-            {
+            request=request, name="auth/login.html", context={
                 "request": request,
                 "errors": format_pydantic_errors(e),
                 "email": email,
@@ -161,8 +155,7 @@ def login_submit(
 
     except AuthError as e:
         return templates.TemplateResponse(
-            "auth/login.html",
-            {
+            request=request, name="auth/login.html", context={
                 "request": request,
                 "errors": {"general": str(e)},
                 "email": email,
@@ -196,8 +189,7 @@ def forgot_password_page(request: Request, current_user=Depends(get_current_user
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
-        "auth/forgot_password.html",
-        {"request": request, "csrf_token": token},
+        request=request, name="auth/forgot_password.html", context={"request": request, "csrf_token": token},
     )
     set_csrf_cookie(response, token)
     return response
@@ -223,8 +215,7 @@ def forgot_password_submit(
 
     token = generate_csrf_token(request)
     response = templates.TemplateResponse(
-        "auth/forgot_password.html",
-        {
+        request=request, name="auth/forgot_password.html", context={
             "request": request,
             "csrf_token": token,
             "success": True,
@@ -246,8 +237,7 @@ def reset_password_page(
 
     csrf_token = generate_csrf_token(request)
     response = templates.TemplateResponse(
-        "auth/reset_password.html",
-        {
+        request=request, name="auth/reset_password.html", context={
             "request": request,
             "token": token,
             "csrf_token": csrf_token,
@@ -278,8 +268,7 @@ def reset_password_submit(
     except ValidationError as e:
         csrf_token = generate_csrf_token(request)
         response = templates.TemplateResponse(
-            "auth/reset_password.html",
-            {
+            request=request, name="auth/reset_password.html", context={
                 "request": request,
                 "token": token,
                 "csrf_token": csrf_token,
@@ -292,8 +281,7 @@ def reset_password_submit(
     except AuthError as e:
         csrf_token = generate_csrf_token(request)
         response = templates.TemplateResponse(
-            "auth/reset_password.html",
-            {
+            request=request, name="auth/reset_password.html", context={
                 "request": request,
                 "token": token,
                 "csrf_token": csrf_token,

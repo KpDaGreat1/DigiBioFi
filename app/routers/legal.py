@@ -15,8 +15,7 @@ def privacy(
     user=Depends(get_current_user_optional),
 ):
     return templates.TemplateResponse(
-        "legal/privacy.html",
-        {"request": request, "user": user},
+        request=request, name="legal/privacy.html", context={"request": request, "user": user},
     )
 
 
@@ -26,6 +25,5 @@ def terms(
     user=Depends(get_current_user_optional),
 ):
     return templates.TemplateResponse(
-        "legal/terms.html",
-        {"request": request, "user": user},
+        request=request, name="legal/terms.html", context={"request": request, "user": user},
     )

@@ -16,15 +16,15 @@ from app.core.dependencies import get_db, require_admin, require_csrf
 from app.core.templates import flash, templates
 from app.models.analytics import AnalyticsEvent
 from app.models.profile import Profile
-from app.models.user import User
+from app.models.user import SubscriptionTier, User, UserRole
 from app.services.user_service import delete_user_and_assets
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-VALID_ROLES = {"user", "admin"}
-VALID_TIERS = {"free", "basic", "elite"}
+VALID_ROLES = {role.value for role in UserRole}
+VALID_TIERS = {tier.value for tier in SubscriptionTier}
 
 
 def _users_redirect() -> RedirectResponse:
@@ -61,9 +61,9 @@ def admin_home(
         .all()
     )
     tier_counts = {
-        "free": raw_tier_counts.get("free", 0),
-        "basic": raw_tier_counts.get("basic", 0),
-        "elite": raw_tier_counts.get("elite", 0) + raw_tier_counts.get("premium", 0),
+        "free": raw_tier_counts.get(SubscriptionTier.FREE, 0),
+        "basic": raw_tier_counts.get(SubscriptionTier.BASIC, 0),
+        "elite": raw_tier_counts.get(SubscriptionTier.ELITE, 0) + raw_tier_counts.get(SubscriptionTier.PREMIUM, 0),
     }
 
     # Public vs private profiles
@@ -99,8 +99,7 @@ def admin_home(
     )
 
     return templates.TemplateResponse(
-        "admin/index.html",
-        {
+        request=request, name="admin/index.html", context={
             "request": request,
             "admin": admin,
             "stats": {
@@ -143,8 +142,7 @@ def admin_users(
     total_pages = (total + per_page - 1) // per_page
 
     return templates.TemplateResponse(
-        "admin/users.html",
-        {
+        request=request, name="admin/users.html", context={
             "request": request,
             "admin": admin,
             "owner_email": settings.admin_email.lower(),
@@ -206,7 +204,7 @@ async def set_user_role(
         flash(request, "Invalid role.", "error")
         return _users_redirect()
 
-    user.role = role
+    user.role = UserRole(role)
     db.commit()
     logger.info("Admin %s changed user %s role to %s", admin.id, user.id, role)
     flash(request, f"{user.email} role set to {role}.", "success")
@@ -237,7 +235,7 @@ async def set_user_tier(
         flash(request, "Owner access remains locked to elite admin.", "info")
         return _users_redirect()
 
-    user.subscription_tier = tier
+    user.subscription_tier = SubscriptionTier(tier)
     user.subscription_status = "active"
     db.commit()
     flash(request, f"{user.email} tier set to {tier}.", "success")

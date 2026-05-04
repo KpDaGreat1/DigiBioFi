@@ -24,7 +24,7 @@ from app.schemas.profile import (
     ExperienceCreate, EducationCreate, SkillCreate,
     ProjectCreate, CertificationCreate, AwardCreate, CustomSectionCreate,
 )
-from app.services import profile_service, qr_service, file_service, analytics_service
+from app.services import profile_service, qr_service, file_service, analytics_service, ai_service
 from app.services.storage import storage
 from app.utils.validators import format_pydantic_errors
 
@@ -161,8 +161,7 @@ def dashboard_home(
     plan_label = current_plan_label(current_user)
 
     return templates.TemplateResponse(
-        "dashboard/index.html",
-        {
+        request=request, name="dashboard/index.html", context={
             "request": request,
             "user": current_user,
             "profile": profile,
@@ -192,8 +191,7 @@ def profile_edit_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        "dashboard/profile_edit.html",
-        {"request": request, "user": current_user, "profile": profile},
+        request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -240,8 +238,7 @@ async def profile_edit_submit(
             profile.recruiter_visibility = (recruiter_visibility == "on")
             profile.freelance_availability = (freelance_availability == "on")
         return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile, "errors": errors},
+            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile, "errors": errors},
             status_code=status_code,
         )
 
@@ -299,8 +296,7 @@ async def upload_profile_image(
         logger.error(f"Image upload error for user {current_user.id}: {e}", exc_info=True)
         flash(request, "Failed to upload image.", "error")
         return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile},
+            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
             status_code=400,
         )
     return RedirectResponse("/dashboard/profile", status_code=303)
@@ -329,10 +325,166 @@ async def upload_resume(
         logger.error(f"Resume upload error for user {current_user.id}: {e}", exc_info=True)
         flash(request, "Failed to upload resume.", "error")
         return templates.TemplateResponse(
-            "dashboard/profile_edit.html",
-            {"request": request, "user": current_user, "profile": profile},
+            request=request, name="dashboard/profile_edit.html", context={"request": request, "user": current_user, "profile": profile},
             status_code=400,
         )
+    return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+# ── AI Resume Analyzer ────────────────────────────────────────────────────────
+
+@router.post("/profile/resume/analyze", response_class=HTMLResponse)
+async def analyze_resume(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Parse the user's existing uploaded resume PDF with PyMuPDF + Gemini API
+    and bulk-apply the extracted structured data to their profile.
+    """
+    if not settings.gemini_api_key:
+        flash(request, "AI resume analysis is not enabled on this platform.", "info")
+        return RedirectResponse("/dashboard/profile", status_code=303)
+
+    profile = _get_profile(current_user, db)
+    if not profile:
+        flash(request, "Profile not found.", "error")
+        return RedirectResponse("/dashboard/profile", status_code=303)
+
+    if not profile.resume_pdf:
+        flash(request, "Please upload a resume PDF first before using AI analysis.", "error")
+        return RedirectResponse("/dashboard/profile", status_code=303)
+
+    try:
+        # Resolve the on-disk path from the stored URL/relative path
+        from pathlib import Path
+        stored = profile.resume_pdf
+        # stored_path is either a URL like /uploads/resumes/... or a relative path
+        if stored.startswith("http"):
+            flash(request, "AI analysis is not available for externally hosted resumes.", "error")
+            return RedirectResponse("/dashboard/profile", status_code=303)
+
+        # Strip leading slash if present, build absolute path
+        relative = stored.lstrip("/")
+        pdf_path = str(Path(settings.upload_dir).parent / relative)
+        if not Path(pdf_path).is_file():
+            # Try direct join as fallback
+            pdf_path = str(Path(settings.upload_dir) / Path(stored).name)
+
+        if not Path(pdf_path).is_file():
+            flash(request, "Resume file not found on server. Please re-upload.", "error")
+            return RedirectResponse("/dashboard/profile", status_code=303)
+
+        logger.info("Starting AI resume analysis for user %s", current_user.id)
+        parsed = ai_service.process_resume(pdf_path)
+
+        if not parsed:
+            flash(request, "AI could not extract data from this resume. Try a text-based PDF.", "error")
+            return RedirectResponse("/dashboard/profile", status_code=303)
+
+        applied = []
+
+        # ── Apply core profile fields ──
+        profile_patch: dict = {}
+        if parsed.get("headline") and not profile.headline:
+            profile_patch["headline"] = str(parsed["headline"])[:300]
+            applied.append("headline")
+        if parsed.get("bio") and not profile.bio:
+            profile_patch["bio"] = str(parsed["bio"])[:1000]
+            applied.append("bio")
+        if parsed.get("location") and not profile.location:
+            profile_patch["location"] = str(parsed["location"])[:200]
+            applied.append("location")
+
+        if profile_patch:
+            for k, v in profile_patch.items():
+                setattr(profile, k, v)
+
+        # ── Apply skills (additive — only add new ones) ──
+        raw_skills = parsed.get("skills") or []
+        if isinstance(raw_skills, list) and raw_skills:
+            existing_names = {s.name.lower() for s in profile.skills}
+            from app.models.profile import Skill
+            order_start = len(profile.skills)
+            new_skills = []
+            seen = set(existing_names)
+            for i, skill_name in enumerate(raw_skills[:50]):
+                name = str(skill_name).strip()[:100]
+                if not name or name.lower() in seen:
+                    continue
+                seen.add(name.lower())
+                new_skills.append(Skill(
+                    profile_id=profile.id,
+                    name=name,
+                    category="",
+                    display_order=order_start + len(new_skills),
+                ))
+            if new_skills:
+                db.add_all(new_skills)
+                applied.append(f"{len(new_skills)} skills")
+
+        # ── Apply experience (only if none exists) ──
+        raw_exp = parsed.get("experience") or []
+        if isinstance(raw_exp, list) and raw_exp and not profile.experiences:
+            from app.models.profile import Experience
+            for i, exp in enumerate(raw_exp[:10]):
+                if not isinstance(exp, dict):
+                    continue
+                company = str(exp.get("company") or "").strip()[:200]
+                role = str(exp.get("role") or "").strip()[:200]
+                if not company or not role:
+                    continue
+                db.add(Experience(
+                    profile_id=profile.id,
+                    company=company,
+                    title=role,
+                    start_date=str(exp.get("start_date") or "")[:20],
+                    end_date=str(exp.get("end_date") or "")[:20],
+                    is_current=(str(exp.get("end_date") or "").lower() in {"present", "current", ""}),
+                    description=str(exp.get("description") or "")[:2000],
+                    display_order=i,
+                ))
+            applied.append("experience")
+
+        # ── Apply education (only if none exists) ──
+        raw_edu = parsed.get("education") or []
+        if isinstance(raw_edu, list) and raw_edu and not profile.educations:
+            from app.models.profile import Education
+            for i, edu in enumerate(raw_edu[:10]):
+                if not isinstance(edu, dict):
+                    continue
+                school = str(edu.get("institution") or "").strip()[:200]
+                if not school:
+                    continue
+                db.add(Education(
+                    profile_id=profile.id,
+                    school=school,
+                    degree=str(edu.get("degree") or "")[:200],
+                    field=str(edu.get("field_of_study") or "")[:200],
+                    start_date=str(edu.get("start_date") or "")[:20],
+                    end_date=str(edu.get("end_date") or "")[:20],
+                    display_order=i,
+                ))
+            applied.append("education")
+
+        db.commit()
+        db.refresh(profile)
+
+        if applied:
+            summary = ", ".join(applied)
+            flash(request, f"AI analysis complete. Applied: {summary}.", "success")
+        else:
+            flash(request, "AI analysis ran but found nothing new to add (profile already populated).", "info")
+
+        logger.info("AI resume analysis applied [%s] for user %s", ", ".join(applied), current_user.id)
+
+    except Exception as e:
+        db.rollback()
+        logger.error("AI resume analysis failed for user %s: %s", current_user.id, e, exc_info=True)
+        flash(request, "AI analysis encountered an error. Please try again.", "error")
+
     return RedirectResponse("/dashboard/profile", status_code=303)
 
 
@@ -346,8 +498,7 @@ def experience_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        "dashboard/experience.html",
-        {"request": request, "user": current_user, "profile": profile},
+        request=request, name="dashboard/experience.html", context={"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -378,8 +529,7 @@ def add_experience(
         return RedirectResponse("/dashboard/experience", status_code=303)
     except ValidationError as e:
         return templates.TemplateResponse(
-            "dashboard/experience.html",
-            {
+            request=request, name="dashboard/experience.html", context={
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -405,8 +555,7 @@ def edit_experience_page(
         flash(request, "Experience not found.", "error")
         return RedirectResponse("/dashboard/experience", status_code=303)
     return templates.TemplateResponse(
-        "dashboard/experience.html",
-        {"request": request, "user": current_user, "profile": profile, "edit_exp": exp},
+        request=request, name="dashboard/experience.html", context={"request": request, "user": current_user, "profile": profile, "edit_exp": exp},
     )
 
 
@@ -444,8 +593,7 @@ def edit_experience_submit(
             is_current=(is_current == "on"), description=description,
         )
         return templates.TemplateResponse(
-            "dashboard/experience.html",
-            {
+            request=request, name="dashboard/experience.html", context={
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -480,8 +628,7 @@ def education_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        "dashboard/education.html",
-        {"request": request, "user": current_user, "profile": profile},
+        request=request, name="dashboard/education.html", context={"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -508,8 +655,7 @@ async def add_education(
             certificate_url = uploaded_certificate_url
         except HTTPException as exc:
             return templates.TemplateResponse(
-                "dashboard/education.html",
-                {
+                request=request, name="dashboard/education.html", context={
                     "request": request,
                     "user": current_user,
                     "profile": profile,
@@ -531,8 +677,7 @@ async def add_education(
         if uploaded_certificate_url:
             _delete_upload_url(uploaded_certificate_url)
         return templates.TemplateResponse(
-            "dashboard/education.html",
-            {
+            request=request, name="dashboard/education.html", context={
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -562,8 +707,7 @@ def edit_education_page(
         flash(request, "Education not found.", "error")
         return RedirectResponse("/dashboard/education", status_code=303)
     return templates.TemplateResponse(
-        "dashboard/education.html",
-        {"request": request, "user": current_user, "profile": profile, "edit_edu": edu},
+        request=request, name="dashboard/education.html", context={"request": request, "user": current_user, "profile": profile, "edit_edu": edu},
     )
 
 
@@ -600,8 +744,7 @@ async def edit_education_submit(
                 new_certificate_url = uploaded_certificate_url
             except HTTPException as exc:
                 return templates.TemplateResponse(
-                    "dashboard/education.html",
-                    {
+                    request=request, name="dashboard/education.html", context={
                         "request": request,
                         "user": current_user,
                         "profile": profile,
@@ -680,8 +823,7 @@ def skills_page(
 ):
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        "dashboard/skills.html",
-        {"request": request, "user": current_user, "profile": profile, "csrf_token": get_csrf_token(request)},
+        request=request, name="dashboard/skills.html", context={"request": request, "user": current_user, "profile": profile, "csrf_token": get_csrf_token(request)},
     )
 
 
@@ -767,8 +909,7 @@ def projects_page(
         return access_redirect
     profile = _get_profile(current_user, db)
     return templates.TemplateResponse(
-        "dashboard/projects.html",
-        {"request": request, "user": current_user, "profile": profile},
+        request=request, name="dashboard/projects.html", context={"request": request, "user": current_user, "profile": profile},
     )
 
 
@@ -850,8 +991,7 @@ async def add_project(
         if uploaded_thumbnail_url:
             _delete_upload_url(uploaded_thumbnail_url)
         return templates.TemplateResponse(
-            "dashboard/projects.html",
-            {
+            request=request, name="dashboard/projects.html", context={
                 "request": request,
                 "user": current_user,
                 "profile": profile,
@@ -884,8 +1024,7 @@ def edit_project_page(
         flash(request, "Project not found.", "error")
         return RedirectResponse("/dashboard/projects", status_code=303)
     return templates.TemplateResponse(
-        "dashboard/projects.html",
-        {"request": request, "user": current_user, "profile": profile, "edit_proj": proj},
+        request=request, name="dashboard/projects.html", context={"request": request, "user": current_user, "profile": profile, "edit_proj": proj},
     )
 
 
@@ -1005,8 +1144,7 @@ def qr_view(
     show_qr_analytics = can_access_analytics(current_user)
     stats = analytics_service.get_summary(profile.id, db) if profile and show_qr_analytics else None
     return templates.TemplateResponse(
-        "dashboard/qr_view.html",
-        {
+        request=request, name="dashboard/qr_view.html", context={
             "request": request,
             "user": current_user,
             "profile": profile,
@@ -1061,8 +1199,7 @@ def upgrade_page(
     elite_checkout_enabled = bool(settings.stripe_secret_key and settings.get_stripe_price("elite"))
 
     return templates.TemplateResponse(
-        "dashboard/upgrade.html",
-        {
+        request=request, name="dashboard/upgrade.html", context={
             "request": request,
             "user": current_user,
             "profile": profile,
@@ -1085,8 +1222,7 @@ def card_preview(
         qr_service.generate_qr_for_profile(profile, db)
         db.refresh(profile)
     return templates.TemplateResponse(
-        "dashboard/card_preview.html",
-        {"request": request, "user": current_user, "profile": profile},
+        request=request, name="dashboard/card_preview.html", context={"request": request, "user": current_user, "profile": profile},
     )
 
 

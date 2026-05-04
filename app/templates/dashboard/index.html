@@ -31,12 +31,12 @@
     </div>
   </section>
 
-  <section class="bg-white rounded-[2rem] border border-slate-200 shadow-premium p-8">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+  <section class="bento-card p-8 glow-accent">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
       <div>
-        <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-3">Current Plan</p>
-        <h2 class="text-3xl font-black text-slate-900 tracking-tight">{{ current_plan_label }}</h2>
-        <p class="text-sm font-medium text-slate-500 mt-2">
+        <p class="text-[11px] font-black text-brand-600 uppercase tracking-[0.24em] mb-3">Current Plan</p>
+        <h2 class="text-4xl font-black text-slate-900 tracking-tight">{{ current_plan_label }}</h2>
+        <p class="text-sm font-medium text-slate-500 mt-2 max-w-md">
           {% if current_plan_label == "Admin" %}
           Full platform access is enabled for this admin account.
           {% elif current_plan_label == "Elite" %}
@@ -50,12 +50,12 @@
       </div>
       <div class="flex flex-wrap gap-3">
         {% if show_upgrade_callout %}
-        <a href="/dashboard/upgrade" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-brand-500/20 hover:-translate-y-0.5">
+        <a href="/dashboard/upgrade" class="inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-black px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-brand-500/25 hover:-translate-y-1">
           <i data-lucide="sparkles" class="w-4 h-4"></i>
           Upgrade Plan
         </a>
         {% elif show_manage_subscription %}
-        <a href="/billing/portal" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg shadow-slate-900/15 hover:-translate-y-0.5">
+        <a href="/billing/portal" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-slate-900/15 hover:-translate-y-1">
           <i data-lucide="credit-card" class="w-4 h-4"></i>
           Manage Subscription
         </a>
@@ -66,15 +66,15 @@
 
   <!-- Onboarding / Completion Progress -->
   {% if completion_score < 100 %}
-  <div class="p-8 bg-white rounded-[2rem] border border-slate-200 shadow-premium relative overflow-hidden group">
-    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+  <div class="bento-card p-8 relative overflow-hidden group glow-accent">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl -mr-32 -mt-32 transition-opacity z-0"></div>
     
     <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
       <div class="w-24 h-24 relative flex-shrink-0">
-        <svg class="w-full h-full transform -rotate-90">
-          <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100" />
+        <svg class="w-full h-full transform -rotate-90 drop-shadow-md">
+          <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100 dark:text-slate-800" />
           <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" 
-                  class="text-brand-600 transition-all duration-1000 ease-out"
+                  class="text-brand-500 transition-all duration-1000 ease-out"
                   stroke-dasharray="251.2"
                   stroke-dashoffset="{{ 251.2 - (251.2 * completion_score / 100) }}" />
         </svg>
@@ -88,7 +88,7 @@
         <p class="text-slate-500 font-medium">Unlock your full identity potential by reaching 100% completion. You're almost there!</p>
       </div>
       
-      <a href="/dashboard/profile" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-xl shadow-slate-900/10">
+      <a href="/dashboard/profile" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-8 py-4 rounded-2xl transition-all hover:-translate-y-1 shadow-xl shadow-slate-900/10">
         Finish Setup
       </a>
     </div>
@@ -97,42 +97,45 @@
 
   {% if show_dashboard_analytics %}
   <!-- Stats Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div class="bento-grid">
     {% set stat_items = [
-      ('Profile Views', stats.total_views if stats else 0, 'eye', 'text-blue-600', 'bg-blue-50'),
-      ('Unique Visitors', stats.unique_visitors if stats else 0, 'users', 'text-indigo-600', 'bg-indigo-50'),
-      ('QR Scans', stats.qr_scans if stats else 0, 'qr-code', 'text-pink-600', 'bg-pink-50'),
-      ('Resume Downloads', stats.pdf_downloads if stats else 0, 'file-text', 'text-emerald-600', 'bg-emerald-50')
+      ('Profile Views', stats.total_views if stats else 0, 'eye', 'text-blue-500', 'bg-blue-500/10'),
+      ('Unique Visitors', stats.unique_visitors if stats else 0, 'users', 'text-indigo-500', 'bg-indigo-500/10'),
+      ('QR Scans', stats.qr_scans if stats else 0, 'qr-code', 'text-pink-500', 'bg-pink-500/10'),
+      ('Resume Downloads', stats.pdf_downloads if stats else 0, 'file-text', 'text-emerald-500', 'bg-emerald-500/10')
     ] %}
     {% for label, value, icon, t_color, b_color in stat_items %}
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-premium hover:border-brand-200 transition-all group">
-      <div class="w-12 h-12 {{ b_color }} {{ t_color }} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+    <div class="bento-card p-6 flex flex-col justify-between group glow-accent h-40">
+      <div class="w-12 h-12 {{ b_color }} {{ t_color }} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-sm relative z-10">
         <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
       </div>
-      <div class="text-3xl font-black text-slate-900 tracking-tight">{{ value }}</div>
-      <div class="text-xs font-black text-slate-400 uppercase tracking-[0.1em] mt-1">{{ label }}</div>
+      <div class="relative z-10">
+        <div class="text-4xl font-black text-slate-900 tracking-tight leading-none">{{ value }}</div>
+        <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.16em] mt-2">{{ label }}</div>
+      </div>
+      <div class="absolute -bottom-6 -right-6 w-32 h-32 {{ t_color }} opacity-5 rounded-full blur-2xl group-hover:opacity-10 transition-opacity"></div>
     </div>
     {% endfor %}
   </div>
 
-  <section class="bg-white rounded-[2rem] border border-slate-200 shadow-premium p-8 space-y-6">
-    <div class="flex items-center justify-between gap-4">
+  <section class="bento-card p-8 space-y-6 glow-accent">
+    <div class="flex items-center justify-between gap-4 relative z-10">
       <div>
         <h2 class="text-xl font-black text-slate-900">Recent Visits</h2>
         <p class="text-sm font-medium text-slate-500">Local profile view activity for elite analytics.</p>
       </div>
       <div class="text-right">
         <p class="text-xs font-black text-slate-400 uppercase tracking-[0.16em]">Total Views</p>
-        <p class="text-2xl font-black text-slate-900">{{ analytics_overview.total_views if analytics_overview else 0 }}</p>
+        <p class="text-3xl font-black text-slate-900 leading-none">{{ analytics_overview.total_views if analytics_overview else 0 }}</p>
       </div>
     </div>
-    <div class="text-sm font-medium text-slate-500">
+    <div class="text-sm font-medium text-slate-500 relative z-10">
       Unique visitors: <span class="font-black text-slate-900">{{ analytics_overview.unique_visitors if analytics_overview else 0 }}</span>
     </div>
     {% if analytics_overview and analytics_overview.recent_visits %}
-    <div class="space-y-3">
+    <div class="space-y-3 relative z-10">
       {% for visit in analytics_overview.recent_visits %}
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-slate-200/50 bg-white/50 backdrop-blur-sm px-4 py-3 hover:bg-white hover:shadow-sm transition-all">
         <div>
           <p class="text-sm font-black text-slate-900">{{ visit.viewer_ip or "Unknown IP" }}</p>
           <p class="text-xs text-slate-500 break-all">{{ visit.user_agent or "Unknown device" }}</p>
@@ -142,7 +145,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm font-medium text-slate-400">No recent visits recorded yet.</p>
+    <p class="text-sm font-medium text-slate-400 relative z-10">No recent visits recorded yet.</p>
     {% endif %}
   </section>
   {% endif %}
@@ -150,31 +153,31 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Manage Content -->
     <div class="lg:col-span-2 space-y-8">
-      <div class="bg-white rounded-[2rem] border border-slate-200 shadow-premium overflow-hidden">
-         <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div class="bento-card overflow-hidden">
+         <div class="p-6 md:p-8 border-b border-slate-200/50 flex items-center justify-between bg-slate-50/30 backdrop-blur-sm">
             <h3 class="text-xl font-black text-slate-900">Manage Content</h3>
             <div class="flex gap-2">
-              <span class="w-2 h-2 rounded-full bg-slate-200"></span>
-              <span class="w-2 h-2 rounded-full bg-slate-200"></span>
-              <span class="w-2 h-2 rounded-full bg-slate-200"></span>
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span>
             </div>
          </div>
-         <div class="p-8 grid sm:grid-cols-2 gap-6">
+         <div class="p-6 md:p-8 bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
             {% for url, label, desc, icon, color in [
-              ('/dashboard/profile', 'Basic Info', 'Name, headline, and bio', 'user', 'bg-indigo-50 text-indigo-600'),
-              ('/dashboard/experience', 'Experience', 'Job history and roles', 'briefcase', 'bg-blue-50 text-blue-600'),
-              ('/dashboard/education', 'Education', 'Degrees and schools', 'graduation-cap', 'bg-violet-50 text-violet-600'),
-              ('/dashboard/skills', 'Skills', 'Technical & soft skills', 'cpu', 'bg-emerald-50 text-emerald-600'),
-              ('/dashboard/projects', 'Projects', 'Showcase your work', 'code-2', 'bg-orange-50 text-orange-600'),
-              ('/dashboard/qr', 'QR Experience', 'Customize your QR identity', 'qr-code', 'bg-pink-50 text-pink-600')
+              ('/dashboard/profile', 'Basic Info', 'Name, headline, and bio', 'user', 'bg-indigo-500/10 text-indigo-500'),
+              ('/dashboard/experience', 'Experience', 'Job history and roles', 'briefcase', 'bg-blue-500/10 text-blue-500'),
+              ('/dashboard/education', 'Education', 'Degrees and schools', 'graduation-cap', 'bg-violet-500/10 text-violet-500'),
+              ('/dashboard/skills', 'Skills', 'Technical & soft skills', 'cpu', 'bg-emerald-500/10 text-emerald-500'),
+              ('/dashboard/projects', 'Projects', 'Showcase your work', 'code-2', 'bg-orange-500/10 text-orange-500'),
+              ('/dashboard/qr', 'QR Experience', 'Customize your QR identity', 'qr-code', 'bg-pink-500/10 text-pink-500')
             ] %}
-            <a href="{{ url }}" class="group flex items-center gap-5 p-5 rounded-[1.5rem] hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 hover:shadow-sm">
-              <div class="w-14 h-14 {{ color }} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                <i data-lucide="{{ icon }}" class="w-7 h-7"></i>
+            <a href="{{ url }}" class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-100/50 transition-all border border-transparent hover:border-slate-200 hover:shadow-sm">
+              <div class="w-12 h-12 {{ color }} rounded-[14px] flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm shrink-0">
+                <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
               </div>
               <div>
-                <p class="font-black text-slate-900 text-lg">{{ label }}</p>
-                <p class="text-sm font-medium text-slate-400 leading-tight mt-0.5">{{ desc }}</p>
+                <p class="font-black text-slate-900 text-[1.05rem] leading-tight">{{ label }}</p>
+                <p class="text-xs font-medium text-slate-500 leading-tight mt-1">{{ desc }}</p>
               </div>
             </a>
             {% endfor %}
@@ -184,30 +187,30 @@
 
     <!-- QR Identity Preview -->
     <div class="space-y-8">
-      <div class="bg-white p-10 rounded-[2rem] border border-slate-200 shadow-premium text-center relative overflow-hidden group">
-        <div class="absolute inset-0 bg-brand-600 translate-y-full group-hover:translate-y-[92%] transition-transform duration-500 opacity-[0.03]"></div>
+      <div class="bento-card p-10 text-center relative overflow-hidden group glow-accent">
+        <div class="absolute inset-0 bg-brand-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out z-0"></div>
         
-        <h3 class="text-xl font-black text-slate-900 mb-8">Live Identity</h3>
-        <div class="relative inline-block group/qr">
-          <div class="absolute -inset-6 bg-gradient-to-tr from-brand-500 to-brand-700 rounded-[2.5rem] blur-xl opacity-10 group-hover/qr:opacity-20 transition-opacity"></div>
-          <div class="relative bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-2xl">
+        <h3 class="text-xl font-black text-slate-900 mb-8 relative z-10">Live Identity</h3>
+        <div class="relative inline-block group/qr z-10">
+          <div class="absolute -inset-6 bg-gradient-to-tr from-brand-500 to-accent-500 rounded-[2.5rem] blur-2xl opacity-15 group-hover/qr:opacity-30 transition-opacity duration-500"></div>
+          <div class="relative bg-white/80 backdrop-blur-md p-6 rounded-[2rem] border border-slate-200/50 shadow-2xl hover:scale-105 transition-transform duration-500">
             {% if profile.qr_code %}
             <img src="/{{ profile.qr_code.image_path }}" alt="QR Code" class="w-44 h-44 mx-auto rounded-xl" />
             {% else %}
-            <div class="w-44 h-44 flex flex-col items-center justify-center text-slate-300 gap-3 bg-slate-50 rounded-2xl">
-              <i data-lucide="qr-code" class="w-12 h-12 opacity-20"></i>
+            <div class="w-44 h-44 flex flex-col items-center justify-center text-slate-400 gap-3 bg-slate-100/50 rounded-2xl">
+              <i data-lucide="qr-code" class="w-12 h-12 opacity-30"></i>
               <p class="text-[10px] font-black uppercase tracking-[0.2em]">Not Active</p>
             </div>
             {% endif %}
           </div>
         </div>
         
-        <div class="mt-10 space-y-3">
-           <a href="/dashboard/qr" class="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 shadow-lg shadow-slate-900/10">
+        <div class="mt-10 space-y-3 relative z-10">
+           <a href="/dashboard/qr" class="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-brand-600 text-white font-bold py-4 rounded-2xl transition-all hover:-translate-y-1 shadow-xl shadow-slate-900/20">
               <i data-lucide="download" class="w-4 h-4"></i>
               Get QR Assets
            </a>
-           <button onclick="copyProfileLink(event)" class="flex items-center justify-center gap-2 w-full bg-white text-slate-700 border border-slate-200 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-200">
+           <button onclick="copyProfileLink(event)" class="flex items-center justify-center gap-2 w-full bg-white/50 backdrop-blur-sm text-slate-700 border border-slate-200 font-bold py-4 rounded-2xl hover:bg-white hover:shadow-md transition-all hover:-translate-y-0.5">
               <i data-lucide="copy" class="w-4 h-4"></i>
               Copy URL
            </button>

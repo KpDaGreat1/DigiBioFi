@@ -1,12 +1,24 @@
 """
 User model — authentication identity and role.
 """
+import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+class UserRole(str, enum.Enum):
+    USER = "user"
+    ADMIN = "admin"
+
+
+class SubscriptionTier(str, enum.Enum):
+    FREE = "free"
+    BASIC = "basic"
+    PREMIUM = "premium"
+    ELITE = "elite"
 
 
 class User(Base):
@@ -17,11 +29,11 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Role: "user" | "admin"
-    role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER, nullable=False)
 
-    # Subscription tier: "free" | "basic" | "premium" | "elite"
-    subscription_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
+    subscription_tier: Mapped[SubscriptionTier] = mapped_column(
+        Enum(SubscriptionTier), default=SubscriptionTier.FREE, nullable=False
+    )
     subscription_status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -35,7 +47,11 @@ class User(Base):
 
     @property
     def is_premium(self) -> bool:
-        return self.subscription_tier in ("basic", "premium", "elite")
+        return self.subscription_tier in (
+            SubscriptionTier.BASIC,
+            SubscriptionTier.PREMIUM,
+            SubscriptionTier.ELITE,
+        )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

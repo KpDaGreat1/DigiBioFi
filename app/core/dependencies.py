@@ -90,13 +90,15 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
 # ADMIN GUARD (THIS FIXES YOUR CRASH)
 # ───────────────────────────────
 def require_admin(current_user = Depends(get_current_user)):
-    if current_user.role != "admin":
+    from app.models.user import UserRole
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
 
 def require_premium(current_user = Depends(get_current_user)):
-    if current_user.role == "admin":
+    from app.models.user import UserRole
+    if current_user.role == UserRole.ADMIN:
         return current_user
     if not can_access_portfolio(current_user):
         raise HTTPException(
@@ -107,7 +109,8 @@ def require_premium(current_user = Depends(get_current_user)):
 
 
 def require_elite(current_user = Depends(get_current_user)):
-    if current_user.role == "admin":
+    from app.models.user import UserRole
+    if current_user.role == UserRole.ADMIN:
         return current_user
     if not can_access_elite_features(current_user):
         raise HTTPException(

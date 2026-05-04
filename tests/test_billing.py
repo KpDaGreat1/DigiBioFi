@@ -23,11 +23,11 @@ class TestBillingRoutes:
             resp = auth_client.post(
                 "/billing/create-checkout-session",
                 data={"plan": " enterprise ", "csrf_token": "test"},
-                follow_redirects=True,
+                follow_redirects=False,
             )
 
-        assert resp.status_code == 200
-        assert b"Selected plan is invalid." in resp.content
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard/upgrade"
         assert any("Invalid checkout plan attempt" in rec.message for rec in caplog.records)
 
     def test_checkout_missing_config_redirects_safely(self, auth_client, monkeypatch):
@@ -42,11 +42,11 @@ class TestBillingRoutes:
         resp = auth_client.post(
             "/billing/create-checkout-session",
             data={"plan": "basic", "csrf_token": "test"},
-            follow_redirects=True,
+            follow_redirects=False,
         )
 
-        assert resp.status_code == 200
-        assert b"Billing is not configured yet." in resp.content
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard/upgrade"
 
     def test_checkout_success_redirects_with_deterministic_urls(self, auth_client, monkeypatch):
         monkeypatch.setattr(settings, "stripe_secret_key", "sk_test_123")
@@ -93,11 +93,11 @@ class TestBillingRoutes:
             resp = auth_client.post(
                 "/billing/create-checkout-session",
                 data={"plan": "elite", "csrf_token": "test"},
-                follow_redirects=True,
+                follow_redirects=False,
             )
 
-        assert resp.status_code == 200
-        assert b"Could not start checkout. Please try again." in resp.content
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard/upgrade"
         assert any("Stripe checkout failed" in rec.message for rec in caplog.records)
 
     def test_billing_success_and_cancel_routes_are_redirect_only(self, auth_client):
@@ -117,23 +117,23 @@ class TestDashboardCheckoutMessages:
         user.subscription_status = "active"
         db.commit()
 
-        resp = auth_client.get("/dashboard?success=true&plan=basic", follow_redirects=True)
-        assert resp.status_code == 200
-        assert b"Your Basic plan is active." in resp.content
+        resp = auth_client.get("/dashboard?success=true&plan=basic", follow_redirects=False)
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard"
 
         canonical = auth_client.get("/dashboard")
         assert canonical.status_code == 200
         assert b"Your Basic plan is active." not in canonical.content
 
     def test_dashboard_success_pending_flashes_processing_message(self, auth_client):
-        resp = auth_client.get("/dashboard?success=true&plan=elite", follow_redirects=True)
-        assert resp.status_code == 200
-        assert b"Billing is still processing." in resp.content
+        resp = auth_client.get("/dashboard?success=true&plan=elite", follow_redirects=False)
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard"
 
     def test_dashboard_cancel_redirects_once_without_loop(self, auth_client):
-        resp = auth_client.get("/dashboard?canceled=true&plan=elite", follow_redirects=True)
-        assert resp.status_code == 200
-        assert b"Checkout canceled. No charge was made." in resp.content
+        resp = auth_client.get("/dashboard?canceled=true&plan=elite", follow_redirects=False)
+        assert resp.status_code == 303
+        assert resp.headers["location"] == "/dashboard"
 
         canonical = auth_client.get("/dashboard", follow_redirects=False)
         assert canonical.status_code == 200

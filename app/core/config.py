@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     emails_from_email: str = "noreply@example.com"
     emails_from_name: str = "DigiBioFi"
+    # ── AI / ML Pipeline ──────────────────────────────────────────────────────
+    gemini_api_key: str = ""
 
     # ── Stripe ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""

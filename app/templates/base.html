@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#127a67" />
   <meta name="description" content="DigiBioFi — The elite digital identity platform for high-impact professionals." />
 
-<script async 
-  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4064027166799813"
-  crossorigin="anonymous">
-</script>
+  {% if show_dashboard_ad and dashboard_ad_client_id %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ dashboard_ad_client_id }}" crossorigin="anonymous"></script>
+  {% elif show_public_ad and public_ad_client_id %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ public_ad_client_id }}" crossorigin="anonymous"></script>
+  {% endif %}
   
   <!-- Favicon (SVG for better scaling) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23127a67%22/><path d=%22M25 30h50M25 50h40M25 70h30%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22/><circle cx=%2270%22 cy=%2270%22 r=%2212%22 fill=%22white%22/></svg>">
@@ -48,8 +49,8 @@
             },
           },
           fontFamily: {
-            sans: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans: ['Outfit', '"Space Grotesk"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
           },
           boxShadow: {
             'glass': '0 24px 60px -36px rgba(15, 23, 42, 0.35)',
@@ -73,7 +74,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
 
   <!-- Lucide Icons (better than FontAwesome for modern UI) -->
   <script src="https://unpkg.com/lucide@latest"></script>

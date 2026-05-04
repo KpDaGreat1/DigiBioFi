@@ -16,7 +16,7 @@
   </header>
 
   <!-- Sidebar (Desktop) -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out flex flex-col">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 transform -translate-x-full lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out flex flex-col">
     <div class="p-6 hidden lg:block">
       <a href="/dashboard" class="flex items-center gap-2 font-black text-brand-600 text-2xl tracking-tight">
         <div class="bg-brand-600 p-1.5 rounded-lg shadow-lg shadow-brand-500/20">
@@ -54,8 +54,8 @@
       {% endif %}
     </nav>
 
-    <div class="p-4 border-t border-slate-100 mt-auto">
-      <div class="bg-slate-50 rounded-2xl p-4 mb-4">
+    <div class="p-4 border-t border-slate-200/50 mt-auto">
+      <div class="bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-4 mb-4 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 rounded-full bg-white border-2 border-brand-100 shadow-sm flex items-center justify-center font-bold text-brand-600">
             {{ user.username[0].upper() }}
@@ -92,7 +92,7 @@
     <div class="flex-1 min-w-0 flex flex-col pt-16 lg:pt-0">
         <div class="max-w-[1400px] w-full mx-auto flex flex-col flex-1">
             <!-- Desktop Top Nav -->
-            <header class="hidden lg:flex bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 items-center justify-between sticky top-0 z-30">
+            <header class="hidden lg:flex bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 px-8 py-4 items-center justify-between sticky top-0 z-30 shadow-sm">
       <div>
         {% block breadcrumbs %}
         <nav class="flex items-center gap-2 text-sm font-bold">
@@ -127,9 +127,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="px-10 py-10 border-t border-slate-200 bg-white/50 text-center">
-      <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">"Let all things be done decently and in order." — 1 Corinthians 14:40</p>
-      <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">&copy; 2026 DigiBioFi • Professional Identity System</p>
+    <footer class="px-10 py-10 border-t border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm text-center">
+      <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">"Let all things be done decently and in order." — 1 Corinthians 14:40</p>
+      <p class="text-[10px] font-bold text-slate-400/80 uppercase tracking-widest">&copy; 2026 DigiBioFi • Professional Identity System</p>
     </footer>
     </div>
   </div>
