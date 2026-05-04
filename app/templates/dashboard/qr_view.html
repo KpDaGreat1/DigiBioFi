@@ -4,83 +4,115 @@
 {% block page_title %}QR Code{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto flex flex-col items-center surface-light">
-  <div class="text-center mb-12">
-    <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-3">Your QR Code</h1>
-    <p class="text-slate-500 font-medium">Share your profile quickly in person, on printed materials, or anywhere a scan is easier than a link.</p>
+<div class="max-w-4xl mx-auto space-y-10">
+
+  <div>
+    <h1 class="text-3xl font-bold text-white tracking-tight">Your QR Code</h1>
+    <p class="text-slate-500 font-medium mt-1 text-sm">Share your profile instantly at events, on printed materials, or anywhere a scan is easier than a link.</p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
-    <!-- QR Card Display -->
-    <div class="flex justify-center">
-      <div class="relative group">
-        <!-- Elite Glow Effects -->
-        <div class="absolute -inset-10 bg-brand-500 rounded-[4rem] blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity animate-pulse-slow"></div>
-        <div class="absolute -inset-4 bg-gradient-to-tr from-brand-600 to-indigo-600 rounded-[3.5rem] blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-        
-        <div class="relative bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 text-center">
-          <div class="relative bg-slate-50 p-8 rounded-[2rem] border-4 border-white shadow-inner mb-8 overflow-hidden">
-            {% if profile.qr_code %}
-            <img src="/{{ profile.qr_code.image_path }}" alt="QR Code" class="w-64 h-64 mx-auto rounded-xl relative z-10" />
-            <div class="absolute inset-0 bg-brand-500/5 animate-pulse"></div>
-            {% else %}
-            <div class="w-64 h-64 flex flex-col items-center justify-center text-slate-300 gap-4">
-              <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-brand-500"></i>
-              <p class="text-xs font-black uppercase tracking-widest">Generating...</p>
-            </div>
-            {% endif %}
-          </div>
-          
-          <div class="space-y-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Official Profile</p>
-            <h2 class="text-xl font-black text-slate-900">{{ profile.full_name or profile.slug }}</h2>
-            <p class="text-sm font-bold text-brand-600">{{ profile.headline or 'Professional' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="grid lg:grid-cols-2 gap-10 items-start">
 
-    <!-- Actions & Info -->
-    <div class="space-y-8">
-      <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-elevated">
-        <h3 class="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-          <i data-lucide="share-2" class="w-5 h-5 text-brand-600"></i>
-          Share your profile
-        </h3>
-        
-        <div class="space-y-4">
-          <a href="/qr/download/{{ profile.slug }}" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-slate-800 transition-all hover:-translate-y-1 shadow-xl shadow-slate-900/20">
-            <i data-lucide="download" class="w-5 h-5"></i>
-            Download Print Quality
-          </a>
-          
-          <button onclick="copyQRLink(event)" class="flex items-center justify-center gap-3 w-full bg-white text-slate-700 border border-slate-200 font-black py-4 rounded-2xl hover:bg-slate-50 transition-all hover:border-brand-300 group">
-            <i data-lucide="copy" class="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors"></i>
-            Copy Direct Link
-          </button>
+    <!-- QR Display Card -->
+    <div class="premium-panel p-10 text-center relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-48 h-48 bg-brand-blue/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none"></div>
+
+      <div class="relative inline-block mb-8 group">
+        <div class="absolute -inset-6 bg-gradient-to-tr from-brand-blue to-brand-purple rounded-[3rem] blur-2xl opacity-10 group-hover:opacity-25 transition-opacity"></div>
+        <div class="relative bg-white p-8 rounded-[2.5rem] shadow-2xl">
+          {% if profile.qr_code and profile.qr_code.image_path %}
+          <img src="/{{ profile.qr_code.image_path }}"
+               alt="QR Code for {{ profile.full_name or profile.slug }}"
+               class="w-56 h-56 rounded-xl"
+               onerror="this.style.display='none';document.getElementById('qr-fallback').classList.remove('hidden');" />
+          <div id="qr-fallback" class="w-56 h-56 hidden flex-col items-center justify-center gap-3">
+            <i data-lucide="alert-circle" class="w-10 h-10 text-slate-400"></i>
+            <p class="text-xs font-bold text-slate-500">QR image unavailable</p>
+            <p class="text-[10px] text-slate-400">Use the regenerate button</p>
+          </div>
+          {% else %}
+          <div class="w-56 h-56 flex flex-col items-center justify-center gap-4">
+            <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-brand-600"></i>
+            <p class="text-xs font-bold text-slate-500">Generating…</p>
+          </div>
+          {% endif %}
         </div>
       </div>
+
+      <h2 class="text-xl font-bold text-white mb-1 tracking-tight">{{ profile.full_name or profile.slug }}</h2>
+      <p class="text-sm font-bold text-brand-blue uppercase tracking-widest">{{ profile.headline or 'Professional Profile' }}</p>
 
       {% if show_qr_analytics %}
-      <div class="bg-brand-50 rounded-[2rem] p-8 border border-brand-100">
-        <h3 class="text-lg font-black text-brand-900 mb-2">QR Analytics</h3>
-        <p class="text-sm font-medium text-brand-700 mb-6">Track how many times your QR code has been scanned.</p>
-        
-        <div class="flex items-end gap-4">
-          <div class="text-5xl font-black text-brand-600 leading-none">{{ qr_scans }}</div>
-          <div class="text-sm font-black text-brand-400 uppercase tracking-widest pb-1">Total Scans</div>
+      <div class="mt-8 flex items-center justify-center gap-2">
+        <span class="text-5xl font-bold text-white">{{ qr_scans }}</span>
+        <div class="text-left">
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total</p>
+          <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scans</p>
         </div>
       </div>
       {% endif %}
+    </div>
 
-      <form action="/dashboard/qr/regenerate" method="post" onsubmit="return confirm('Regenerating your QR will create a new QR asset. The target link will remain the same. Continue?')">
+    <!-- Actions Card -->
+    <div class="space-y-6">
+      <div class="premium-panel p-8 space-y-5">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="share-2" class="w-4 h-4 text-brand-blue"></i>
+          Share Your Profile
+        </h3>
+
+        <a href="/qr/download/{{ profile.slug }}"
+           class="flex items-center justify-center gap-3 w-full btn-primary py-4 text-sm">
+          <i data-lucide="download" class="w-5 h-5"></i>
+          Download Print Quality
+        </a>
+
+        <button onclick="copyQRLink(event)"
+                class="flex items-center justify-center gap-3 w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/10 hover:border-brand-blue/30 transition-all text-sm group">
+          <i data-lucide="copy" class="w-5 h-5 text-slate-400 group-hover:text-brand-blue transition-colors"></i>
+          Copy Direct Link
+        </button>
+
+        <div class="pt-2 border-t border-white/5">
+          <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">Your QR Target URL</p>
+          <code class="block text-[10px] text-slate-500 bg-white/5 rounded-xl px-3 py-2 break-all font-mono">
+            {{ base_url }}/p/{{ profile.slug }}
+          </code>
+        </div>
+      </div>
+
+      <div class="premium-panel p-8 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-slate-500"></i>
+          QR Tips
+        </h3>
+        <ul class="space-y-3 text-sm text-slate-400">
+          <li class="flex items-start gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-brand-green mt-0.5 flex-shrink-0"></i>
+            Print at 300 DPI or larger for best scan results
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-brand-green mt-0.5 flex-shrink-0"></i>
+            Minimum recommended size: 2×2 cm
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-brand-green mt-0.5 flex-shrink-0"></i>
+            Keep white border around the code for scanner compatibility
+          </li>
+        </ul>
+      </div>
+
+      <form action="/dashboard/qr/regenerate" method="post"
+            onsubmit="return confirm('Regenerating creates a new QR image. The target URL stays the same. Continue?')">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-        <button type="submit" data-loading-text="REFRESHING ASSET..." class="flex items-center gap-2 text-slate-400 hover:text-brand-600 font-bold text-sm transition-colors mx-auto">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          QR not scanning? Regenerate QR Code
+        <button type="submit"
+                class="flex items-center justify-center gap-2 w-full text-slate-500 hover:text-white font-bold text-xs uppercase tracking-widest transition-colors py-3">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          QR not scanning? Regenerate
         </button>
       </form>
     </div>
+
   </div>
 </div>
 
@@ -89,13 +121,13 @@
     const url = "{{ base_url }}/p/{{ profile.slug }}?src=qr";
     navigator.clipboard.writeText(url).then(() => {
       const btn = event.currentTarget;
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> Copied to Clipboard!';
-      btn.classList.add('text-green-600', 'border-green-200', 'bg-green-50');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i data-lucide="check" class="w-5 h-5 text-brand-green"></i><span>Copied!</span>';
+      btn.classList.add('border-brand-green/30', 'bg-brand-green/5', 'text-brand-green');
       lucide.createIcons();
       setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.classList.remove('text-green-600', 'border-green-200', 'bg-green-50');
+        btn.innerHTML = orig;
+        btn.classList.remove('border-brand-green/30', 'bg-brand-green/5', 'text-brand-green');
         lucide.createIcons();
       }, 2000);
     });

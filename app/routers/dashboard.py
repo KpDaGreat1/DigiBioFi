@@ -1438,10 +1438,13 @@ def qr_view(
     db: Session = Depends(get_db),
 ):
     profile = _get_profile(current_user, db)
-    # Ensure QR exists (generate on first visit)
+    # Ensure QR exists (generate on first visit); swallow errors so the page still loads
     if not profile.qr_code:
-        qr_service.generate_qr_for_profile(profile, db)
-        db.refresh(profile)
+        try:
+            qr_service.generate_qr_for_profile(profile, db)
+            db.refresh(profile)
+        except Exception:
+            logger.exception("QR generation failed for user=%s", current_user.id)
     show_qr_analytics = can_access_analytics(current_user)
     stats = analytics_service.get_summary(profile.id, db) if profile and show_qr_analytics else None
     return templates.TemplateResponse(

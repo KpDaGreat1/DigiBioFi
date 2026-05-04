@@ -59,6 +59,41 @@
       </div>
     </section>
 
+    <!-- Video Introduction Section -->
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="reveal text-center mb-10">
+          <p class="text-xs font-black text-brand-blue uppercase tracking-[0.3em] mb-4">See It In Action</p>
+          <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight">Your professional profile, simplified.</h2>
+          <p class="text-slate-400 text-base font-medium mt-4 max-w-2xl mx-auto">Watch how DigiBioFi brings your career story together in one shareable link.</p>
+        </div>
+        <div class="reveal reveal-delay-1 relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/60 aspect-video mx-auto">
+          <!-- Replace the src below with your actual video embed URL -->
+          {% if video_embed_url %}
+          <iframe
+            src="{{ video_embed_url }}"
+            title="DigiBioFi Introduction"
+            class="absolute inset-0 w-full h-full"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+          {% else %}
+          <!-- Placeholder shown until a video URL is configured -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-900 to-slate-950">
+            <div class="w-20 h-20 rounded-full bg-brand-blue/20 border border-brand-blue/30 flex items-center justify-center shadow-glow cursor-pointer hover:bg-brand-blue/30 transition-all group">
+              <i data-lucide="play" class="w-9 h-9 text-brand-blue ml-1 group-hover:scale-110 transition-transform"></i>
+            </div>
+            <div class="text-center">
+              <p class="text-white font-bold text-lg">Product Overview</p>
+              <p class="text-slate-500 text-sm mt-1">Video coming soon</p>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
     <section class="py-20 border-t border-white/5 bg-white/[0.01]">
       <div class="max-w-7xl mx-auto px-6">
         <div class="reveal flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">

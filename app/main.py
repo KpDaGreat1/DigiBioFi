@@ -836,7 +836,12 @@ def root(request: Request, user=Depends(get_current_user_optional)):
     """Landing page."""
     return templates.TemplateResponse(
         "landing.html",
-        {"request": request, "user": user, "base_url": external_base_url(request)},
+        {
+            "request": request,
+            "user": user,
+            "base_url": external_base_url(request),
+            "video_embed_url": settings.video_embed_url if hasattr(settings, "video_embed_url") else "",
+        },
     )
 
 

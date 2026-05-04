@@ -544,7 +544,7 @@ def admin_message_thread(
     thread_messages = (
         db.query(ContactMessage)
         .filter(ContactMessage.user_id == user_id)
-        .order_by(ContactMessage.created_at.desc())
+        .order_by(ContactMessage.created_at.asc())
         .all()
     )
     if not thread_messages:
@@ -557,13 +557,23 @@ def admin_message_thread(
     ).update({"status": "read"}, synchronize_session=False)
     db.commit()
 
+    # Re-fetch to get updated statuses
+    db.expire_all()
+    thread_user = db.query(ContactMessage).filter(
+        ContactMessage.user_id == user_id
+    ).first()
+
+    from app.models.user import User as UserModel
+    the_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
     return templates.TemplateResponse(
         "admin/message_thread.html",
         {
             "request": request,
             "admin": admin,
-            "thread_user": thread_messages[0].user,
+            "thread_user": the_user,
             "thread_messages": thread_messages,
+            "thread_user_id": user_id,
         },
     )
 
@@ -609,9 +619,87 @@ async def delete_message(
         flash(request, "Message not found.", "error")
         return RedirectResponse("/admin/messages", status_code=303)
 
+    user_id = msg.user_id
     db.delete(msg)
     db.commit()
     flash(request, "Message deleted.", "success")
+    if user_id:
+        return RedirectResponse(f"/admin/messages/thread/{user_id}", status_code=303)
+    return RedirectResponse("/admin/messages", status_code=303)
+
+
+@router.post("/messages/thread/{user_id}/reply", response_class=HTMLResponse)
+async def admin_reply_to_thread(
+    request: Request,
+    user_id: int,
+    body: str = Form(...),
+    csrf_token: str = Depends(require_csrf),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+    from app.models.user import User
+
+    body = body.strip()
+    if not body:
+        flash(request, "Reply cannot be empty.", "error")
+        return RedirectResponse(f"/admin/messages/thread/{user_id}", status_code=303)
+
+    thread_user = db.query(User).filter(User.id == user_id).first()
+    if not thread_user:
+        flash(request, "User not found.", "error")
+        return RedirectResponse("/admin/messages", status_code=303)
+
+    reply = ContactMessage(
+        sender_name="DigiBioFi Support",
+        sender_email="support@digibiofi.com",
+        user_id=user_id,
+        source="admin",
+        is_admin_reply=True,
+        subject="Support Reply",
+        body=body,
+        status="read",
+    )
+    db.add(reply)
+    db.commit()
+    flash(request, "Reply sent.", "success")
+    return RedirectResponse(f"/admin/messages/thread/{user_id}", status_code=303)
+
+
+@router.post("/messages/thread/{user_id}/resolve", response_class=HTMLResponse)
+async def admin_resolve_thread(
+    request: Request,
+    user_id: int,
+    csrf_token: str = Depends(require_csrf),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+
+    db.query(ContactMessage).filter(
+        ContactMessage.user_id == user_id,
+        ContactMessage.status != "resolved",
+    ).update({"status": "resolved"}, synchronize_session=False)
+    db.commit()
+    flash(request, "Thread marked as resolved.", "success")
+    return RedirectResponse(f"/admin/messages/thread/{user_id}", status_code=303)
+
+
+@router.post("/messages/thread/{user_id}/delete", response_class=HTMLResponse)
+async def admin_delete_thread(
+    request: Request,
+    user_id: int,
+    csrf_token: str = Depends(require_csrf),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    from app.models.message import ContactMessage
+
+    db.query(ContactMessage).filter(ContactMessage.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.commit()
+    flash(request, "Thread deleted.", "success")
     return RedirectResponse("/admin/messages", status_code=303)
 
 

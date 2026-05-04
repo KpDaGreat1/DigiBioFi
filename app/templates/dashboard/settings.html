@@ -4,171 +4,165 @@
 {% block page_title %}Settings{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-5xl mx-auto space-y-8 surface-light">
+<div class="max-w-5xl mx-auto space-y-10">
   <div>
-    <h1 class="text-3xl font-black text-slate-900 tracking-tight">Settings</h1>
-    <p class="mt-2 text-sm font-medium text-slate-500">Manage your private account details, password, billing access, and account lifecycle.</p>
+    <h1 class="text-3xl font-bold text-white tracking-tight">Settings</h1>
+    <p class="mt-1 text-sm font-medium text-slate-500">Manage your private account details, password, billing access, and account lifecycle.</p>
   </div>
 
   <div class="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
     <section class="space-y-8">
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-elevated">
-        <div class="mb-6">
-          <h2 class="text-xl font-black text-slate-900 tracking-tight">Private Account Details</h2>
-          <p class="mt-1 text-sm text-slate-500">These details stay private. Public identity, bio, skills, experience, and links stay in the profile editor.</p>
-        </div>
 
+      <!-- Account Details -->
+      <article class="premium-panel p-8">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white tracking-tight">Private Account Details</h2>
+          <p class="mt-1 text-sm text-slate-500">These details stay private. Public info lives in the profile editor.</p>
+        </div>
         <form action="/settings/profile" method="post" class="space-y-5">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-
           <div class="grid gap-5 md:grid-cols-2">
-            <div class="space-y-2">
-              <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Email</label>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
               <input type="email" name="email" value="{{ settings_values.email }}" required maxlength="255"
-                     class="w-full rounded-2xl border {% if profile_errors.email %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-              {% if profile_errors.email %}<p class="error-message">{{ profile_errors.email }}</p>{% endif %}
+                     class="w-full {% if profile_errors.email %}border-red-500/50{% endif %}">
+              {% if profile_errors.email %}<p class="text-xs text-red-400 mt-1">{{ profile_errors.email }}</p>{% endif %}
             </div>
-            <div class="space-y-2">
-              <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Phone</label>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Phone</label>
               <input type="text" name="phone" value="{{ settings_values.phone }}" maxlength="50" autocomplete="tel"
-                     class="w-full rounded-2xl border {% if profile_errors.phone %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-              {% if profile_errors.phone %}<p class="error-message">{{ profile_errors.phone }}</p>{% endif %}
+                     class="w-full {% if profile_errors.phone %}border-red-500/50{% endif %}">
+              {% if profile_errors.phone %}<p class="text-xs text-red-400 mt-1">{{ profile_errors.phone }}</p>{% endif %}
             </div>
           </div>
-
-          <div class="space-y-2">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Address</label>
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Address</label>
             <input type="text" name="address" value="{{ settings_values.address }}" maxlength="200" autocomplete="street-address"
-                   class="w-full rounded-2xl border {% if profile_errors.address %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-            {% if profile_errors.address %}<p class="error-message">{{ profile_errors.address }}</p>{% endif %}
+                   class="w-full {% if profile_errors.address %}border-red-500/50{% endif %}">
+            {% if profile_errors.address %}<p class="text-xs text-red-400 mt-1">{{ profile_errors.address }}</p>{% endif %}
           </div>
-
-          <button type="submit" class="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-slate-800">
-            Save Settings
-          </button>
+          <button type="submit" class="btn-primary px-6 py-3 text-xs">Save Settings</button>
         </form>
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-elevated">
+      <!-- Password -->
+      <article class="premium-panel p-8">
         <div class="mb-6">
-          <h2 class="text-xl font-black text-slate-900 tracking-tight">Security</h2>
+          <h2 class="text-lg font-bold text-white tracking-tight">Security</h2>
           <p class="mt-1 text-sm text-slate-500">Change your password without affecting your public profile.</p>
         </div>
-
         <form action="/settings/password" method="post" class="space-y-5">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-
-          <div class="space-y-2">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Current Password</label>
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Current Password</label>
             <input type="password" name="current_password" required autocomplete="current-password"
-                   class="w-full rounded-2xl border {% if password_errors.current_password %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-            {% if password_errors.current_password %}<p class="error-message">{{ password_errors.current_password }}</p>{% endif %}
+                   class="w-full {% if password_errors.current_password %}border-red-500/50{% endif %}">
+            {% if password_errors.current_password %}<p class="text-xs text-red-400 mt-1">{{ password_errors.current_password }}</p>{% endif %}
           </div>
-
           <div class="grid gap-5 md:grid-cols-2">
-            <div class="space-y-2">
-              <label class="block text-xs font-black uppercase tracking-widest text-slate-700">New Password</label>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">New Password</label>
               <input type="password" name="new_password" required minlength="12" autocomplete="new-password"
-                     class="w-full rounded-2xl border {% if password_errors.new_password %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-              {% if password_errors.new_password %}<p class="error-message">{{ password_errors.new_password }}</p>{% endif %}
+                     class="w-full {% if password_errors.new_password %}border-red-500/50{% endif %}">
+              {% if password_errors.new_password %}<p class="text-xs text-red-400 mt-1">{{ password_errors.new_password }}</p>{% endif %}
             </div>
-            <div class="space-y-2">
-              <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Confirm New Password</label>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Confirm New Password</label>
               <input type="password" name="confirm_password" required minlength="12" autocomplete="new-password"
-                     class="w-full rounded-2xl border {% if password_errors.confirm_password %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10">
-              {% if password_errors.confirm_password %}<p class="error-message">{{ password_errors.confirm_password }}</p>{% endif %}
+                     class="w-full {% if password_errors.confirm_password %}border-red-500/50{% endif %}">
+              {% if password_errors.confirm_password %}<p class="text-xs text-red-400 mt-1">{{ password_errors.confirm_password }}</p>{% endif %}
             </div>
           </div>
-
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-xs font-medium text-slate-500">
-            Passwords must be at least 12 characters and include an uppercase letter, a number, and a special character.
+          <div class="rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3 text-xs text-slate-500">
+            Passwords must be at least 12 characters with an uppercase letter, a number, and a special character.
           </div>
-
-          <button type="submit" class="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-slate-800">
-            Update Password
-          </button>
+          <button type="submit" class="btn-primary px-6 py-3 text-xs">Update Password</button>
         </form>
       </article>
+
     </section>
 
     <aside class="space-y-8">
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-elevated">
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Billing</h2>
-        <p class="mt-2 text-sm text-slate-500">
-          {% if user.role == 'admin' %}
-          Admin accounts keep permanent platform authority. Billing controls remain available only when you need to inspect a live subscription state.
-          {% else %}
-          Manage your current plan and billing details without exposing any account data publicly.
-          {% endif %}
+
+      <!-- Billing -->
+      <article class="premium-panel p-8">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-2">Billing</h2>
+        <p class="text-sm text-slate-500 mb-5">
+          {% if user.role == 'admin' %}Admin accounts keep permanent platform authority.
+          {% else %}Manage your current plan and billing details.{% endif %}
         </p>
-        <div class="mt-5 space-y-3">
-          <a href="{% if user.role == 'admin' %}/admin{% else %}/dashboard/upgrade{% endif %}" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
-            {% if user.role == 'admin' %}Admin Panel{% else %}Plans and Pricing{% endif %}
-            <span aria-hidden="true">→</span>
+        <div class="space-y-2">
+          <a href="{% if user.role == 'admin' %}/admin{% else %}/dashboard/upgrade{% endif %}"
+             class="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/8 hover:text-white hover:border-brand-blue/30 transition-all">
+            {% if user.role == 'admin' %}Admin Panel{% else %}Plans & Pricing{% endif %}
+            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600"></i>
           </a>
           {% if can_manage_subscription(user) %}
-          <a href="/billing/portal" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
+          <a href="/billing/portal"
+             class="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/8 hover:text-white hover:border-brand-blue/30 transition-all">
             Manage Subscription
-            <span aria-hidden="true">→</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600"></i>
           </a>
           {% endif %}
         </div>
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-elevated">
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Account Management</h2>
-        <p class="mt-2 text-sm text-slate-500">Deleting your account removes your profile, uploaded files, and support thread history.</p>
+      <!-- Quick Links -->
+      <article class="premium-panel p-8">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-5">Quick Links</h2>
+        <div class="space-y-2">
+          {% for href, label in [
+            ('/dashboard/profile', 'Profile Editor'),
+            ('/dashboard/messages', 'Messages'),
+          ] %}
+          <a href="{{ href }}"
+             class="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/8 hover:text-white hover:border-brand-blue/30 transition-all">
+            {{ label }}
+            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600"></i>
+          </a>
+          {% endfor %}
+          {% if user.role == 'admin' %}
+          <a href="/admin/users"
+             class="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/8 hover:text-white hover:border-brand-blue/30 transition-all">
+            User Authority
+            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600"></i>
+          </a>
+          {% else %}
+          <a href="/dashboard/upgrade"
+             class="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/8 hover:text-white hover:border-brand-blue/30 transition-all">
+            Plans
+            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600"></i>
+          </a>
+          {% endif %}
+        </div>
+      </article>
 
-        <form action="/settings/delete" method="post" class="mt-6 space-y-5">
+      <!-- Danger Zone -->
+      <article class="rounded-2xl border border-red-900/30 bg-red-950/20 p-8">
+        <h2 class="text-lg font-bold text-red-400 tracking-tight mb-2">Delete Account</h2>
+        <p class="text-sm text-slate-500 mb-5">Removes your profile, uploads, and support history permanently.</p>
+        <form action="/settings/delete" method="post" class="space-y-5">
           <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
-
-          <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-xs font-medium text-amber-800">
-            This action is permanent. Type <span class="font-black">DELETE</span> and confirm your password to continue.
+          <div class="rounded-xl border border-amber-800/30 bg-amber-950/30 px-4 py-3 text-xs text-amber-400">
+            Type <span class="font-black">DELETE</span> and confirm your password to continue.
           </div>
-
-          <div class="space-y-2">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Type DELETE</label>
-            <input type="text" name="confirmation" required
-                   class="w-full rounded-2xl border {% if delete_errors.confirmation %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-500/10">
-            {% if delete_errors.confirmation %}<p class="error-message">{{ delete_errors.confirmation }}</p>{% endif %}
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Type DELETE</label>
+            <input type="text" name="confirmation" required class="w-full {% if delete_errors.confirmation %}border-red-500/50{% endif %}">
+            {% if delete_errors.confirmation %}<p class="text-xs text-red-400 mt-1">{{ delete_errors.confirmation }}</p>{% endif %}
           </div>
-
-          <div class="space-y-2">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-700">Current Password</label>
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500">Password</label>
             <input type="password" name="current_password" required autocomplete="current-password"
-                   class="w-full rounded-2xl border {% if delete_errors.current_password %}border-red-300 bg-red-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-500/10">
-            {% if delete_errors.current_password %}<p class="error-message">{{ delete_errors.current_password }}</p>{% endif %}
+                   class="w-full {% if delete_errors.current_password %}border-red-500/50{% endif %}">
+            {% if delete_errors.current_password %}<p class="text-xs text-red-400 mt-1">{{ delete_errors.current_password }}</p>{% endif %}
           </div>
-
-          <button type="submit" class="w-full rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-red-700">
-            Delete Account
+          <button type="submit" class="w-full rounded-xl bg-red-600 hover:bg-red-700 px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition-all">
+            Delete Account Permanently
           </button>
         </form>
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-elevated">
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Quick Links</h2>
-        <div class="mt-5 space-y-3">
-          <a href="/dashboard/profile" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
-            Profile Editor
-            <span aria-hidden="true">→</span>
-          </a>
-          <a href="/dashboard/messages" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
-            Messages
-            <span aria-hidden="true">→</span>
-          </a>
-          <a href="{% if user.role == 'admin' %}/admin/articles{% else %}/dashboard/upgrade{% endif %}" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
-            {% if user.role == 'admin' %}Insights CMS{% else %}Plans{% endif %}
-            <span aria-hidden="true">→</span>
-          </a>
-          {% if user.role == 'admin' %}
-          <a href="/admin/users" class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white hover:border-brand-200 hover:text-brand-700">
-            User Authority
-            <span aria-hidden="true">→</span>
-          </a>
-          {% endif %}
-        </div>
-      </article>
     </aside>
   </div>
 </div>

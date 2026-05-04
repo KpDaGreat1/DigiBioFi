@@ -1,5 +1,6 @@
 """
-Contact message model — stores messages submitted via the public contact form.
+Contact message model — stores messages submitted via the public contact form
+and admin replies in a unified thread.
 
 Status values:
   unread   — new message, not yet seen by admin
@@ -9,13 +10,14 @@ Status values:
 Source values:
   internal — submitted by a logged-in registered user
   external — submitted by an anonymous / unauthenticated visitor
+  admin    — reply sent by an admin back to the user
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -39,13 +41,16 @@ class ContactMessage(Base):
     )
     user: Mapped[User] = relationship("User", foreign_keys=[user_id])
 
-    # Source distinguishes internal (registered) vs external (anonymous) senders
+    # Source distinguishes internal (registered) vs external (anonymous) vs admin reply
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="external", index=True)
+
+    # True when this entry is an admin reply (source="admin")
+    is_admin_reply: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
 
     subject: Mapped[str] = mapped_column(String(300), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
-    # Workflow status
+    # Workflow status — admin replies always start as "read"
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="unread", index=True
     )

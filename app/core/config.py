@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     adsense_public_sidebar_slot: str = ""
     adsense_dashboard_slot: str = ""
 
+    # ── Homepage video (optional embed URL, e.g. YouTube /embed/...) ────────
+    video_embed_url: str = ""
+
     # ── AI resume extraction ─────────────────────────────────────────────────
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
