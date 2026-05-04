@@ -149,6 +149,14 @@ requirements.lock.txt
 *.sqlite3
 *.sqlite-shm
 *.sqlite-wal
+# Security — never commit keys, certs, or secrets directories
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
 tmp_*
 pycache/
 uploads/
