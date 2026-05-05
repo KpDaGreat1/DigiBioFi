@@ -1,0 +1,143 @@
+{% extends "layouts/admin.html" %}
+{% block title %}Analytics — Admin — DigiBioFi{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-12">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 reveal">
+    <div>
+      <div class="inline-flex items-center gap-2 text-brand-gold text-[10px] font-black uppercase tracking-[0.3em] mb-4">
+        <span class="w-8 h-[1px] bg-brand-gold"></span>
+        Platform Analytics
+      </div>
+      <h1 class="text-4xl md:text-6xl font-bold text-white tracking-tight leading-tight">
+        Analytics <span class="text-brand-gold">Overview.</span>
+      </h1>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 reveal reveal-delay-1">
+    <div class="premium-card p-8">
+      <div class="text-4xl font-bold text-white tracking-tight mb-1">{{ total_events }}</div>
+      <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Events</div>
+    </div>
+    <div class="premium-card p-8">
+      <div class="text-4xl font-bold text-white tracking-tight mb-1">{{ total_views }}</div>
+      <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Profile Views</div>
+    </div>
+    <div class="premium-card p-8">
+      <div class="text-4xl font-bold text-white tracking-tight mb-1">{{ event_breakdown.get('qr_scan', 0) }}</div>
+      <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">QR Scans</div>
+    </div>
+    <div class="premium-card p-8">
+      <div class="text-4xl font-bold text-white tracking-tight mb-1">{{ event_breakdown.get('pdf_download', 0) }}</div>
+      <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resume Downloads</div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-8 reveal reveal-delay-2">
+    <!-- Event Breakdown -->
+    <div class="premium-panel overflow-hidden">
+      <div class="p-8 border-b border-white/5 bg-white/[0.02]">
+        <h3 class="text-lg font-bold text-white tracking-tight">Events by Type</h3>
+      </div>
+      <div class="divide-y divide-white/5">
+        {% for event_type, count in event_breakdown.items() %}
+        <div class="px-8 py-4 flex items-center justify-between">
+          <div class="text-sm font-bold text-slate-300">{{ event_type }}</div>
+          <div class="text-sm font-bold text-brand-gold">{{ count }}</div>
+        </div>
+        {% else %}
+        <div class="px-8 py-6 text-sm text-slate-500">No events recorded yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Source Breakdown -->
+    <div class="premium-panel overflow-hidden">
+      <div class="p-8 border-b border-white/5 bg-white/[0.02]">
+        <h3 class="text-lg font-bold text-white tracking-tight">Events by Source</h3>
+      </div>
+      <div class="divide-y divide-white/5">
+        {% for source, count in source_breakdown.items() %}
+        <div class="px-8 py-4 flex items-center justify-between">
+          <div class="text-sm font-bold text-slate-300">{{ source }}</div>
+          <div class="text-sm font-bold text-brand-blue">{{ count }}</div>
+        </div>
+        {% else %}
+        <div class="px-8 py-6 text-sm text-slate-500">No source data yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Profiles -->
+  <div class="premium-panel overflow-hidden reveal reveal-delay-3">
+    <div class="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+      <h3 class="text-lg font-bold text-white tracking-tight">Top Profiles by Events</h3>
+      <a href="/admin/users" class="text-[10px] font-black text-brand-gold uppercase tracking-widest hover:underline">Manage All</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-white/5">
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</th>
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Views</th>
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">QR Scans</th>
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Total Events</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for profile in top_profiles %}
+          <tr class="group hover:bg-white/[0.02] transition-colors">
+            <td class="px-8 py-5">
+              <div class="font-bold text-white text-sm">{{ profile.username }}</div>
+              <div class="text-[10px] text-slate-500 font-medium">/p/{{ profile.slug }}</div>
+            </td>
+            <td class="px-8 py-5 text-right font-bold text-slate-300 text-sm">{{ profile.page_views }}</td>
+            <td class="px-8 py-5 text-right font-bold text-slate-300 text-sm">{{ profile.qr_scans }}</td>
+            <td class="px-8 py-5 text-right font-bold text-brand-gold text-sm">{{ profile.event_count }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="px-8 py-8 text-sm text-slate-500 text-center">No analytics data yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Events -->
+  <div class="premium-panel overflow-hidden reveal reveal-delay-4">
+    <div class="p-8 border-b border-white/5 bg-white/[0.02]">
+      <h3 class="text-lg font-bold text-white tracking-tight">Recent Events</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-white/5">
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</th>
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Event</th>
+            <th class="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Source</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for event in recent_events %}
+          <tr class="group hover:bg-white/[0.02] transition-colors">
+            <td class="px-8 py-4 text-xs text-slate-500">{{ event.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="px-8 py-4 text-sm font-bold text-slate-300">{{ event.event_type }}</td>
+            <td class="px-8 py-4 text-sm text-slate-400">{{ event.source }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="px-8 py-8 text-sm text-slate-500 text-center">No recent events.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

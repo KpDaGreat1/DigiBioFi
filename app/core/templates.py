@@ -50,7 +50,7 @@ def get_flashed_messages(request: Request):
     """
     Retrieve and clear all flash messages from the session.
     """
-    messages = request.session.pop("flash", []); print(f"FLASH MESSAGES IN TEMPLATE: {messages}"); return messages
+    return request.session.pop("flash", [])
 
 templates.env.globals["get_csrf_token"] = get_csrf_token
 templates.env.globals["get_flashed_messages"] = get_flashed_messages

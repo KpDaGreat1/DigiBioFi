@@ -19,6 +19,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser \
+    && mkdir -p /app/uploads/qr_codes \
+               /app/uploads/profile_images \
+               /app/uploads/project_thumbnails \
+               /app/uploads/certificates \
+               /app/uploads/resume_previews \
+               /app/uploads/resumes \
     && chown -R appuser:appuser /app
 
 USER appuser

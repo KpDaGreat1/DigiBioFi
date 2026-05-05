@@ -1004,3 +1004,67 @@ async def admin_article_delete(
     db.commit()
     flash(request, "Article deleted.", "success")
     return RedirectResponse("/admin/articles", status_code=303)
+
+
+@router.get("/analytics", response_class=HTMLResponse)
+def admin_analytics(
+    request: Request,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    from app.models.profile import ProfileView
+
+    total_events = db.query(AnalyticsEvent).count()
+    total_views = db.query(ProfileView).count()
+
+    event_breakdown = dict(
+        db.query(AnalyticsEvent.event_type, func.count(AnalyticsEvent.id))
+        .group_by(AnalyticsEvent.event_type)
+        .all()
+    )
+    source_breakdown = dict(
+        db.query(AnalyticsEvent.source, func.count(AnalyticsEvent.id))
+        .group_by(AnalyticsEvent.source)
+        .all()
+    )
+
+    top_profiles = (
+        db.query(
+            Profile.slug.label("slug"),
+            User.username.label("username"),
+            func.count(AnalyticsEvent.id).label("event_count"),
+            func.coalesce(
+                func.sum(case((AnalyticsEvent.event_type == "page_view", 1), else_=0)), 0
+            ).label("page_views"),
+            func.coalesce(
+                func.sum(case((AnalyticsEvent.event_type == "qr_scan", 1), else_=0)), 0
+            ).label("qr_scans"),
+        )
+        .join(User, User.id == Profile.user_id)
+        .outerjoin(AnalyticsEvent, AnalyticsEvent.profile_id == Profile.id)
+        .group_by(Profile.id, Profile.slug, User.username)
+        .order_by(func.count(AnalyticsEvent.id).desc())
+        .limit(20)
+        .all()
+    )
+
+    recent_events = (
+        db.query(AnalyticsEvent)
+        .order_by(AnalyticsEvent.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "admin/analytics.html",
+        {
+            "request": request,
+            "admin": admin,
+            "total_events": total_events,
+            "total_views": total_views,
+            "event_breakdown": event_breakdown,
+            "source_breakdown": source_breakdown,
+            "top_profiles": top_profiles,
+            "recent_events": recent_events,
+        },
+    )
