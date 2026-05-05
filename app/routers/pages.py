@@ -74,11 +74,13 @@ def explore_page(
     request: Request,
     page: int = 1,
     q: str = "",
+    filter: str = "",
     db: Session = Depends(get_db),
     user=Depends(get_current_user_optional),
 ):
     from app.models.profile import Profile
     from app.models.user import User
+    from sqlalchemy import func
 
     per_page = 24
     offset = (page - 1) * per_page
@@ -95,11 +97,21 @@ def explore_page(
 
     if q and q.strip():
         search = f"%{q.strip().lower()}%"
-        from sqlalchemy import func
         query = query.filter(
             func.lower(Profile.full_name).like(search)
             | func.lower(Profile.headline).like(search)
+            | func.lower(Profile.location).like(search)
         )
+
+    active_filter = (filter or "").strip().lower()
+    if active_filter == "verified":
+        query = query.filter(User.is_verified.is_(True))
+    elif active_filter == "recruiter":
+        query = query.filter(Profile.recruiter_visibility.is_(True))
+    elif active_filter == "freelance":
+        query = query.filter(Profile.freelance_availability.is_(True))
+    elif active_filter == "elite":
+        query = query.filter(User.subscription_tier == "elite")
 
     total = query.count()
     profiles = (
@@ -111,7 +123,7 @@ def explore_page(
     example_profile_slugs = {profile.slug for profile in profiles if _is_example_profile(profile)}
     real_profiles = [profile for profile in profiles if profile.slug not in example_profile_slugs]
     demo_profiles = []
-    if not q.strip() and len(example_profile_slugs) < _DEMO_PROFILE_TARGET_COUNT:
+    if not q.strip() and not active_filter and len(example_profile_slugs) < _DEMO_PROFILE_TARGET_COUNT:
         missing_examples = max(0, _DEMO_PROFILE_TARGET_COUNT - len(example_profile_slugs))
         demo_profiles = list(_DEMO_PROFILES[:missing_examples])
 
@@ -127,6 +139,7 @@ def explore_page(
             "total_pages": total_pages,
             "total": total,
             "q": q,
+            "active_filter": active_filter,
             "base_url": external_base_url(request),
             "example_profile_slugs": example_profile_slugs,
             "example_profile_count": len(example_profile_slugs),

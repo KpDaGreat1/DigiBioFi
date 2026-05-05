@@ -827,6 +827,82 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
                     user.subscription_status = "past_due"
                     logger.warning(f"User {user.id} invoice payment failed — status set to past_due")
 
+        # ── Stripe Identity events ────────────────────────────────────────────
+        elif event_type == "identity.verification_session.verified":
+            session_id = obj.get("id")
+            metadata = obj.get("metadata") or {}
+            user_id_meta = metadata.get("user_id")
+            user = None
+            if user_id_meta:
+                try:
+                    user = db.query(User).filter(User.id == int(user_id_meta)).first()
+                except (ValueError, TypeError):
+                    pass
+            if not user and session_id:
+                user = db.query(User).filter(User.stripe_verification_id == session_id).first()
+            if user:
+                user.is_verified = True
+                user.verification_status = "verified"
+                user.stripe_verification_id = session_id or user.stripe_verification_id
+                logger.info("User %s identity verified via Stripe Identity", user.id)
+                from app.models.notification import Notification
+                note = Notification(
+                    user_id=user.id,
+                    type="verification",
+                    title="Identity Verified",
+                    body="Your identity has been successfully verified. Your profile now shows the Verified badge.",
+                    link="/dashboard",
+                )
+                db.add(note)
+            else:
+                logger.warning("identity.verification_session.verified: no user found for session=%s", session_id)
+
+        elif event_type == "identity.verification_session.requires_input":
+            session_id = obj.get("id")
+            metadata = obj.get("metadata") or {}
+            user_id_meta = metadata.get("user_id")
+            user = None
+            if user_id_meta:
+                try:
+                    user = db.query(User).filter(User.id == int(user_id_meta)).first()
+                except (ValueError, TypeError):
+                    pass
+            if not user and session_id:
+                user = db.query(User).filter(User.stripe_verification_id == session_id).first()
+            if user:
+                user.verification_status = "requires_input"
+                last_error = (obj.get("last_error") or {}).get("reason", "")
+                logger.info(
+                    "User %s identity verification requires_input: reason=%s",
+                    user.id,
+                    last_error,
+                )
+                from app.models.notification import Notification
+                note = Notification(
+                    user_id=user.id,
+                    type="verification",
+                    title="Verification Needs Attention",
+                    body=f"Your identity verification needs additional input. Please retry from your Settings. {last_error}".strip(),
+                    link="/settings",
+                )
+                db.add(note)
+
+        elif event_type == "identity.verification_session.canceled":
+            session_id = obj.get("id")
+            metadata = obj.get("metadata") or {}
+            user_id_meta = metadata.get("user_id")
+            user = None
+            if user_id_meta:
+                try:
+                    user = db.query(User).filter(User.id == int(user_id_meta)).first()
+                except (ValueError, TypeError):
+                    pass
+            if not user and session_id:
+                user = db.query(User).filter(User.stripe_verification_id == session_id).first()
+            if user:
+                user.verification_status = "canceled"
+                logger.info("User %s identity verification canceled", user.id)
+
         # After successful processing, record the event ID for idempotency
         if event_id:
             from app.models.stripe import StripeEvent

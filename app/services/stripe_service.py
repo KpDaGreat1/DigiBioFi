@@ -68,3 +68,24 @@ def get_latest_subscription(customer_id: str):
     if not subscriptions.data:
         return None
     return subscriptions.data[0]
+
+
+def create_verification_session(user_id: int) -> tuple[str, str]:
+    """Create a Stripe Identity VerificationSession.
+
+    Returns (session_id, client_secret) — caller stores session_id on the User row.
+    client_secret is passed to the frontend Stripe.js modal; it is short-lived.
+    No PII is stored locally.
+    """
+    import stripe
+    from app.core.config import settings
+
+    stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
+
+    session = stripe.identity.VerificationSession.create(
+        type="document",
+        metadata={"user_id": str(user_id)},
+        options={"document": {"require_matching_selfie": True}},
+    )
+    return session.id, session.client_secret

@@ -89,6 +89,7 @@ def _render_settings_page(
             "password_errors": password_errors or {},
             "delete_errors": delete_errors or {},
             "can_manage_subscription": can_manage_subscription,
+            "stripe_publishable_key": settings.stripe_publishable_key,
         },
         status_code=status_code,
     )
@@ -1637,3 +1638,112 @@ async def upload_elite_image3(
         logger.error(f"Image3 upload error: {e}", exc_info=True)
         flash(request, "Failed to upload image.", "error")
     return RedirectResponse("/dashboard/profile", status_code=303)
+
+
+# ── Stripe Identity Verification ──────────────────────────────────────────────
+
+@router.post("/verify/create-session")
+def create_identity_session(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a Stripe Identity VerificationSession; return client_secret to the frontend."""
+    from fastapi.responses import JSONResponse
+
+    if current_user.is_verified:
+        return JSONResponse({"error": "already_verified"}, status_code=400)
+
+    if not settings.stripe_secret_key:
+        logger.error(
+            "Stripe identity create-session blocked: STRIPE_SECRET_KEY not set for user_id=%s",
+            current_user.id,
+        )
+        return JSONResponse({"error": "not_configured"}, status_code=503)
+
+    try:
+        from app.services.stripe_service import create_verification_session
+        session_id, client_secret = create_verification_session(current_user.id)
+        current_user.stripe_verification_id = session_id
+        current_user.verification_status = "requires_input"
+        db.commit()
+        return JSONResponse({"client_secret": client_secret})
+    except Exception:
+        logger.exception("Stripe Identity create-session failed for user_id=%s", current_user.id)
+        return JSONResponse({"error": "stripe_error"}, status_code=500)
+
+
+@router.get("/verify/status")
+def identity_verify_status(
+    current_user: User = Depends(get_current_user),
+):
+    from fastapi.responses import JSONResponse
+    return JSONResponse({
+        "is_verified": current_user.is_verified,
+        "verification_status": current_user.verification_status or "",
+    })
+
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+
+@router.get("/notifications", response_class=HTMLResponse)
+def notifications_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.notification import Notification
+    notifications = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id)
+        .order_by(Notification.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read.is_(False),
+    ).update({"is_read": True})
+    db.commit()
+    profile = _get_profile(current_user, db)
+    return templates.TemplateResponse(
+        "dashboard/notifications.html",
+        {
+            "request": request,
+            "user": current_user,
+            "profile": profile,
+            "notifications": notifications,
+        },
+    )
+
+
+@router.get("/notifications/count")
+def notifications_count(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.notification import Notification
+    from fastapi.responses import JSONResponse
+    count = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id, Notification.is_read.is_(False))
+        .count()
+    )
+    return JSONResponse({"unread": count})
+
+
+@router.post("/notifications/mark-read", response_class=HTMLResponse)
+def mark_notifications_read(
+    request: Request,
+    csrf_token: str = Depends(require_csrf),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.notification import Notification
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read.is_(False),
+    ).update({"is_read": True})
+    db.commit()
+    return RedirectResponse("/dashboard/notifications", status_code=303)

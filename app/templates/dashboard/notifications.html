@@ -1,0 +1,66 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Notifications — DigiBioFi{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto space-y-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-white tracking-tight">Notifications</h1>
+      <p class="mt-1 text-sm font-medium text-slate-500">System updates, messages, and verification alerts.</p>
+    </div>
+    {% if notifications %}
+    <form action="/dashboard/notifications/mark-read" method="post">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token(request) }}">
+      <button type="submit" class="text-xs font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest">
+        Mark All Read
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+  <div class="space-y-3">
+    {% for n in notifications %}
+    <div class="premium-panel p-5 flex items-start gap-4 {% if not n.is_read %}border-l-2 border-brand-blue{% endif %}">
+      <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center
+        {% if n.type == 'verification' %}bg-brand-green/10{% elif n.type == 'message' %}bg-brand-blue/10{% else %}bg-white/5{% endif %}">
+        {% if n.type == 'verification' %}
+        <i data-lucide="badge-check" class="w-5 h-5 text-brand-green"></i>
+        {% elif n.type == 'message' %}
+        <i data-lucide="message-square" class="w-5 h-5 text-brand-blue"></i>
+        {% else %}
+        <i data-lucide="bell" class="w-5 h-5 text-slate-400"></i>
+        {% endif %}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-4 mb-1">
+          <p class="font-bold text-white text-sm tracking-tight">{{ n.title }}</p>
+          <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest whitespace-nowrap flex-shrink-0">
+            {{ n.created_at.strftime('%b %d') if n.created_at else '' }}
+          </span>
+        </div>
+        {% if n.body %}
+        <p class="text-slate-400 text-sm font-medium leading-relaxed">{{ n.body }}</p>
+        {% endif %}
+        {% if n.link %}
+        <a href="{{ n.link }}" class="inline-block mt-2 text-xs font-bold text-brand-blue hover:text-white transition-colors uppercase tracking-widest">
+          View →
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="premium-panel p-16 text-center">
+    <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+      <i data-lucide="bell-off" class="w-8 h-8 text-slate-600"></i>
+    </div>
+    <h3 class="font-bold text-white text-xl mb-3 tracking-tight">No notifications yet</h3>
+    <p class="text-slate-500 font-medium text-sm">Platform updates, messages, and verification alerts will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

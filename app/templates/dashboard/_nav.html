@@ -21,8 +21,9 @@
     ('/dashboard/experience','briefcase',        'Experience'),
     ('/dashboard/projects', 'code-2',           'Projects'),
     ('/dashboard/education','graduation-cap',    'Education'),
-    ('/dashboard/messages', 'message-square',   'Messages'),
-    ('/settings',           'settings',         'Settings'),
+    ('/dashboard/messages',       'message-square',  'Messages'),
+    ('/dashboard/notifications',  'bell',            'Notifications'),
+    ('/settings',                 'settings',        'Settings'),
   ] %}
   {% for path, icon, label in mobile_items %}
   <a href="{{ path }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">

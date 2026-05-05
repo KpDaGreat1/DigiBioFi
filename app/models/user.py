@@ -71,6 +71,11 @@ class User(Base):
     stripe_customer_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     stripe_subscription_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")
 
+    # Stripe Identity — webhook-driven only, no PII stored
+    stripe_verification_id: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    # requires_input | processing | verified | canceled | failed | ""
+    verification_status: Mapped[str] = mapped_column(String(30), nullable=False, default="")
+
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

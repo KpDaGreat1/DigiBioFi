@@ -80,6 +80,61 @@
         </form>
       </article>
 
+      <!-- Identity Verification -->
+      <article class="premium-panel p-8" id="identity-section">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white tracking-tight">Identity Verification</h2>
+          <p class="mt-1 text-sm text-slate-500">Get the Verified badge on your public profile via Stripe Identity.</p>
+        </div>
+
+        {% if user.is_verified %}
+        <div class="flex items-center gap-3 rounded-xl border border-brand-green/30 bg-brand-green/10 px-5 py-4">
+          <i data-lucide="badge-check" class="w-5 h-5 text-brand-green flex-shrink-0"></i>
+          <div>
+            <p class="font-bold text-brand-green text-sm">Identity Verified</p>
+            <p class="text-xs text-slate-400 mt-0.5">Your Verified badge is live on your public profile.</p>
+          </div>
+        </div>
+        {% elif user.verification_status == 'processing' %}
+        <div class="flex items-center gap-3 rounded-xl border border-brand-blue/30 bg-brand-blue/10 px-5 py-4">
+          <i data-lucide="loader" class="w-5 h-5 text-brand-blue flex-shrink-0 animate-spin"></i>
+          <div>
+            <p class="font-bold text-brand-blue text-sm">Verification In Progress</p>
+            <p class="text-xs text-slate-400 mt-0.5">Stripe is reviewing your submission. Check back soon.</p>
+          </div>
+        </div>
+        {% elif user.verification_status == 'requires_input' %}
+        <div class="rounded-xl border border-amber-700/30 bg-amber-950/20 px-5 py-4 mb-5">
+          <p class="text-amber-400 font-bold text-sm mb-1">Verification Needs Attention</p>
+          <p class="text-xs text-slate-400">Your previous submission needs a retry. Complete the steps below to continue.</p>
+        </div>
+        <button id="verify-btn" class="btn-primary px-6 py-3 text-xs w-full" data-publishable-key="{{ stripe_publishable_key }}">
+          Retry Verification
+        </button>
+        {% elif user.verification_status == 'failed' %}
+        <div class="rounded-xl border border-red-800/30 bg-red-950/20 px-5 py-4 mb-5">
+          <p class="text-red-400 font-bold text-sm mb-1">Verification Failed</p>
+          <p class="text-xs text-slate-400">We could not verify your identity. You may try again.</p>
+        </div>
+        <button id="verify-btn" class="btn-primary px-6 py-3 text-xs w-full" data-publishable-key="{{ stripe_publishable_key }}">
+          Try Again
+        </button>
+        {% else %}
+        <p class="text-sm text-slate-400 font-medium mb-5 leading-relaxed">
+          Verify your real identity with a government-issued ID. This is processed securely by Stripe — no documents are stored on DigiBioFi servers.
+        </p>
+        <button id="verify-btn" class="btn-primary px-6 py-3 text-xs w-full" data-publishable-key="{{ stripe_publishable_key }}">
+          <i data-lucide="shield-check" class="w-4 h-4 inline mr-1.5"></i>
+          Verify My Identity
+        </button>
+        <p class="text-[10px] text-slate-600 mt-3 font-medium">
+          Powered by Stripe Identity · Secure · No PII stored on DigiBioFi
+        </p>
+        {% endif %}
+
+        <div id="verify-status-msg" class="hidden mt-4 rounded-xl border border-brand-blue/20 bg-brand-blue/5 px-4 py-3 text-sm font-medium text-slate-300"></div>
+      </article>
+
     </section>
 
     <aside class="space-y-8">
@@ -166,4 +221,62 @@
     </aside>
   </div>
 </div>
+
+{% if not user.is_verified %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function() {
+  var btn = document.getElementById('verify-btn');
+  if (!btn) return;
+
+  var publishableKey = btn.getAttribute('data-publishable-key') || '';
+  if (!publishableKey) return;
+
+  btn.addEventListener('click', async function() {
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+
+    try {
+      var csrfInput = document.querySelector('input[name="csrf_token"]');
+      var csrfToken = csrfInput ? csrfInput.value : '';
+
+      var res = await fetch('/dashboard/verify/create-session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'csrf_token=' + encodeURIComponent(csrfToken),
+      });
+      var data = await res.json();
+
+      if (data.error === 'already_verified') {
+        location.reload();
+        return;
+      }
+      if (!data.client_secret) {
+        throw new Error(data.error || 'no_secret');
+      }
+
+      var stripe = Stripe(publishableKey);
+      var result = await stripe.verifyIdentity(data.client_secret);
+
+      var msg = document.getElementById('verify-status-msg');
+      if (result.error) {
+        if (msg) { msg.classList.remove('hidden'); msg.textContent = result.error.message || 'Verification canceled.'; }
+        btn.disabled = false;
+        btn.textContent = 'Try Again';
+      } else {
+        if (msg) { msg.classList.remove('hidden'); msg.textContent = 'Verification submitted. Stripe is reviewing your submission — you\'ll be notified once complete.'; }
+        btn.disabled = true;
+        btn.textContent = 'Pending Review…';
+      }
+    } catch (err) {
+      var msg = document.getElementById('verify-status-msg');
+      if (msg) { msg.classList.remove('hidden'); msg.textContent = 'Could not start verification. Please try again.'; }
+      btn.disabled = false;
+      btn.textContent = 'Verify My Identity';
+    }
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
