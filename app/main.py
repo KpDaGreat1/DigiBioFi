@@ -322,6 +322,14 @@ def _apply_security_headers(response):
             " https://tpc.googlesyndication.com"
         )
 
+    # Allow video embed provider in frame-src
+    video_url = (settings.video_embed_url or "").strip()
+    if video_url:
+        if "youtube.com" in video_url or "youtu.be" in video_url:
+            frame_src += " https://www.youtube.com https://www.youtube-nocookie.com"
+        elif "vimeo.com" in video_url:
+            frame_src += " https://player.vimeo.com"
+
     csp = (
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
@@ -566,6 +574,11 @@ for subdir in ("profile_images", "project_thumbnails", "certificates", "resume_p
         name=f"uploads-{subdir}",
     )
 app.mount("/qr_codes", StaticFiles(directory=str(qr_path)), name="qr_codes")
+
+# Mount resumes so the stored URL path /uploads/resumes/... resolves
+_resumes_path = settings.upload_path / "resumes"
+_resumes_path.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads/resumes", StaticFiles(directory=str(_resumes_path)), name="uploads-resumes")
 
 
 # ── Health Check ─────────────────────────────────────
@@ -831,16 +844,34 @@ async def stripe_webhook(request: Request, db=Depends(get_db)):
 
 # ── Root redirect ─────────────────────────────────────────────────────────────
 
+def _normalize_video_embed_url(url: str) -> str:
+    """Convert YouTube watch/short URLs to embed format; pass embed/Vimeo URLs through."""
+    if not url:
+        return ""
+    import re
+    yt_watch = re.match(
+        r"https?://(?:www\.)?youtube\.com/watch\?.*?[?&]v=([A-Za-z0-9_-]{11})", url
+    )
+    if yt_watch:
+        return f"https://www.youtube.com/embed/{yt_watch.group(1)}"
+    yt_short = re.match(r"https?://youtu\.be/([A-Za-z0-9_-]{11})", url)
+    if yt_short:
+        return f"https://www.youtube.com/embed/{yt_short.group(1)}"
+    return url
+
+
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request, user=Depends(get_current_user_optional)):
     """Landing page."""
+    raw_video_url = (settings.video_embed_url or "").strip()
+    video_embed_url = _normalize_video_embed_url(raw_video_url)
     return templates.TemplateResponse(
         "landing.html",
         {
             "request": request,
             "user": user,
             "base_url": external_base_url(request),
-            "video_embed_url": settings.video_embed_url if hasattr(settings, "video_embed_url") else "",
+            "video_embed_url": video_embed_url,
         },
     )
 

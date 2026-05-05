@@ -4,6 +4,7 @@ services:
   web:
     build: .
     container_name: digibiofi_app
+    restart: unless-stopped
     ports:
       - "8000:8000"
     env_file:
@@ -11,6 +12,8 @@ services:
     depends_on:
       - db
       - redis
+    volumes:
+      - uploads_data:/app/uploads
     command: >
       sh -c "
       until PGPASSWORD=${POSTGRES_PASSWORD} pg_isready -h db -p 5432 -U ${POSTGRES_USER}; do
@@ -47,3 +50,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

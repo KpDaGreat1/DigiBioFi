@@ -32,6 +32,23 @@ Build a professional profile page with a unique URL and QR code. Replace paper r
 
 ---
 
+## Quick Start (Docker — one command)
+
+```bash
+git clone <repo-url> digibiofi && cd digibiofi
+cp .env.example .env
+# Edit .env — set SECRET_KEY, CSRF_SECRET_KEY, ADMIN_EMAIL, ADMIN_PASSWORD,
+# POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, and DATABASE_URL:
+#   DATABASE_URL=postgresql://POSTGRES_USER:POSTGRES_PASSWORD@db:5432/POSTGRES_DB
+docker compose up --build -d
+```
+
+The app is now running at **http://localhost:8000**.  
+Alembic migrations run automatically before the server starts.  
+Uploads persist via the `uploads_data` Docker named volume.
+
+---
+
 ## PyCharm Setup
 
 1. Open the `digibiofi/` folder in PyCharm.
